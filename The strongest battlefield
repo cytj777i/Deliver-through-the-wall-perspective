@@ -5,13 +5,13 @@ local UIS = game:GetService("UserInputService")
 local Lighting = game:GetService("Lighting")
 local Camera = workspace.CurrentCamera
 
--- UI配置 - 缩小整体界面
+-- UI配置 - 进一步缩小整体界面
 local UI = {
-    ButtonSize = UDim2.new(0.95, 0, 0.2, 0), -- 按钮填满容器宽度，高度增加
-    Spacing = UDim2.new(0, 0, 0.01, 0),      -- 紧凑间距
-    Position = UDim2.new(0.75, 0, 0.35, 0),
-    ContainerHeight = 0.75, -- 缩小容器高度
-    ContainerWidth = 0.22   -- 缩小容器宽度
+    ButtonSize = UDim2.new(0.9, 0, 0.14, 0), -- 缩小按钮尺寸
+    Spacing = UDim2.new(0, 0, 0.008, 0),     -- 更紧凑的间距
+    Position = UDim2.new(0.78, 0, 0.4, 0),   -- 调整位置
+    ContainerHeight = 0.65, -- 进一步缩小容器高度
+    ContainerWidth = 0.18   -- 进一步缩小容器宽度
 }
 
 local Teleport = {
@@ -27,7 +27,7 @@ local Teleport = {
     OriginalTransparency = {} -- 存储原始透明度
 }
 
--- 创建按钮（优化按钮）
+-- 创建按钮（缩小按钮）
 local function CreateButton(name, parent, position, isStateButton)
     local button = Instance.new("TextButton")
     button.Name = name
@@ -36,15 +36,15 @@ local function CreateButton(name, parent, position, isStateButton)
     button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     button.TextColor3 = Color3.new(1, 1, 1)
     button.Text = name
-    button.TextSize = 14 -- 适中字体大小
+    button.TextSize = 12 -- 缩小字体
     button.Parent = parent
     
     -- 状态指示器
     if isStateButton then
         local stateIndicator = Instance.new("Frame")
         stateIndicator.Name = "StateIndicator"
-        stateIndicator.Size = UDim2.new(0.08, 0, 0.08, 0)
-        stateIndicator.Position = UDim2.new(0.9, 0, 0.1, 0)
+        stateIndicator.Size = UDim2.new(0.06, 0, 0.06, 0)
+        stateIndicator.Position = UDim2.new(0.92, 0, 0.1, 0)
         stateIndicator.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
         stateIndicator.BorderSizePixel = 1
         stateIndicator.BorderColor3 = Color3.new(1, 1, 1)
@@ -100,7 +100,7 @@ local function UpdateButtonState(buttonName, isActive)
     end
 end
 
--- 初始化UI - 缩小整体界面
+-- 初始化UI - 进一步缩小整体界面
 local function InitMobileUI()
     local player = Players.LocalPlayer
     local playerGui = player:WaitForChild("PlayerGui")
@@ -111,7 +111,7 @@ local function InitMobileUI()
     screenGui.ResetOnSpawn = false
     screenGui.Parent = playerGui
 
-    -- 创建缩小容器
+    -- 创建更小的容器
     local container = Instance.new("Frame")
     container.Name = "ButtonContainer"
     container.Size = UDim2.new(UI.ContainerWidth, 0, UI.ContainerHeight, 0)
@@ -122,6 +122,16 @@ local function InitMobileUI()
     container.BorderColor3 = Color3.fromRGB(60, 60, 60)
     container.Parent = screenGui
 
+    -- 创建拖动区域（覆盖整个容器但透明）
+    local dragArea = Instance.new("TextButton")
+    dragArea.Name = "DragArea"
+    dragArea.Size = UDim2.new(1, 0, 1, 0)
+    dragArea.Position = UDim2.new(0, 0, 0, 0)
+    dragArea.BackgroundTransparency = 1
+    dragArea.Text = ""
+    dragArea.TextTransparency = 1
+    dragArea.Parent = container
+
     -- 计算按钮位置 - 垂直排列填满容器
     local buttonHeight = UI.ButtonSize.Y.Scale
     local spacing = UI.Spacing.Y.Scale
@@ -129,19 +139,19 @@ local function InitMobileUI()
     local startY = (1 - totalHeight) / 2 -- 垂直居中
     
     -- 创建按钮 - 填满容器宽度
-    CreateButton("开始", container, UDim2.new(0.025, 0, startY, 0), false)
-    CreateButton("换人", container, UDim2.new(0.025, 0, startY + buttonHeight + spacing, 0), false)
-    CreateButton("结束", container, UDim2.new(0.025, 0, startY + (buttonHeight + spacing)*2, 0), false)
-    CreateButton("防甩", container, UDim2.new(0.025, 0, startY + (buttonHeight + spacing)*3, 0), true)
-    CreateButton("视野", container, UDim2.new(0.025, 0, startY + (buttonHeight + spacing)*4, 0), true)
+    CreateButton("开始", container, UDim2.new(0.05, 0, startY, 0), false)
+    CreateButton("换人", container, UDim2.new(0.05, 0, startY + buttonHeight + spacing, 0), false)
+    CreateButton("结束", container, UDim2.new(0.05, 0, startY + (buttonHeight + spacing)*2, 0), false)
+    CreateButton("防甩", container, UDim2.new(0.05, 0, startY + (buttonHeight + spacing)*3, 0), true)
+    CreateButton("视野", container, UDim2.new(0.05, 0, startY + (buttonHeight + spacing)*4, 0), true)
 
     -- 初始化状态显示
     UpdateButtonState("防甩", Teleport.AntiThrow)
     UpdateButtonState("视野", Teleport.WallVision)
 
-    -- 整个UI可拖动
+    -- 整个UI可拖动（使用透明拖动区域）
     local dragStartPos, containerStartPos
-    container.InputBegan:Connect(function(input)
+    dragArea.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.Touch then
             dragStartPos = input.Position
             containerStartPos = Vector2.new(container.AbsolutePosition.X, container.AbsolutePosition.Y)
@@ -159,7 +169,7 @@ local function InitMobileUI()
         dragStartPos = nil
     end)
 
-    print("优化UI已加载 - 整体界面缩小")
+    print("优化UI已加载 - 整体界面进一步缩小")
 end
 
 -- 视野穿墙模式
