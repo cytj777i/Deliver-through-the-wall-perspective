@@ -5,13 +5,12 @@ local UIS = game:GetService("UserInputService")
 local Lighting = game:GetService("Lighting")
 local Camera = workspace.CurrentCamera
 
--- UI配置 - 使用FPS计数器样式
+-- UI配置
 local UI = {
-    ButtonSize = UDim2.new(0, 100, 0, 30), -- 类似FPS计数器的尺寸
-    Spacing = UDim2.new(0, 0, 0, 5),       -- 按钮间距
-    Position = UDim2.new(0, 10, 0, 10),    -- 类似FPS计数器的位置
-    ContainerHeight = 0.65, 
-    ContainerWidth = 0.18   
+    ButtonSize = UDim2.new(0, 100, 0, 30),
+    Spacing = UDim2.new(0, 0, 0, 5),
+    ContainerHeight = 175,
+    ContainerWidth = 110
 }
 
 local Teleport = {
@@ -20,27 +19,27 @@ local Teleport = {
     Origin = nil,
     Connection = nil,
     PlayerList = {},
-    AntiThrow = false, -- 防甩模式
-    BodyForce = nil,   -- 重力控制
-    LastPosition = nil, -- 用于检测异常移动
-    WallVision = false, -- 透视模式
-    OriginalTransparency = {} -- 存储原始透明度
+    AntiThrow = false,
+    BodyForce = nil,
+    LastPosition = nil,
+    WallVision = false,
+    OriginalTransparency = {}
 }
 
--- 创建按钮（FPS计数器样式）
+-- 创建按钮
 local function CreateButton(name, parent, position, isStateButton)
     local button = Instance.new("TextButton")
     button.Name = name
     button.Size = UI.ButtonSize
     button.Position = position
     button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    button.BackgroundTransparency = 0.25 -- 类似FPS计数器的半透明效果
+    button.BackgroundTransparency = 0.25
     button.TextColor3 = Color3.new(1, 1, 1)
     button.Text = name
     button.TextSize = 14
     button.Parent = parent
     
-    -- 状态指示器（更小的圆形指示器）
+    -- 状态指示器
     if isStateButton then
         local stateIndicator = Instance.new("Frame")
         stateIndicator.Name = "StateIndicator"
@@ -50,27 +49,6 @@ local function CreateButton(name, parent, position, isStateButton)
         stateIndicator.BorderSizePixel = 0
         stateIndicator.Parent = button
     end
-
-    -- 点击处理
-    local lastTap = 0
-    button.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch then
-            if os.clock() - lastTap < 0.5 then return end
-            lastTap = os.clock()
-
-            if name == "开始" then
-                StartTeleport()
-            elseif name == "换人" then
-                SwapTarget()
-            elseif name == "结束" then
-                StopTeleport()
-            elseif name == "防甩" then
-                ToggleAntiThrow()
-            elseif name == "视野" then
-                ToggleWallVision()
-            end
-        end
-    end)
 
     return button
 end
@@ -100,7 +78,7 @@ local function UpdateButtonState(buttonName, isActive)
     end
 end
 
--- 初始化UI - FPS计数器样式
+-- 初始化UI - 右上角位置
 local function InitMobileUI()
     local player = Players.LocalPlayer
     local playerGui = player:WaitForChild("PlayerGui")
@@ -111,59 +89,98 @@ local function InitMobileUI()
     screenGui.ResetOnSpawn = false
     screenGui.Parent = playerGui
 
-    -- 创建紧凑容器（类似FPS计数器的简约风格）
+    -- 创建容器（放在屏幕右上角）
     local container = Instance.new("Frame")
     container.Name = "ButtonContainer"
-    container.Size = UDim2.new(0, 110, 0, 175) -- 固定像素尺寸
-    container.Position = UI.Position
+    container.Size = UDim2.new(0, UI.ContainerWidth, 0, UI.ContainerHeight)
+    container.Position = UDim2.new(1, -120, 0, 10) -- 右上角位置
     container.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    container.BackgroundTransparency = 0.3 -- 半透明背景
-    container.BorderSizePixel = 0 -- 无边框
+    container.BackgroundTransparency = 0.3
+    container.BorderSizePixel = 0
     container.Parent = screenGui
-
-    -- 创建拖动区域（覆盖整个容器但透明）
-    local dragArea = Instance.new("TextButton")
-    dragArea.Name = "DragArea"
-    dragArea.Size = UDim2.new(1, 0, 1, 0)
-    dragArea.Position = UDim2.new(0, 0, 0, 0)
-    dragArea.BackgroundTransparency = 1
-    dragArea.Text = ""
-    dragArea.TextTransparency = 1
-    dragArea.Parent = container
 
     -- 创建按钮 - 垂直排列
     local startY = 5
-    CreateButton("开始", container, UDim2.new(0, 5, 0, startY), false)
-    CreateButton("换人", container, UDim2.new(0, 5, 0, startY + 35), false)
-    CreateButton("结束", container, UDim2.new(0, 5, 0, startY + 70), false)
-    CreateButton("防甩", container, UDim2.new(0, 5, 0, startY + 105), true)
-    CreateButton("视野", container, UDim2.new(0, 5, 0, startY + 140), true)
+    local buttons = {
+        CreateButton("开始", container, UDim2.new(0, 5, 0, startY), false),
+        CreateButton("换人", container, UDim2.new(0, 5, 0, startY + 35), false),
+        CreateButton("结束", container, UDim2.new(0, 5, 0, startY + 70), false),
+        CreateButton("防甩", container, UDim2.new(0, 5, 0, startY + 105), true),
+        CreateButton("视野", container, UDim2.new(0, 5, 0, startY + 140), true)
+    }
 
     -- 初始化状态显示
     UpdateButtonState("防甩", Teleport.AntiThrow)
     UpdateButtonState("视野", Teleport.WallVision)
 
-    -- 整个UI可拖动（使用透明拖动区域）
+    -- 整个UI可拖动（包括按钮区域）
     local dragStartPos, containerStartPos
-    dragArea.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch then
-            dragStartPos = input.Position
+    local isDragging = false
+    
+    -- 为容器和所有按钮添加拖动支持
+    local function setupDrag(inputObject)
+        if inputObject.UserInputType == Enum.UserInputType.Touch then
+            dragStartPos = inputObject.Position
             containerStartPos = Vector2.new(container.AbsolutePosition.X, container.AbsolutePosition.Y)
+            isDragging = false -- 重置拖动状态
         end
-    end)
+    end
 
+    -- 容器拖动
+    container.InputBegan:Connect(setupDrag)
+    
+    -- 按钮拖动和点击处理
+    for _, button in ipairs(buttons) do
+        local lastTap = 0
+        local buttonName = button.Name
+        
+        button.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.Touch then
+                setupDrag(input)
+                
+                -- 记录点击时间，用于区分点击和拖动
+                lastTap = os.clock()
+            end
+        end)
+        
+        button.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.Touch and not isDragging then
+                -- 如果不是拖动，并且点击间隔大于0.5秒，则执行按钮功能
+                if os.clock() - lastTap < 0.5 then
+                    if buttonName == "开始" then
+                        StartTeleport()
+                    elseif buttonName == "换人" then
+                        SwapTarget()
+                    elseif buttonName == "结束" then
+                        StopTeleport()
+                    elseif buttonName == "防甩" then
+                        ToggleAntiThrow()
+                    elseif buttonName == "视野" then
+                        ToggleWallVision()
+                    end
+                end
+            end
+        end)
+    end
+
+    -- 处理拖动
     UIS.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.Touch and dragStartPos then
             local delta = input.Position - dragStartPos
-            container.Position = UDim2.new(0, containerStartPos.X + delta.X, 0, containerStartPos.Y + delta.Y)
+            -- 如果移动距离超过阈值，则视为拖动
+            if delta.Magnitude > 5 then
+                isDragging = true
+                container.Position = UDim2.new(0, containerStartPos.X + delta.X, 0, containerStartPos.Y + delta.Y)
+            end
         end
     end)
 
     UIS.InputEnded:Connect(function()
         dragStartPos = nil
+        isDragging = false
     end)
 
-    print("FPS样式UI已加载")
+    print("传送UI已加载 - 位置：右上角，支持拖动操作")
 end
 
 -- 视野穿墙模式
@@ -424,4 +441,4 @@ end)
 
 -- 执行
 InitMobileUI()
-print("传送脚本加载完成 | FPS样式UI")
+print("传送脚本加载完成 | 初始位置：右上角 | 支持按钮区域拖动")
