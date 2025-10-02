@@ -1,4 +1,4 @@
--- 完整传送与穿墙视野脚本
+-- Roblox手机端极速传送脚本 (UI优化版)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
@@ -13,41 +13,66 @@ local Teleport = {
     Active = false,
     Connection = nil,
     Target = nil,
+    Wallhack = false,
     WallVision = false,
     OriginalTransparency = {},
     PlayerList = {},
     Origin = nil
 }
 
--- UI配置
+-- UI配置 - 优化手机端体验
 local UI = {
-    ButtonSize = UDim2.new(0.15, 0, 0.08, 0),
-    Spacing = UDim2.new(0, 0, 0.01, 0),
-    Position = UDim2.new(0.65, 0, 0.3, 0),
-    DragHandleHeight = 0.03,
-    ContainerHeight = 0.45
+    ButtonSize = UDim2.new(0.8, 0, 0.12, 0), -- 更大的按钮尺寸
+    Spacing = 0.02, -- 间距
+    Position = UDim2.new(0.7, 0, 0.2, 0),
+    DragHandleHeight = 0.1,
+    ContainerHeight = 0.65,
+    ContainerWidth = 0.3,
+    FontSize = 16 -- 更大的字体
 }
+
+-- 创建按钮（优化点击体验）
+local function CreateButton(name, parent, position, backgroundColor)
+    local button = Instance.new("TextButton")
+    button.Name = name
+    button.Size = UI.ButtonSize
+    button.Position = position
+    button.BackgroundColor3 = backgroundColor
+    button.TextColor3 = Color3.new(1, 1, 1)
+    button.Text = name
+    button.TextSize = UI.FontSize
+    button.TextWrapped = true
+    button.Parent = parent
+    
+    -- 添加圆角
+    local UICorner = Instance.new("UICorner")
+    UICorner.CornerRadius = UDim.new(0, 8)
+    UICorner.Parent = button
+    
+    return button
+end
 
 -- 创建UI界面
 local function CreateUI()
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "TeleportGui"
     ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-    ScreenGui.ResetOnSpawn = false  -- 防止重生时重置
+    ScreenGui.ResetOnSpawn = false
 
     -- 主容器
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainFrame"
-    MainFrame.Size = UDim2.new(0.2, 0, UI.ContainerHeight, 0)
+    MainFrame.Size = UDim2.new(UI.ContainerWidth, 0, UI.ContainerHeight, 0)
     MainFrame.Position = UI.Position
     MainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    MainFrame.BackgroundTransparency = 0.2
     MainFrame.BorderSizePixel = 0
     MainFrame.ClipsDescendants = true
     MainFrame.Parent = ScreenGui
 
     -- 添加圆角
     local UICorner = Instance.new("UICorner")
-    UICorner.CornerRadius = UDim.new(0, 8)
+    UICorner.CornerRadius = UDim.new(0, 12)
     UICorner.Parent = MainFrame
 
     -- 拖拽区域
@@ -56,81 +81,62 @@ local function CreateUI()
     DragHandle.Size = UDim2.new(1, 0, UI.DragHandleHeight, 0)
     DragHandle.Position = UDim2.new(0, 0, 0, 0)
     DragHandle.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    DragHandle.BackgroundTransparency = 0.3
     DragHandle.BorderSizePixel = 0
     DragHandle.Text = "传送控制面板 (拖拽移动)"
     DragHandle.TextColor3 = Color3.fromRGB(255, 255, 255)
-    DragHandle.TextScaled = true
+    DragHandle.TextSize = UI.FontSize
+    DragHandle.TextWrapped = true
     DragHandle.Parent = MainFrame
 
     -- 按钮容器
     local ButtonContainer = Instance.new("Frame")
     ButtonContainer.Name = "ButtonContainer"
-    ButtonContainer.Size = UDim2.new(1, 0, 1 - UI.DragHandleHeight.Scale, 0)
-    ButtonContainer.Position = UDim2.new(0, 0, UI.DragHandleHeight.Scale, 0)
+    ButtonContainer.Size = UDim2.new(1, 0, 1 - UI.DragHandleHeight, 0)
+    ButtonContainer.Position = UDim2.new(0, 0, UI.DragHandleHeight, 0)
     ButtonContainer.BackgroundTransparency = 1
     ButtonContainer.Parent = MainFrame
 
+    -- 按钮布局计算
+    local function GetButtonPosition(index)
+        local yPosition = 0.02 + (UI.ButtonSize.Y.Scale + UI.Spacing) * (index - 1)
+        return UDim2.new(0.1, 0, yPosition, 0)
+    end
+
     -- 开始传送按钮
-    local StartButton = Instance.new("TextButton")
-    StartButton.Name = "StartButton"
-    StartButton.Size = UI.ButtonSize
-    StartButton.Position = UDim2.new(0.05, 0, 0.05, 0)
-    StartButton.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
-    StartButton.BorderSizePixel = 0
-    StartButton.Text = "开始传送"
-    StartButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    StartButton.TextScaled = true
-    StartButton.Parent = ButtonContainer
-
+    local StartButton = CreateButton("开始传送", ButtonContainer, GetButtonPosition(1), Color3.fromRGB(50, 150, 50))
+    
     -- 停止传送按钮
-    local StopButton = Instance.new("TextButton")
-    StopButton.Name = "StopButton"
-    StopButton.Size = UI.ButtonSize
-    StopButton.Position = UDim2.new(0.05, 0, 0.05 + UI.ButtonSize.Y.Scale + UI.Spacing.Y.Scale, 0)
-    StopButton.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
-    StopButton.BorderSizePixel = 0
-    StopButton.Text = "停止传送"
-    StopButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    StopButton.TextScaled = true
-    StopButton.Parent = ButtonContainer
-
+    local StopButton = CreateButton("停止传送", ButtonContainer, GetButtonPosition(2), Color3.fromRGB(150, 50, 50))
+    
     -- 切换目标按钮
-    local SwapTargetButton = Instance.new("TextButton")
-    SwapTargetButton.Name = "SwapTargetButton"
-    SwapTargetButton.Size = UI.ButtonSize
-    SwapTargetButton.Position = UDim2.new(0.05, 0, 0.05 + (UI.ButtonSize.Y.Scale + UI.Spacing.Y.Scale) * 2, 0)
-    SwapTargetButton.BackgroundColor3 = Color3.fromRGB(150, 150, 50)
-    SwapTargetButton.BorderSizePixel = 0
-    SwapTargetButton.Text = "切换目标"
-    SwapTargetButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    SwapTargetButton.TextScaled = true
-    SwapTargetButton.Parent = ButtonContainer
-
+    local SwapTargetButton = CreateButton("切换目标", ButtonContainer, GetButtonPosition(3), Color3.fromRGB(150, 150, 50))
+    
+    -- 穿墙模式按钮
+    local WallhackButton = CreateButton("穿墙模式: 关闭", ButtonContainer, GetButtonPosition(4), Color3.fromRGB(50, 100, 150))
+    
     -- 穿墙视野按钮
-    local WallVisionButton = Instance.new("TextButton")
-    WallVisionButton.Name = "WallVisionButton"
-    WallVisionButton.Size = UI.ButtonSize
-    WallVisionButton.Position = UDim2.new(0.05, 0, 0.05 + (UI.ButtonSize.Y.Scale + UI.Spacing.Y.Scale) * 3, 0)
-    WallVisionButton.BackgroundColor3 = Color3.fromRGB(50, 50, 150)
-    WallVisionButton.BorderSizePixel = 0
-    WallVisionButton.Text = "穿墙视野: 关闭"
-    WallVisionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    WallVisionButton.TextScaled = true
-    WallVisionButton.Parent = ButtonContainer
+    local WallVisionButton = CreateButton("穿墙视野: 关闭", ButtonContainer, GetButtonPosition(5), Color3.fromRGB(50, 50, 150))
 
     -- 状态显示
     local StatusLabel = Instance.new("TextLabel")
     StatusLabel.Name = "StatusLabel"
-    StatusLabel.Size = UDim2.new(0.9, 0, 0.1, 0)
-    StatusLabel.Position = UDim2.new(0.05, 0, 0.05 + (UI.ButtonSize.Y.Scale + UI.Spacing.Y.Scale) * 4, 0)
+    StatusLabel.Size = UDim2.new(0.8, 0, 0.15, 0)
+    StatusLabel.Position = GetButtonPosition(6)
     StatusLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    StatusLabel.BackgroundTransparency = 0.3
     StatusLabel.BorderSizePixel = 0
     StatusLabel.Text = "状态: 就绪"
     StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    StatusLabel.TextScaled = true
+    StatusLabel.TextSize = UI.FontSize
+    StatusLabel.TextWrapped = true
     StatusLabel.Parent = ButtonContainer
+    
+    local StatusCorner = Instance.new("UICorner")
+    StatusCorner.CornerRadius = UDim.new(0, 8)
+    StatusCorner.Parent = StatusLabel
 
-    return ScreenGui, MainFrame, StartButton, StopButton, SwapTargetButton, WallVisionButton, StatusLabel
+    return ScreenGui, MainFrame, StartButton, StopButton, SwapTargetButton, WallhackButton, WallVisionButton, StatusLabel, DragHandle
 end
 
 -- 获取所有玩家
@@ -206,18 +212,7 @@ function StopTeleport()
         Teleport.Connection = nil
     end
 
-    -- 如果之前保存了原始位置，可以恢复到这里
-    if Teleport.Origin then
-        local myChar = LocalPlayer.Character
-        if myChar then
-            local myRoot = myChar:FindFirstChild("HumanoidRootPart")
-            if myRoot then
-                myRoot.CFrame = Teleport.Origin
-            end
-        end
-    end
-
-    print("传送已停止，位置已恢复")
+    print("传送已停止")
 end
 
 -- 传送循环
@@ -267,6 +262,32 @@ local function StartTeleport()
     end)
 end
 
+-- 切换穿墙模式
+local function ToggleWallhack()
+    Teleport.Wallhack = not Teleport.Wallhack
+    
+    local localChar = LocalPlayer.Character
+    if not localChar then return end
+    
+    if Teleport.Wallhack then
+        -- 启用穿墙
+        for _, part in ipairs(localChar:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+        print("穿墙模式已启用")
+    else
+        -- 禁用穿墙
+        for _, part in ipairs(localChar:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = true
+            end
+        end
+        print("穿墙模式已禁用")
+    end
+end
+
 -- 切换穿墙视野
 local function ToggleWallVision()
     Teleport.WallVision = not Teleport.WallVision
@@ -289,6 +310,7 @@ local function ToggleWallVision()
             Teleport.OriginalTransparency[terrain] = 0
             terrain.Transparency = 0.5
         end
+        print("穿墙视野已启用")
     else
         -- 恢复原始透明度
         for part, transparency in pairs(Teleport.OriginalTransparency) do
@@ -297,6 +319,7 @@ local function ToggleWallVision()
             end
         end
         Teleport.OriginalTransparency = {}
+        print("穿墙视野已禁用")
     end
 end
 
@@ -318,25 +341,39 @@ local function Initialize()
         return
     end
 
-    local ScreenGui, MainFrame, StartButton, StopButton, SwapTargetButton, WallVisionButton, StatusLabel = result
+    local ScreenGui, MainFrame, StartButton, StopButton, SwapTargetButton, WallhackButton, WallVisionButton, StatusLabel, DragHandle = result
 
-    -- 拖拽功能
-    local dragging = false
-    local dragInput, dragStart, startPos
-
-    local function Update(input)
-        local delta = input.Position - dragStart
-        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
+    -- 拖拽功能（优化的手机端拖拽）
+    local dragStartPos, containerStartPos
+    
+    DragHandle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch then
+            dragStartPos = input.Position
+            containerStartPos = Vector2.new(MainFrame.AbsolutePosition.X, MainFrame.AbsolutePosition.Y)
+        end
+    end)
+    
+    UIS.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch and dragStartPos then
+            local delta = input.Position - dragStartPos
+            MainFrame.Position = UDim2.new(0, containerStartPos.X + delta.X, 0, containerStartPos.Y + delta.Y)
+        end
+    end)
+    
+    UIS.InputEnded:Connect(function()
+        dragStartPos = nil
+    end)
 
     -- 绑定按钮事件
     StartButton.MouseButton1Click:Connect(StartTeleport)
     StopButton.MouseButton1Click:Connect(StopTeleport)
     SwapTargetButton.MouseButton1Click:Connect(SwapTarget)
+    WallhackButton.MouseButton1Click:Connect(ToggleWallhack)
     WallVisionButton.MouseButton1Click:Connect(ToggleWallVision)
 
     -- 更新UI状态
     RunService.Heartbeat:Connect(function()
+        -- 更新传送状态
         if Teleport.Active then
             StatusLabel.Text = "状态: 传送中 - " .. (Teleport.Target and Teleport.Target.Name or "无目标")
             StatusLabel.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
@@ -345,39 +382,22 @@ local function Initialize()
             StatusLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
         end
 
+        -- 更新穿墙模式按钮状态
+        if Teleport.Wallhack then
+            WallhackButton.Text = "穿墙模式: 开启"
+            WallhackButton.BackgroundColor3 = Color3.fromRGB(80, 130, 200)
+        else
+            WallhackButton.Text = "穿墙模式: 关闭"
+            WallhackButton.BackgroundColor3 = Color3.fromRGB(50, 100, 150)
+        end
+
+        -- 更新穿墙视野按钮状态
         if Teleport.WallVision then
             WallVisionButton.Text = "穿墙视野: 开启"
             WallVisionButton.BackgroundColor3 = Color3.fromRGB(80, 80, 200)
         else
             WallVisionButton.Text = "穿墙视野: 关闭"
             WallVisionButton.BackgroundColor3 = Color3.fromRGB(50, 50, 150)
-        end
-    end)
-
-    -- 拖拽处理
-    DragHandle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            dragStart = input.Position
-            startPos = MainFrame.Position
-
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
-        end
-    end)
-
-    DragHandle.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement and dragging then
-            dragInput = input
-        end
-    end)
-
-    UIS.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            Update(input)
         end
     end)
     
@@ -399,5 +419,31 @@ local function SafeInitialize()
     end)
 end
 
+-- 玩家加入/离开事件
+Players.PlayerAdded:Connect(function(player)
+    if player ~= LocalPlayer then
+        table.insert(Teleport.PlayerList, player)
+    end
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+    for i, p in ipairs(Teleport.PlayerList) do
+        if p == player then
+            table.remove(Teleport.PlayerList, i)
+            break
+        end
+    end
+end)
+
+-- 异常处理
+LocalPlayer.CharacterAdded:Connect(function(char)
+    char:WaitForChild("Humanoid").Died:Connect(function()
+        if Teleport.Active then
+            StopTeleport()
+        end
+    end)
+end)
+
 -- 开始初始化
 SafeInitialize()
+print("传送脚本加载完成 | 方向:正下方(Y-5.5) | UI优化版")
