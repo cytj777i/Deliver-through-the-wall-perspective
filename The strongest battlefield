@@ -1,4 +1,4 @@
--- Roblox手机端极速传送脚本 (UI优化增强版)
+，-- Roblox手机端极速传送脚本 (UI优化增强版)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
@@ -23,10 +23,7 @@ local Teleport = {
     PlayerList = {},
     AntiThrow = false, -- 防甩模式
     WallVision = false,
-    OriginalTransparency = {},
-    OriginalGravity = nil, -- 保存原始重力
-    LastPosition = nil,    -- 用于检测异常移动
-    LastCheckTime = 0
+    OriginalTransparency = {}
 }
 
 -- 创建按钮（状态显示优化）
@@ -221,19 +218,7 @@ local function FindNearestPlayer()
     return nearest
 end
 
--- 检测异常移动（新防甩飞机制）
-local function IsAbnormalMovement(currentPos, lastPos, deltaTime)
-    if not lastPos then return false end
-    
-    local distance = (currentPos - lastPos).Magnitude
-    local speed = distance / deltaTime
-    
-    -- 如果速度超过阈值（50 studs/秒），视为异常移动
-    local speedThreshold = 50
-    return speed > speedThreshold
-end
-
--- 传送逻辑 - 0.001秒间隔
+-- 传送逻辑 - 0.001秒间隔（改回原版）
 local function TeleportRoutine()
     if not Teleport.Active then return end
 
@@ -249,22 +234,6 @@ local function TeleportRoutine()
     local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
 
     if myRoot and targetRoot then
-        local currentTime = tick()
-        local deltaTime = currentTime - Teleport.LastCheckTime
-        
-        -- 防甩飞检测
-        if Teleport.AntiThrow and Teleport.LastPosition then
-            if IsAbnormalMovement(myRoot.Position, Teleport.LastPosition, deltaTime) then
-                -- 检测到异常移动，跳过这一帧的传送
-                Teleport.LastPosition = myRoot.Position
-                Teleport.LastCheckTime = currentTime
-                return
-            end
-        end
-        
-        Teleport.LastPosition = myRoot.Position
-        Teleport.LastCheckTime = currentTime
-
         -- 正下方传送：5.5格高度
         local newPos = Vector3.new(
             targetRoot.Position.X,
@@ -277,26 +246,54 @@ local function TeleportRoutine()
     end
 end
 
--- 防甩飞模式 - 新机制：检测异常移动
+-- 防甩飞模式 - 删除玩家与玩家之间的碰撞（保持不变）
 function ToggleAntiThrow()
     Teleport.AntiThrow = not Teleport.AntiThrow
     UpdateButtonState("防甩", Teleport.AntiThrow)
-    
+
     if Teleport.AntiThrow then
-        -- 初始化位置记录
-        local myChar = Players.LocalPlayer.Character
-        if myChar and myChar:FindFirstChild("HumanoidRootPart") then
-            Teleport.LastPosition = myChar.HumanoidRootPart.Position
-            Teleport.LastCheckTime = tick()
+        -- 启用防甩
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= Players.LocalPlayer and player.Character then
+                for _, part in ipairs(player.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = false
+                    end
+                end
+            end
         end
-        print("防甩模式已启用 - 异常移动检测激活")
+
+        -- 监听新玩家加入
+        Players.PlayerAdded:Connect(function(player)
+            if Teleport.AntiThrow then
+                player.CharacterAdded:Connect(function(character)
+                    wait(1) -- 等待角色加载完成
+                    for _, part in ipairs(character:GetDescendants()) do
+                        if part:IsA("BasePart") then
+                            part.CanCollide = false
+                        end
+                    end
+                end)
+            end
+        end)
+
+        print("防甩模式已启用 - 玩家间碰撞已关闭")
     else
-        Teleport.LastPosition = nil
-        print("防甩模式已禁用")
+        -- 禁用防甩飞
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= Players.LocalPlayer and player.Character then
+                for _, part in ipairs(player.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = true
+                    end
+                end
+            end
+        end
+        print("防甩模式已禁用 - 玩家间碰撞已恢复")
     end
 end
 
--- 视野穿墙模式
+-- 视野穿墙模式（保持不变）
 function ToggleWallVision()
     Teleport.WallVision = not Teleport.WallVision
     UpdateButtonState("视野", Teleport.WallVision)
@@ -334,7 +331,7 @@ function ToggleWallVision()
     end
 end
 
--- 按钮功能
+-- 按钮功能（改回原版，移除重力控制）
 function StartTeleport()
     if Teleport.Active then return end
 
@@ -347,23 +344,14 @@ function StartTeleport()
         return
     end
 
-    -- 保存原始重力并设置为0
-    Teleport.OriginalGravity = Lighting.Gravity
-    Lighting.Gravity = 0
-
     Teleport.Active = true
-    Teleport.LastPosition = Players.LocalPlayer.Character.HumanoidRootPart.Position
-    Teleport.LastCheckTime = tick()
-    
     Teleport.Connection = RunService.Heartbeat:Connect(function()
         TeleportRoutine()
         task.wait(0.001) -- 0.001秒间隔
     end)
-    
-    print("传送开始 - 重力已设置为0")
 end
 
--- 换人功能
+-- 换人功能（保持不变）
 function SwapTarget()
     if not Teleport.Active then return end
 
@@ -388,7 +376,7 @@ function SwapTarget()
     print("已切换到: "..Teleport.Target.Name)
 end
 
--- 结束功能 - 恢复重力
+-- 结束功能（改回原版，移除重力恢复）
 function StopTeleport()
     if not Teleport.Active then return end
 
@@ -397,21 +385,25 @@ function StopTeleport()
         Teleport.Connection:Disconnect()
     end
 
-    -- 恢复原始重力
-    if Teleport.OriginalGravity then
-        Lighting.Gravity = Teleport.OriginalGravity
-        Teleport.OriginalGravity = nil
-    end
-
-    Teleport.LastPosition = nil
-    
-    print("传送已停止 - 重力已恢复")
+    print("传送已停止，位置保持不变")
 end
 
--- 玩家加入/离开事件
+-- 玩家加入/离开事件（保持不变）
 Players.PlayerAdded:Connect(function(player)
     if player ~= Players.LocalPlayer then
         table.insert(Teleport.PlayerList, player)
+
+        -- 如果防甩启用，处理新玩家
+        if Teleport.AntiThrow then
+            player.CharacterAdded:Connect(function(character)
+                wait(1) -- 等待角色加载完成
+                for _, part in ipairs(character:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = false
+                    end
+                end
+            end)
+        end
     end
 end)
 
@@ -424,7 +416,7 @@ Players.PlayerRemoving:Connect(function(player)
     end
 end)
 
--- 异常处理
+-- 异常处理（保持不变）
 Players.LocalPlayer.CharacterAdded:Connect(function(char)
     char:WaitForChild("Humanoid").Died:Connect(function()
         if Teleport.Active then
@@ -435,4 +427,5 @@ end)
 
 -- 执行
 InitMobileUI()
-print("传送脚本加载完成 | 方向:正下方(Y-5.5) | 间隔:0.001秒 | 防甩:异常移动检测 | 重力控制已添加")
+print("传送脚本加载完成 | 方向:正下方(Y-5.5) | 间隔:0.001秒 | 防甩:碰撞关闭 | 重力控制已移除")
+       
