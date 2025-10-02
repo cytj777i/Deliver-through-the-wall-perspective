@@ -5,14 +5,13 @@ local UIS = game:GetService("UserInputService")
 local Lighting = game:GetService("Lighting")
 local Camera = workspace.CurrentCamera
 
--- UI配置 - 进一步优化界面
+-- UI配置 - 紧凑优化界面
 local UI = {
-    ButtonSize = UDim2.new(0.18, 0, 0.09, 0), -- 继续增大按钮尺寸
-    Spacing = UDim2.new(0, 0, 0.015, 0),      -- 增加间距
-    Position = UDim2.new(0.65, 0, 0.25, 0),
-    DragHandleHeight = 0.04,
-    ContainerHeight = 0.5, -- 容器高度进一步增加
-    ContainerWidth = 0.25  -- 增加容器宽度
+    ButtonSize = UDim2.new(0.22, 0, 0.08, 0), -- 紧凑但足够大的按钮
+    Spacing = UDim2.new(0, 0, 0.01, 0),       -- 紧凑间距
+    Position = UDim2.new(0.7, 0, 0.3, 0),
+    ContainerHeight = 0.35, -- 紧凑容器高度
+    ContainerWidth = 0.28   -- 紧凑容器宽度
 }
 
 local Teleport = {
@@ -22,44 +21,37 @@ local Teleport = {
     Connection = nil,
     PlayerList = {},
     AntiThrow = false, -- 防甩模式
-    WallVision = false,
-    OriginalTransparency = {}
+    BodyForce = nil,   -- 重力控制
+    LastPosition = nil -- 用于检测异常移动
 }
 
--- 创建按钮（状态显示优化）
+-- 创建按钮（紧凑优化）
 local function CreateButton(name, parent, position, isStateButton)
     local button = Instance.new("TextButton")
     button.Name = name
     button.Size = UI.ButtonSize
     button.Position = position
-    button.BackgroundColor3 = Color3.fromRGB(40, 40, 40) -- 默认黑色
+    button.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
     button.TextColor3 = Color3.new(1, 1, 1)
     button.Text = name
-    button.TextSize = 16 -- 继续增大字体
+    button.TextSize = 14 -- 适中字体大小
     button.Parent = parent
     
-    -- 如果是状态按钮，添加状态指示器
+    -- 状态指示器
     if isStateButton then
         local stateIndicator = Instance.new("Frame")
         stateIndicator.Name = "StateIndicator"
-        stateIndicator.Size = UDim2.new(0.15, 0, 0.15, 0)
-        stateIndicator.Position = UDim2.new(0.85, 0, 0.85, 0)
-        stateIndicator.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- 默认红色（关闭）
+        stateIndicator.Size = UDim2.new(0.12, 0, 0.12, 0)
+        stateIndicator.Position = UDim2.new(0.88, 0, 0.88, 0)
+        stateIndicator.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
         stateIndicator.BorderSizePixel = 1
         stateIndicator.BorderColor3 = Color3.new(1, 1, 1)
         stateIndicator.Parent = button
     end
 
-    -- 扩大点击区域（热区）
-    local hitbox = Instance.new("Frame")
-    hitbox.Name = "Hitbox"
-    hitbox.Size = UDim2.new(1.3, 0, 1.3, 0) -- 比按钮大30%
-    hitbox.Position = UDim2.new(-0.15, 0, -0.15, 0)
-    hitbox.BackgroundTransparency = 1
-    hitbox.Parent = button
-
+    -- 点击处理
     local lastTap = 0
-    hitbox.InputBegan:Connect(function(input)
+    button.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.Touch then
             if os.clock() - lastTap < 0.5 then return end
             lastTap = os.clock()
@@ -72,8 +64,6 @@ local function CreateButton(name, parent, position, isStateButton)
                 StopTeleport()
             elseif name == "防甩" then
                 ToggleAntiThrow()
-            elseif name == "视野" then
-                ToggleWallVision()
             end
         end
     end)
@@ -97,18 +87,17 @@ local function UpdateButtonState(buttonName, isActive)
         if stateIndicator then
             if isActive then
                 stateIndicator.BackgroundColor3 = Color3.fromRGB(0, 255, 0) -- 绿色（开启）
-                button.BackgroundColor3 = Color3.fromRGB(0, 100, 0) -- 深绿色背景
+                button.BackgroundColor3 = Color3.fromRGB(0, 80, 0) -- 深绿色背景
             else
                 stateIndicator.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- 红色（关闭）
-                button.BackgroundColor3 = Color3.fromRGB(100, 0, 0) -- 深红色背景
+                button.BackgroundColor3 = Color3.fromRGB(80, 0, 0) -- 深红色背景
             end
         end
     end
 end
 
--- 初始化UI - 优化点击体验和状态显示
+-- 初始化UI - 紧凑优化
 local function InitMobileUI()
-    -- 确保PlayerGui存在
     local player = Players.LocalPlayer
     local playerGui = player:WaitForChild("PlayerGui")
 
@@ -118,53 +107,30 @@ local function InitMobileUI()
     screenGui.ResetOnSpawn = false
     screenGui.Parent = playerGui
 
-    -- 创建容器Frame（进一步增大尺寸）
+    -- 创建紧凑容器
     local container = Instance.new("Frame")
     container.Name = "ButtonContainer"
     container.Size = UDim2.new(UI.ContainerWidth, 0, UI.ContainerHeight, 0)
     container.Position = UI.Position
-    container.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    container.BackgroundTransparency = 0.3
+    container.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    container.BackgroundTransparency = 0.2
     container.BorderSizePixel = 2
-    container.BorderColor3 = Color3.fromRGB(80, 80, 80)
+    container.BorderColor3 = Color3.fromRGB(70, 70, 70)
     container.Parent = screenGui
 
-    -- 创建拖动手柄
-    local dragHandle = Instance.new("Frame")
-    dragHandle.Name = "DragHandle"
-    dragHandle.Size = UDim2.new(1, 0, UI.DragHandleHeight, 0)
-    dragHandle.Position = UDim2.new(0, 0, 0, 0)
-    dragHandle.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    dragHandle.BackgroundTransparency = 0.5
-    dragHandle.BorderSizePixel = 1
-    dragHandle.Parent = container
-
-    -- 标题文本
-    local title = Instance.new("TextLabel")
-    title.Name = "Title"
-    title.Size = UDim2.new(1, 0, 1, 0)
-    title.Position = UDim2.new(0, 0, 0, 0)
-    title.BackgroundTransparency = 1
-    title.Text = "传送控制"
-    title.TextColor3 = Color3.new(1, 1, 1)
-    title.TextSize = 14
-    title.Parent = dragHandle
-
-    -- 垂直排列按钮（增大间距）
-    local startY = UI.DragHandleHeight
-    CreateButton("开始", container, UDim2.new(0, 0, startY, 0), false)
-    CreateButton("换人", container, UDim2.new(0, 0, startY + UI.Spacing.Y.Scale + UI.ButtonSize.Y.Scale, 0), false)
-    CreateButton("结束", container, UDim2.new(0, 0, startY + (UI.Spacing.Y.Scale + UI.ButtonSize.Y.Scale)*2, 0), false)
-    CreateButton("防甩", container, UDim2.new(0, 0, startY + (UI.Spacing.Y.Scale + UI.ButtonSize.Y.Scale)*3, 0), true)
-    CreateButton("视野", container, UDim2.new(0, 0, startY + (UI.Spacing.Y.Scale + UI.ButtonSize.Y.Scale)*4, 0), true)
+    -- 紧凑按钮布局
+    local startY = 0.02
+    CreateButton("开始", container, UDim2.new(0.02, 0, startY, 0), false)
+    CreateButton("换人", container, UDim2.new(0.02, 0, startY + UI.Spacing.Y.Scale + UI.ButtonSize.Y.Scale, 0), false)
+    CreateButton("结束", container, UDim2.new(0.02, 0, startY + (UI.Spacing.Y.Scale + UI.ButtonSize.Y.Scale)*2, 0), false)
+    CreateButton("防甩", container, UDim2.new(0.02, 0, startY + (UI.Spacing.Y.Scale + UI.ButtonSize.Y.Scale)*3, 0), true)
 
     -- 初始化状态显示
     UpdateButtonState("防甩", Teleport.AntiThrow)
-    UpdateButtonState("视野", Teleport.WallVision)
 
-    -- 拖拽功能（仅作用于拖动手柄）
+    -- 整个UI可拖动
     local dragStartPos, containerStartPos
-    dragHandle.InputBegan:Connect(function(input)
+    container.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.Touch then
             dragStartPos = input.Position
             containerStartPos = Vector2.new(container.AbsolutePosition.X, container.AbsolutePosition.Y)
@@ -182,7 +148,7 @@ local function InitMobileUI()
         dragStartPos = nil
     end)
 
-    print("UI已优化，按钮更大且带有状态指示器")
+    print("紧凑UI已加载，整个界面可拖动")
 end
 
 -- 获取所有玩家列表
@@ -218,7 +184,49 @@ local function FindNearestPlayer()
     return nearest
 end
 
--- 传送逻辑 - 0.001秒间隔（改回原版）
+-- 设置零重力
+local function SetZeroGravity(character)
+    if not character then return end
+    
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then return end
+    
+    -- 移除现有BodyForce
+    if Teleport.BodyForce then
+        Teleport.BodyForce:Destroy()
+        Teleport.BodyForce = nil
+    end
+    
+    -- 创建新的BodyForce抵消重力
+    Teleport.BodyForce = Instance.new("BodyForce")
+    Teleport.BodyForce.Name = "AntiGravity"
+    Teleport.BodyForce.Force = Vector3.new(0, workspace.Gravity * humanoidRootPart:GetMass(), 0)
+    Teleport.BodyForce.Parent = humanoidRootPart
+end
+
+-- 移除零重力
+local function RemoveZeroGravity()
+    if Teleport.BodyForce then
+        Teleport.BodyForce:Destroy()
+        Teleport.BodyForce = nil
+    end
+end
+
+-- 检测异常移动（防甩核心）
+local function CheckAbnormalMovement(currentPos)
+    if not Teleport.LastPosition then
+        Teleport.LastPosition = currentPos
+        return false
+    end
+    
+    local distance = (currentPos - Teleport.LastPosition).Magnitude
+    Teleport.LastPosition = currentPos
+    
+    -- 如果移动距离超过预期值，视为异常移动
+    return distance > 10 -- 可根据需要调整阈值
+end
+
+-- 传送逻辑 - 增强防甩和重力控制
 local function TeleportRoutine()
     if not Teleport.Active then return end
 
@@ -234,6 +242,14 @@ local function TeleportRoutine()
     local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
 
     if myRoot and targetRoot then
+        -- 检测异常移动（防甩）
+        if CheckAbnormalMovement(myRoot.Position) then
+            print("检测到异常移动，重新传送到目标下方")
+        end
+        
+        -- 设置零重力防止掉落
+        SetZeroGravity(myChar)
+        
         -- 正下方传送：5.5格高度
         local newPos = Vector3.new(
             targetRoot.Position.X,
@@ -246,92 +262,19 @@ local function TeleportRoutine()
     end
 end
 
--- 防甩飞模式 - 删除玩家与玩家之间的碰撞（保持不变）
+-- 增强防甩模式 - 循环传送确保始终在目标下方
 function ToggleAntiThrow()
     Teleport.AntiThrow = not Teleport.AntiThrow
     UpdateButtonState("防甩", Teleport.AntiThrow)
 
     if Teleport.AntiThrow then
-        -- 启用防甩
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= Players.LocalPlayer and player.Character then
-                for _, part in ipairs(player.Character:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        part.CanCollide = false
-                    end
-                end
-            end
-        end
-
-        -- 监听新玩家加入
-        Players.PlayerAdded:Connect(function(player)
-            if Teleport.AntiThrow then
-                player.CharacterAdded:Connect(function(character)
-                    wait(1) -- 等待角色加载完成
-                    for _, part in ipairs(character:GetDescendants()) do
-                        if part:IsA("BasePart") then
-                            part.CanCollide = false
-                        end
-                    end
-                end)
-            end
-        end)
-
-        print("防甩模式已启用 - 玩家间碰撞已关闭")
+        print("增强防甩模式已启用 - 循环传送确保位置")
     else
-        -- 禁用防甩飞
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= Players.LocalPlayer and player.Character then
-                for _, part in ipairs(player.Character:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        part.CanCollide = true
-                    end
-                end
-            end
-        end
-        print("防甩模式已禁用 - 玩家间碰撞已恢复")
+        print("防甩模式已禁用")
     end
 end
 
--- 视野穿墙模式（保持不变）
-function ToggleWallVision()
-    Teleport.WallVision = not Teleport.WallVision
-    UpdateButtonState("视野", Teleport.WallVision)
-
-    if Teleport.WallVision then
-        -- 启用视野穿墙
-        Teleport.OriginalTransparency = {}
-
-        -- 使所有墙壁透明
-        for _, part in ipairs(workspace:GetDescendants()) do
-            if part:IsA("BasePart") and part.Transparency < 0.5 then
-                Teleport.OriginalTransparency[part] = part.Transparency
-                part.Transparency = 0.7
-            end
-        end
-
-        -- 使地面透明
-        for _, terrain in ipairs(workspace:GetChildren()) do
-            if terrain:IsA("Terrain") then
-                Teleport.OriginalTransparency[terrain] = terrain.Transparency
-                terrain.Transparency = 0.6
-            end
-        end
-
-        print("视野穿墙模式已启用")
-    else
-        -- 禁用视野穿墙
-        for part, transparency in pairs(Teleport.OriginalTransparency) do
-            if part:IsA("BasePart") or part:IsA("Terrain") then
-                part.Transparency = transparency
-            end
-        end
-        Teleport.OriginalTransparency = {}
-        print("视野穿墙模式已禁用")
-    end
-end
-
--- 按钮功能（改回原版，移除重力控制）
+-- 按钮功能
 function StartTeleport()
     if Teleport.Active then return end
 
@@ -349,9 +292,11 @@ function StartTeleport()
         TeleportRoutine()
         task.wait(0.001) -- 0.001秒间隔
     end)
+    
+    print("传送开始 - 目标: "..Teleport.Target.Name)
 end
 
--- 换人功能（保持不变）
+-- 换人功能
 function SwapTarget()
     if not Teleport.Active then return end
 
@@ -376,7 +321,7 @@ function SwapTarget()
     print("已切换到: "..Teleport.Target.Name)
 end
 
--- 结束功能（改回原版，移除重力恢复）
+-- 结束功能
 function StopTeleport()
     if not Teleport.Active then return end
 
@@ -384,26 +329,19 @@ function StopTeleport()
     if Teleport.Connection then
         Teleport.Connection:Disconnect()
     end
+    
+    -- 移除零重力
+    RemoveZeroGravity()
+    
+    Teleport.LastPosition = nil
 
-    print("传送已停止，位置保持不变")
+    print("传送已停止，重力已恢复")
 end
 
--- 玩家加入/离开事件（保持不变）
+-- 玩家加入/离开事件
 Players.PlayerAdded:Connect(function(player)
     if player ~= Players.LocalPlayer then
         table.insert(Teleport.PlayerList, player)
-
-        -- 如果防甩启用，处理新玩家
-        if Teleport.AntiThrow then
-            player.CharacterAdded:Connect(function(character)
-                wait(1) -- 等待角色加载完成
-                for _, part in ipairs(character:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        part.CanCollide = false
-                    end
-                end
-            end)
-        end
     end
 end)
 
@@ -416,15 +354,21 @@ Players.PlayerRemoving:Connect(function(player)
     end
 end)
 
--- 异常处理（保持不变）
+-- 异常处理
 Players.LocalPlayer.CharacterAdded:Connect(function(char)
     char:WaitForChild("Humanoid").Died:Connect(function()
         if Teleport.Active then
             StopTeleport()
         end
     end)
+    
+    -- 角色重生时重新应用零重力
+    if Teleport.Active then
+        wait(1) -- 等待角色完全加载
+        SetZeroGravity(char)
+    end
 end)
 
 -- 执行
 InitMobileUI()
-print("传送脚本加载完成 | 方向:正下方(Y-5.5) | 间隔:0.001秒 | 防甩:碰撞关闭 | 重力控制已移除")
+print("传送脚本加载完成 | 方向:正下方(Y-5.5) | 间隔:0.001秒 | 增强防甩:循环传送+零重力")
