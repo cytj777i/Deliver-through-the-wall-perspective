@@ -33,7 +33,8 @@ local function CreateUI()
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "TeleportGui"
     ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-    
+    ScreenGui.ResetOnSpawn = false  -- 防止重生时重置
+
     -- 主容器
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainFrame"
@@ -43,7 +44,12 @@ local function CreateUI()
     MainFrame.BorderSizePixel = 0
     MainFrame.ClipsDescendants = true
     MainFrame.Parent = ScreenGui
-    
+
+    -- 添加圆角
+    local UICorner = Instance.new("UICorner")
+    UICorner.CornerRadius = UDim.new(0, 8)
+    UICorner.Parent = MainFrame
+
     -- 拖拽区域
     local DragHandle = Instance.new("TextButton")
     DragHandle.Name = "DragHandle"
@@ -55,7 +61,7 @@ local function CreateUI()
     DragHandle.TextColor3 = Color3.fromRGB(255, 255, 255)
     DragHandle.TextScaled = true
     DragHandle.Parent = MainFrame
-    
+
     -- 按钮容器
     local ButtonContainer = Instance.new("Frame")
     ButtonContainer.Name = "ButtonContainer"
@@ -63,7 +69,7 @@ local function CreateUI()
     ButtonContainer.Position = UDim2.new(0, 0, UI.DragHandleHeight.Scale, 0)
     ButtonContainer.BackgroundTransparency = 1
     ButtonContainer.Parent = MainFrame
-    
+
     -- 开始传送按钮
     local StartButton = Instance.new("TextButton")
     StartButton.Name = "StartButton"
@@ -75,7 +81,7 @@ local function CreateUI()
     StartButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     StartButton.TextScaled = true
     StartButton.Parent = ButtonContainer
-    
+
     -- 停止传送按钮
     local StopButton = Instance.new("TextButton")
     StopButton.Name = "StopButton"
@@ -87,7 +93,7 @@ local function CreateUI()
     StopButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     StopButton.TextScaled = true
     StopButton.Parent = ButtonContainer
-    
+
     -- 切换目标按钮
     local SwapTargetButton = Instance.new("TextButton")
     SwapTargetButton.Name = "SwapTargetButton"
@@ -99,7 +105,7 @@ local function CreateUI()
     SwapTargetButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     SwapTargetButton.TextScaled = true
     SwapTargetButton.Parent = ButtonContainer
-    
+
     -- 穿墙视野按钮
     local WallVisionButton = Instance.new("TextButton")
     WallVisionButton.Name = "WallVisionButton"
@@ -111,7 +117,7 @@ local function CreateUI()
     WallVisionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     WallVisionButton.TextScaled = true
     WallVisionButton.Parent = ButtonContainer
-    
+
     -- 状态显示
     local StatusLabel = Instance.new("TextLabel")
     StatusLabel.Name = "StatusLabel"
@@ -123,7 +129,7 @@ local function CreateUI()
     StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
     StatusLabel.TextScaled = true
     StatusLabel.Parent = ButtonContainer
-    
+
     return ScreenGui, MainFrame, StartButton, StopButton, SwapTargetButton, WallVisionButton, StatusLabel
 end
 
@@ -142,13 +148,13 @@ end
 local function FindNearestPlayer()
     local myChar = LocalPlayer.Character
     if not myChar then return nil end
-    
+
     local myRoot = myChar:FindFirstChild("HumanoidRootPart")
     if not myRoot then return nil end
-    
+
     local nearestPlayer = nil
     local nearestDistance = math.huge
-    
+
     for _, player in pairs(GetAllPlayers()) do
         local char = player.Character
         if char then
@@ -162,21 +168,21 @@ local function FindNearestPlayer()
             end
         end
     end
-    
+
     return nearestPlayer
 end
 
 -- 切换目标玩家
 function SwapTarget()
     if not Teleport.Active then return end
-    
+
     Teleport.PlayerList = GetAllPlayers()
-    
+
     if #Teleport.PlayerList == 0 then
         warn("没有其他玩家可切换")
         return
     end
-    
+
     local currentIndex = 1
     for i, player in ipairs(Teleport.PlayerList) do
         if player == Teleport.Target then
@@ -184,7 +190,7 @@ function SwapTarget()
             break
         end
     end
-    
+
     local nextIndex = currentIndex % #Teleport.PlayerList + 1
     Teleport.Target = Teleport.PlayerList[nextIndex]
     print("已切换到目标: " .. Teleport.Target.Name)
@@ -193,13 +199,13 @@ end
 -- 停止传送
 function StopTeleport()
     if not Teleport.Active then return end
-    
+
     Teleport.Active = false
     if Teleport.Connection then
         Teleport.Connection:Disconnect()
         Teleport.Connection = nil
     end
-    
+
     -- 如果之前保存了原始位置，可以恢复到这里
     if Teleport.Origin then
         local myChar = LocalPlayer.Character
@@ -210,25 +216,25 @@ function StopTeleport()
             end
         end
     end
-    
+
     print("传送已停止，位置已恢复")
 end
 
 -- 传送循环
 local function TeleportRoutine()
     if not Teleport.Active then return end
-    
+
     local myChar = LocalPlayer.Character
     local targetChar = Teleport.Target and Teleport.Target.Character
-    
+
     if not myChar or not targetChar then
         StopTeleport()
         return
     end
-    
+
     local myRoot = myChar:FindFirstChild("HumanoidRootPart")
     local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
-    
+
     if myRoot and targetRoot then
         -- 正下方传送：5.5格高度
         local teleportPosition = targetRoot.Position + Vector3.new(0, -5.5, 0)
@@ -239,31 +245,36 @@ end
 -- 开始传送
 local function StartTeleport()
     if Teleport.Active then return end
-    
-    Teleport.Origin = LocalPlayer.Character.HumanoidRootPart.CFrame
+
+    local myChar = LocalPlayer.Character
+    if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then
+        warn("角色未加载或没有HumanoidRootPart")
+        return
+    end
+
+    Teleport.Origin = myChar.HumanoidRootPart.CFrame
     Teleport.PlayerList = GetAllPlayers()
     Teleport.Target = FindNearestPlayer()
-    
+
     if not Teleport.Target then
         warn("未找到目标玩家")
         return
     end
-    
+
     Teleport.Active = true
     Teleport.Connection = RunService.Heartbeat:Connect(function()
         TeleportRoutine()
-        task.wait(0.001) -- 0.001秒间隔
     end)
 end
 
 -- 切换穿墙视野
 local function ToggleWallVision()
     Teleport.WallVision = not Teleport.WallVision
-    
+
     if Teleport.WallVision then
         -- 启用视野穿墙
         Teleport.OriginalTransparency = {}
-        
+
         -- 使所有墙壁透明
         for _, part in ipairs(workspace:GetDescendants()) do
             if part:IsA("BasePart") and part.Transparency < 0.5 then
@@ -271,7 +282,7 @@ local function ToggleWallVision()
                 part.Transparency = 0.7
             end
         end
-        
+
         -- 使地面透明
         local terrain = workspace:FindFirstChildOfClass("Terrain")
         if terrain then
@@ -281,7 +292,9 @@ local function ToggleWallVision()
     else
         -- 恢复原始透明度
         for part, transparency in pairs(Teleport.OriginalTransparency) do
-            part.Transparency = transparency
+            if part and part.Parent then
+                part.Transparency = transparency
+            end
         end
         Teleport.OriginalTransparency = {}
     end
@@ -289,27 +302,39 @@ end
 
 -- 初始化UI和功能
 local function Initialize()
-    -- 等待玩家角色加载
-    local character = LocalPlayer.CharacterAdded:Wait()
-    
+    -- 确保玩家和PlayerGui存在
+    if not LocalPlayer or not LocalPlayer:FindFirstChild("PlayerGui") then
+        warn("等待玩家加载...")
+        LocalPlayer:WaitForChild("PlayerGui")
+    end
+
     -- 创建UI
-    local ScreenGui, MainFrame, StartButton, StopButton, SwapTargetButton, WallVisionButton, StatusLabel = CreateUI()
+    local success, result = pcall(function()
+        return CreateUI()
+    end)
     
+    if not success then
+        warn("创建UI失败: " .. tostring(result))
+        return
+    end
+
+    local ScreenGui, MainFrame, StartButton, StopButton, SwapTargetButton, WallVisionButton, StatusLabel = result
+
     -- 拖拽功能
     local dragging = false
     local dragInput, dragStart, startPos
-    
+
     local function Update(input)
         local delta = input.Position - dragStart
         MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
-    
+
     -- 绑定按钮事件
-    StartButton.MouseButton1Down:Connect(StartTeleport)
-    StopButton.MouseButton1Down:Connect(StopTeleport)
-    SwapTargetButton.MouseButton1Down:Connect(SwapTarget)
-    WallVisionButton.MouseButton1Down:Connect(ToggleWallVision)
-    
+    StartButton.MouseButton1Click:Connect(StartTeleport)
+    StopButton.MouseButton1Click:Connect(StopTeleport)
+    SwapTargetButton.MouseButton1Click:Connect(SwapTarget)
+    WallVisionButton.MouseButton1Click:Connect(ToggleWallVision)
+
     -- 更新UI状态
     RunService.Heartbeat:Connect(function()
         if Teleport.Active then
@@ -319,7 +344,7 @@ local function Initialize()
             StatusLabel.Text = "状态: 就绪"
             StatusLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
         end
-        
+
         if Teleport.WallVision then
             WallVisionButton.Text = "穿墙视野: 开启"
             WallVisionButton.BackgroundColor3 = Color3.fromRGB(80, 80, 200)
@@ -328,14 +353,14 @@ local function Initialize()
             WallVisionButton.BackgroundColor3 = Color3.fromRGB(50, 50, 150)
         end
     end)
-    
+
     -- 拖拽处理
     DragHandle.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
             dragStart = input.Position
             startPos = MainFrame.Position
-            
+
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
@@ -343,19 +368,36 @@ local function Initialize()
             end)
         end
     end)
-    
+
     DragHandle.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseMovement and dragging then
             dragInput = input
         end
     end)
-    
+
     UIS.InputChanged:Connect(function(input)
         if input == dragInput and dragging then
             Update(input)
         end
     end)
+    
+    print("传送UI已成功加载！")
+end
+
+-- 等待游戏完全加载后再初始化
+local function SafeInitialize()
+    pcall(function()
+        -- 等待玩家加载完成
+        if not LocalPlayer.Character then
+            LocalPlayer.CharacterAdded:Wait()
+        end
+        
+        -- 短暂延迟确保一切就绪
+        wait(2)
+        
+        Initialize()
+    end)
 end
 
 -- 开始初始化
-Initialize()
+SafeInitialize()
