@@ -17,7 +17,8 @@ local Teleport = {
     WallVision = false,
     OriginalTransparency = {},
     PlayerList = {},
-    Origin = nil
+    Origin = nil,
+    PlayerListVisible = false
 }
 
 -- UI配置 - 优化手机端体验
@@ -50,6 +51,49 @@ local function CreateButton(name, parent, position, backgroundColor)
     UICorner.Parent = button
     
     return button
+end
+
+-- 创建玩家列表UI
+local function CreatePlayerListUI(parentFrame)
+    local PlayerListFrame = Instance.new("Frame")
+    PlayerListFrame.Name = "PlayerListFrame"
+    PlayerListFrame.Size = UDim2.new(1.2, 0, 0.8, 0)
+    PlayerListFrame.Position = UDim2.new(-0.25, 0, 0.15, 0)
+    PlayerListFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+    PlayerListFrame.BackgroundTransparency = 0.1
+    PlayerListFrame.BorderSizePixel = 0
+    PlayerListFrame.Visible = false
+    PlayerListFrame.Parent = parentFrame
+    
+    local UICorner = Instance.new("UICorner")
+    UICorner.CornerRadius = UDim.new(0, 8)
+    UICorner.Parent = PlayerListFrame
+    
+    local ScrollFrame = Instance.new("ScrollingFrame")
+    ScrollFrame.Name = "ScrollFrame"
+    ScrollFrame.Size = UDim2.new(0.9, 0, 0.85, 0)
+    ScrollFrame.Position = UDim2.new(0.05, 0, 0.1, 0)
+    ScrollFrame.BackgroundTransparency = 1
+    ScrollFrame.BorderSizePixel = 0
+    ScrollFrame.ScrollBarThickness = 6
+    ScrollFrame.Parent = PlayerListFrame
+    
+    local UIListLayout = Instance.new("UIListLayout")
+    UIListLayout.Padding = UDim.new(0, 5)
+    UIListLayout.Parent = ScrollFrame
+    
+    local TitleLabel = Instance.new("TextLabel")
+    TitleLabel.Name = "TitleLabel"
+    TitleLabel.Size = UDim2.new(0.9, 0, 0.08, 0)
+    TitleLabel.Position = UDim2.new(0.05, 0, 0.01, 0)
+    TitleLabel.BackgroundTransparency = 1
+    TitleLabel.Text = "选择目标玩家:"
+    TitleLabel.TextColor3 = Color3.new(1, 1, 1)
+    TitleLabel.TextSize = UI.FontSize
+    TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TitleLabel.Parent = PlayerListFrame
+    
+    return PlayerListFrame
 end
 
 -- 创建UI界面
@@ -136,7 +180,10 @@ local function CreateUI()
     StatusCorner.CornerRadius = UDim.new(0, 8)
     StatusCorner.Parent = StatusLabel
 
-    return ScreenGui, MainFrame, StartButton, StopButton, SwapTargetButton, WallhackButton, WallVisionButton, StatusLabel, DragHandle
+    -- 创建玩家列表UI
+    local PlayerListFrame = CreatePlayerListUI(MainFrame)
+
+    return ScreenGui, MainFrame, StartButton, StopButton, SwapTargetButton, WallhackButton, WallVisionButton, StatusLabel, DragHandle, PlayerListFrame
 end
 
 -- 获取所有玩家
@@ -148,6 +195,63 @@ local function GetAllPlayers()
         end
     end
     return players
+end
+
+-- 更新玩家列表显示
+local function UpdatePlayerList(playerListFrame)
+    local scrollFrame = playerListFrame:FindFirstChild("ScrollFrame")
+    if not scrollFrame then return end
+    
+    -- 清空现有玩家按钮
+    for _, child in ipairs(scrollFrame:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+    
+    -- 添加玩家按钮
+    local players = GetAllPlayers()
+    for i, player in ipairs(players) do
+        local playerButton = Instance.new("TextButton")
+        playerButton.Name = player.Name
+        playerButton.Size = UDim2.new(0.95, 0, 0.15, 0)
+        playerButton.Position = UDim2.new(0.025, 0, 0, (i-1) * 0.16)
+        playerButton.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+        playerButton.Text = player.Name
+        playerButton.TextColor3 = Color3.new(1, 1, 1)
+        playerButton.TextSize = 14
+        playerButton.Parent = scrollFrame
+        
+        local buttonCorner = Instance.new("UICorner")
+        buttonCorner.CornerRadius = UDim.new(0, 6)
+        buttonCorner.Parent = playerButton
+        
+        -- 点击选择玩家
+        playerButton.MouseButton1Click:Connect(function()
+            if Teleport.Active then
+                Teleport.Target = player
+                print("已选择目标: " .. player.Name)
+            else
+                print("请先开始传送再选择目标")
+            end
+            -- 选择后自动关闭列表
+            playerListFrame.Visible = false
+            Teleport.PlayerListVisible = false
+        end)
+    end
+    
+    -- 更新滚动区域
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, #players * 0.16)
+end
+
+-- 切换玩家列表显示
+local function TogglePlayerList(playerListFrame)
+    Teleport.PlayerListVisible = not Teleport.PlayerListVisible
+    playerListFrame.Visible = Teleport.PlayerListVisible
+    
+    if Teleport.PlayerListVisible then
+        UpdatePlayerList(playerListFrame)
+    end
 end
 
 -- 查找最近的玩家
@@ -341,7 +445,7 @@ local function Initialize()
         return
     end
 
-    local ScreenGui, MainFrame, StartButton, StopButton, SwapTargetButton, WallhackButton, WallVisionButton, StatusLabel, DragHandle = result
+    local ScreenGui, MainFrame, StartButton, StopButton, SwapTargetButton, WallhackButton, WallVisionButton, StatusLabel, DragHandle, PlayerListFrame = result
 
     -- 拖拽功能（优化的手机端拖拽）
     local dragStartPos, containerStartPos
@@ -365,11 +469,25 @@ local function Initialize()
     end)
 
     -- 绑定按钮事件
-    StartButton.MouseButton1Click:Connect(StartTeleport)
-    StopButton.MouseButton1Click:Connect(StopTeleport)
-    SwapTargetButton.MouseButton1Click:Connect(SwapTarget)
-    WallhackButton.MouseButton1Click:Connect(ToggleWallhack)
-    WallVisionButton.MouseButton1Click:Connect(ToggleWallVision)
+    StartButton.MouseButton1Click:Connect(function()
+        StartTeleport()
+    end)
+    
+    StopButton.MouseButton1Click:Connect(function()
+        StopTeleport()
+    end)
+    
+    SwapTargetButton.MouseButton1Click:Connect(function()
+        TogglePlayerList(PlayerListFrame)
+    end)
+    
+    WallhackButton.MouseButton1Click:Connect(function()
+        ToggleWallhack()
+    end)
+    
+    WallVisionButton.MouseButton1Click:Connect(function()
+        ToggleWallVision()
+    end)
 
     -- 更新UI状态
     RunService.Heartbeat:Connect(function()
