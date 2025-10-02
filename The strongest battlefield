@@ -1,18 +1,11 @@
--- Roblox手机端极速传送脚本 (UI优化增强版)
+-- Roblox手机端极速传送脚本 (高级UI版)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
 local Lighting = game:GetService("Lighting")
 local Camera = workspace.CurrentCamera
 
--- UI配置
-local UI = {
-    ButtonSize = UDim2.new(0, 100, 0, 30),
-    Spacing = UDim2.new(0, 0, 0, 5),
-    ContainerHeight = 175,
-    ContainerWidth = 110
-}
-
+-- 传送功能变量
 local Teleport = {
     Active = false,
     Target = nil,
@@ -26,200 +19,240 @@ local Teleport = {
     OriginalTransparency = {}
 }
 
--- 创建按钮
-local function CreateButton(name, parent, position, isStateButton)
-    local button = Instance.new("TextButton")
-    button.Name = name
-    button.Size = UI.ButtonSize
-    button.Position = position
-    button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    button.BackgroundTransparency = 0.25
-    button.TextColor3 = Color3.new(1, 1, 1)
-    button.Text = name
-    button.TextSize = 14
-    button.Parent = parent
+-- 创建通知系统
+local function ShowNotification(message, color)
+    color = color or Color3.fromRGB(0, 150, 255)
+    
+    local NotificationGui = Instance.new("ScreenGui")
+    NotificationGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+    
+    local NotificationFrame = Instance.new("Frame")
+    NotificationFrame.Parent = NotificationGui
+    NotificationFrame.Size = UDim2.new(0, 200, 0, 50)
+    NotificationFrame.Position = UDim2.new(0.5, -100, 0.1, 0)
+    NotificationFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+    NotificationFrame.BackgroundTransparency = 0.1
+    
+    local NotificationCorner = Instance.new("UICorner")
+    NotificationCorner.Parent = NotificationFrame
+    NotificationCorner.CornerRadius = UDim.new(0, 8)
+    
+    local NotificationStroke = Instance.new("UIStroke")
+    NotificationStroke.Parent = NotificationFrame
+    NotificationStroke.Color = color
+    NotificationStroke.Thickness = 2
+    
+    local NotificationText = Instance.new("TextLabel")
+    NotificationText.Parent = NotificationFrame
+    NotificationText.Size = UDim2.new(1, -20, 1, -10)
+    NotificationText.Position = UDim2.new(0, 10, 0, 5)
+    NotificationText.BackgroundTransparency = 1
+    NotificationText.Text = message
+    NotificationText.TextColor3 = Color3.fromRGB(220, 220, 255)
+    NotificationText.TextSize = 14
+    NotificationText.Font = Enum.Font.Gotham
+    NotificationText.TextWrapped = true
+    
+    -- 1秒后自动消失
+    delay(1, function()
+        for i = 0, 1, 0.1 do
+            NotificationFrame.BackgroundTransparency = i
+            NotificationText.TextTransparency = i
+            wait(0.05)
+        end
+        NotificationGui:Destroy()
+    end)
+end
+
+-- 创建高级UI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.Name = "AdvancedTeleportUI"
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Parent = ScreenGui
+MainFrame.Size = UDim2.new(0, 180, 0, 220)
+MainFrame.Position = UDim2.new(0.5, -90, 0.5, -110)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+MainFrame.Active = true
+MainFrame.Draggable = true
+
+-- 外发光效果
+local Glow = Instance.new("ImageLabel")
+Glow.Parent = MainFrame
+Glow.Size = UDim2.new(1, 20, 1, 20)
+Glow.Position = UDim2.new(0, -10, 0, -10)
+Glow.BackgroundTransparency = 1
+Glow.Image = "rbxassetid://8992230673"
+Glow.ImageColor3 = Color3.fromRGB(0, 80, 255)
+Glow.ImageTransparency = 0.8
+Glow.ScaleType = Enum.ScaleType.Slice
+Glow.SliceCenter = Rect.new(49, 49, 450, 450)
+
+-- 圆角
+local Corner = Instance.new("UICorner")
+Corner.Parent = MainFrame
+Corner.CornerRadius = UDim.new(0, 12)
+
+-- 边框
+local Stroke = Instance.new("UIStroke")
+Stroke.Parent = MainFrame
+Stroke.Color = Color3.fromRGB(60, 120, 255)
+Stroke.Thickness = 2
+Stroke.Transparency = 0.3
+
+-- 标题栏
+local Header = Instance.new("Frame")
+Header.Parent = MainFrame
+Header.Size = UDim2.new(1, 0, 0, 32)
+Header.Position = UDim2.new(0, 0, 0, 0)
+Header.BackgroundColor3 = Color3.fromRGB(25, 25, 40)
+Header.BackgroundTransparency = 0.1
+
+local HeaderCorner = Instance.new("UICorner")
+HeaderCorner.Parent = Header
+HeaderCorner.CornerRadius = UDim.new(0, 12)
+
+-- 标题文字
+local Title = Instance.new("TextLabel")
+Title.Parent = Header
+Title.Size = UDim2.new(1, -50, 1, 0) -- 为最小化按钮留出空间
+Title.Position = UDim2.new(0, 10, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "传送控制面板"
+Title.TextColor3 = Color3.fromRGB(180, 200, 255)
+Title.TextSize = 14
+Title.Font = Enum.Font.GothamBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+
+-- 状态指示器
+local Status = Instance.new("Frame")
+Status.Parent = Header
+Status.Size = UDim2.new(0, 8, 0, 8)
+Status.Position = UDim2.new(1, -40, 0.5, -4) -- 调整位置为最小化按钮留出空间
+Status.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+Status.BorderSizePixel = 0
+
+local StatusCorner = Instance.new("UICorner")
+StatusCorner.Parent = Status
+StatusCorner.CornerRadius = UDim.new(1, 0)
+
+-- 添加最小化按钮
+local MinimizeButton = Instance.new("TextButton")
+MinimizeButton.Parent = Header
+MinimizeButton.Size = UDim2.new(0, 25, 0, 25)
+MinimizeButton.Position = UDim2.new(1, -30, 0.5, -12)
+MinimizeButton.BackgroundColor3 = Color3.fromRGB(50, 50, 80)
+MinimizeButton.BackgroundTransparency = 0.2
+MinimizeButton.Text = "-"
+MinimizeButton.TextColor3 = Color3.fromRGB(220, 220, 255)
+MinimizeButton.TextSize = 16
+MinimizeButton.Font = Enum.Font.GothamBold
+MinimizeButton.ZIndex = 2
+
+local MinimizeCorner = Instance.new("UICorner")
+MinimizeCorner.Parent = MinimizeButton
+MinimizeCorner.CornerRadius = UDim.new(0, 6)
+
+local MinimizeStroke = Instance.new("UIStroke")
+MinimizeStroke.Parent = MinimizeButton
+MinimizeStroke.Color = Color3.fromRGB(100, 150, 255)
+MinimizeStroke.Thickness = 1
+
+-- 内容区域
+local Content = Instance.new("Frame")
+Content.Parent = MainFrame
+Content.Size = UDim2.new(1, -16, 1, -48)
+Content.Position = UDim2.new(0, 8, 0, 40)
+Content.BackgroundTransparency = 1
+
+-- 创建功能按钮
+local function CreateButton(name, yPosition, hasIndicator)
+    local Button = Instance.new("TextButton")
+    Button.Name = name
+    Button.Size = UDim2.new(1, 0, 0, 30)
+    Button.Position = UDim2.new(0, 0, 0, yPosition)
+    Button.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+    Button.BackgroundTransparency = 0.2
+    Button.TextColor3 = Color3.fromRGB(220, 220, 255)
+    Button.Text = name
+    Button.TextSize = 12
+    Button.Font = Enum.Font.Gotham
+    Button.Parent = Content
+    
+    local ButtonCorner = Instance.new("UICorner")
+    ButtonCorner.Parent = Button
+    ButtonCorner.CornerRadius = UDim.new(0, 6)
+    
+    local ButtonStroke = Instance.new("UIStroke")
+    ButtonStroke.Parent = Button
+    ButtonStroke.Color = Color3.fromRGB(80, 120, 200)
+    ButtonStroke.Thickness = 1
     
     -- 状态指示器
-    if isStateButton then
-        local stateIndicator = Instance.new("Frame")
-        stateIndicator.Name = "StateIndicator"
-        stateIndicator.Size = UDim2.new(0, 8, 0, 8)
-        stateIndicator.Position = UDim2.new(1, -10, 0, 5)
-        stateIndicator.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-        stateIndicator.BorderSizePixel = 0
-        stateIndicator.Parent = button
+    if hasIndicator then
+        local Indicator = Instance.new("Frame")
+        Indicator.Name = "Indicator"
+        Indicator.Size = UDim2.new(0, 8, 0, 8)
+        Indicator.Position = UDim2.new(1, -12, 0.5, -4)
+        Indicator.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+        Indicator.BorderSizePixel = 0
+        Indicator.Parent = Button
+        
+        local IndicatorCorner = Instance.new("UICorner")
+        IndicatorCorner.Parent = Indicator
+        IndicatorCorner.CornerRadius = UDim.new(1, 0)
     end
-
-    return button
+    
+    return Button
 end
 
--- 更新按钮状态显示
+-- 创建所有按钮
+local StartButton = CreateButton("开始传送", 0, false)
+local SwapButton = CreateButton("切换目标", 35, false)
+local StopButton = CreateButton("停止传送", 70, false)
+local AntiThrowButton = CreateButton("防甩模式", 105, true)
+local WallVisionButton = CreateButton("穿墙视野", 140, true)
+
+-- 更新按钮状态
 local function UpdateButtonState(buttonName, isActive)
-    local player = Players.LocalPlayer
-    local playerGui = player:WaitForChild("PlayerGui")
-    local screenGui = playerGui:FindFirstChild("NinjaInjectorUI")
-    if not screenGui then return end
-    
-    local container = screenGui:FindFirstChild("ButtonContainer")
-    if not container then return end
-    
-    local button = container:FindFirstChild(buttonName)
+    local button = Content:FindFirstChild(buttonName)
     if button then
-        local stateIndicator = button:FindFirstChild("StateIndicator")
-        if stateIndicator then
+        local indicator = button:FindFirstChild("Indicator")
+        if indicator then
             if isActive then
-                stateIndicator.BackgroundColor3 = Color3.fromRGB(0, 255, 0) -- 绿色（开启）
-                button.BackgroundColor3 = Color3.fromRGB(0, 60, 0) -- 深绿色背景
+                indicator.BackgroundColor3 = Color3.fromRGB(50, 255, 50)
+                button.BackgroundColor3 = Color3.fromRGB(40, 80, 40)
             else
-                stateIndicator.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- 红色（关闭）
-                button.BackgroundColor3 = Color3.fromRGB(60, 0, 0) -- 深红色背景
+                indicator.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+                button.BackgroundColor3 = Color3.fromRGB(60, 40, 40)
             end
         end
     end
 end
 
--- 初始化UI - 右上角位置
-local function InitMobileUI()
-    local player = Players.LocalPlayer
-    local playerGui = player:WaitForChild("PlayerGui")
-
-    -- 创建ScreenGui
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "NinjaInjectorUI"
-    screenGui.ResetOnSpawn = false
-    screenGui.Parent = playerGui
-
-    -- 创建容器（放在屏幕右上角）
-    local container = Instance.new("Frame")
-    container.Name = "ButtonContainer"
-    container.Size = UDim2.new(0, UI.ContainerWidth, 0, UI.ContainerHeight)
-    container.Position = UDim2.new(1, -120, 0, 10) -- 右上角位置
-    container.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    container.BackgroundTransparency = 0.3
-    container.BorderSizePixel = 0
-    container.Parent = screenGui
-
-    -- 创建按钮 - 垂直排列
-    local startY = 5
-    local buttons = {
-        CreateButton("开始", container, UDim2.new(0, 5, 0, startY), false),
-        CreateButton("换人", container, UDim2.new(0, 5, 0, startY + 35), false),
-        CreateButton("结束", container, UDim2.new(0, 5, 0, startY + 70), false),
-        CreateButton("防甩", container, UDim2.new(0, 5, 0, startY + 105), true),
-        CreateButton("视野", container, UDim2.new(0, 5, 0, startY + 140), true)
-    }
-
-    -- 初始化状态显示
-    UpdateButtonState("防甩", Teleport.AntiThrow)
-    UpdateButtonState("视野", Teleport.WallVision)
-
-    -- 整个UI可拖动（包括按钮区域）
-    local dragStartPos, containerStartPos
-    local isDragging = false
-    
-    -- 为容器和所有按钮添加拖动支持
-    local function setupDrag(inputObject)
-        if inputObject.UserInputType == Enum.UserInputType.Touch then
-            dragStartPos = inputObject.Position
-            containerStartPos = Vector2.new(container.AbsolutePosition.X, container.AbsolutePosition.Y)
-            isDragging = false -- 重置拖动状态
-        end
-    end
-
-    -- 容器拖动
-    container.InputBegan:Connect(setupDrag)
-    
-    -- 按钮拖动和点击处理
-    for _, button in ipairs(buttons) do
-        local lastTap = 0
-        local buttonName = button.Name
+-- 最小化功能
+local minimized = false
+MinimizeButton.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    if minimized then
+        -- 最小化状态
+        MainFrame:TweenSize(UDim2.new(0, 180, 0, 32), "Out", "Quad", 0.3, true)
+        MinimizeButton.Text = "+"
+        Content.Visible = false
         
-        button.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.Touch then
-                setupDrag(input)
-                
-                -- 记录点击时间，用于区分点击和拖动
-                lastTap = os.clock()
-            end
-        end)
-        
-        button.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.Touch and not isDragging then
-                -- 如果不是拖动，并且点击间隔大于0.5秒，则执行按钮功能
-                if os.clock() - lastTap < 0.5 then
-                    if buttonName == "开始" then
-                        StartTeleport()
-                    elseif buttonName == "换人" then
-                        SwapTarget()
-                    elseif buttonName == "结束" then
-                        StopTeleport()
-                    elseif buttonName == "防甩" then
-                        ToggleAntiThrow()
-                    elseif buttonName == "视野" then
-                        ToggleWallVision()
-                    end
-                end
-            end
-        end)
-    end
-
-    -- 处理拖动
-    UIS.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch and dragStartPos then
-            local delta = input.Position - dragStartPos
-            -- 如果移动距离超过阈值，则视为拖动
-            if delta.Magnitude > 5 then
-                isDragging = true
-                container.Position = UDim2.new(0, containerStartPos.X + delta.X, 0, containerStartPos.Y + delta.Y)
-            end
-        end
-    end)
-
-    UIS.InputEnded:Connect(function()
-        dragStartPos = nil
-        isDragging = false
-    end)
-
-    print("传送UI已加载 - 位置：右上角，支持拖动操作")
-end
-
--- 视野穿墙模式
-function ToggleWallVision()
-    Teleport.WallVision = not Teleport.WallVision
-    UpdateButtonState("视野", Teleport.WallVision)
-
-    if Teleport.WallVision then
-        -- 启用视野穿墙
-        Teleport.OriginalTransparency = {}
-
-        -- 使所有墙壁透明
-        for _, part in ipairs(workspace:GetDescendants()) do
-            if part:IsA("BasePart") and part.Transparency < 0.5 then
-                Teleport.OriginalTransparency[part] = part.Transparency
-                part.Transparency = 0.7
-            end
-        end
-
-        -- 使地面透明
-        for _, terrain in ipairs(workspace:GetChildren()) do
-            if terrain:IsA("Terrain") then
-                Teleport.OriginalTransparency[terrain] = terrain.Transparency
-                terrain.Transparency = 0.6
-            end
-        end
-
-        print("视野穿墙模式已启用")
+        -- 隐藏外发光效果
+        Glow.Visible = false
     else
-        -- 禁用视野穿墙
-        for part, transparency in pairs(Teleport.OriginalTransparency) do
-            if part:IsA("BasePart") or part:IsA("Terrain") then
-                part.Transparency = transparency
-            end
-        end
-        Teleport.OriginalTransparency = {}
-        print("视野穿墙模式已禁用")
+        -- 恢复正常状态
+        MainFrame:TweenSize(UDim2.new(0, 180, 0, 220), "Out", "Quad", 0.3, true)
+        MinimizeButton.Text = "-"
+        Content.Visible = true
+        
+        -- 显示外发光效果
+        Glow.Visible = true
     end
-end
+end)
 
 -- 获取所有玩家列表
 local function GetAllPlayers()
@@ -257,16 +290,16 @@ end
 -- 设置零重力
 local function SetZeroGravity(character)
     if not character then return end
-    
+
     local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
     if not humanoidRootPart then return end
-    
+
     -- 移除现有BodyForce
     if Teleport.BodyForce then
         Teleport.BodyForce:Destroy()
         Teleport.BodyForce = nil
     end
-    
+
     -- 创建新的BodyForce抵消重力
     Teleport.BodyForce = Instance.new("BodyForce")
     Teleport.BodyForce.Name = "AntiGravity"
@@ -288,15 +321,15 @@ local function CheckAbnormalMovement(currentPos)
         Teleport.LastPosition = currentPos
         return false
     end
-    
+
     local distance = (currentPos - Teleport.LastPosition).Magnitude
     Teleport.LastPosition = currentPos
-    
+
     -- 如果移动距离超过预期值，视为异常移动
-    return distance > 10 -- 可根据需要调整阈值
+    return distance > 10
 end
 
--- 传送逻辑 - 增强防甩和重力控制
+-- 传送逻辑
 local function TeleportRoutine()
     if not Teleport.Active then return end
 
@@ -316,14 +349,14 @@ local function TeleportRoutine()
         if CheckAbnormalMovement(myRoot.Position) then
             print("检测到异常移动，重新传送到目标下方")
         end
-        
+
         -- 设置零重力防止掉落
         SetZeroGravity(myChar)
-        
+
         -- 正下方传送：5.5格高度
         local newPos = Vector3.new(
             targetRoot.Position.X,
-            targetRoot.Position.Y - 5.5, -- 正下方5.5格
+            targetRoot.Position.Y - 5.5,
             targetRoot.Position.Z
         )
 
@@ -332,20 +365,58 @@ local function TeleportRoutine()
     end
 end
 
--- 增强防甩模式 - 循环传送确保始终在目标下方
-function ToggleAntiThrow()
-    Teleport.AntiThrow = not Teleport.AntiThrow
-    UpdateButtonState("防甩", Teleport.AntiThrow)
+-- 视野穿墙模式
+local function ToggleWallVision()
+    Teleport.WallVision = not Teleport.WallVision
+    UpdateButtonState("穿墙视野", Teleport.WallVision)
 
-    if Teleport.AntiThrow then
-        print("增强防甩模式已启用 - 循环传送确保位置")
+    if Teleport.WallVision then
+        -- 启用视野穿墙
+        Teleport.OriginalTransparency = {}
+
+        -- 使所有墙壁透明
+        for _, part in ipairs(workspace:GetDescendants()) do
+            if part:IsA("BasePart") and part.Transparency < 0.5 then
+                Teleport.OriginalTransparency[part] = part.Transparency
+                part.Transparency = 0.7
+            end
+        end
+
+        -- 使地面透明
+        for _, terrain in ipairs(workspace:GetChildren()) do
+            if terrain:IsA("Terrain") then
+                Teleport.OriginalTransparency[terrain] = terrain.Transparency
+                terrain.Transparency = 0.6
+            end
+        end
+
+        ShowNotification("穿墙视野已启用", Color3.fromRGB(0, 200, 255))
     else
-        print("防甩模式已禁用")
+        -- 禁用视野穿墙
+        for part, transparency in pairs(Teleport.OriginalTransparency) do
+            if part:IsA("BasePart") or part:IsA("Terrain") then
+                part.Transparency = transparency
+            end
+        end
+        Teleport.OriginalTransparency = {}
+        ShowNotification("穿墙视野已禁用", Color3.fromRGB(255, 100, 0))
     end
 end
 
--- 按钮功能
-function StartTeleport()
+-- 防甩模式
+local function ToggleAntiThrow()
+    Teleport.AntiThrow = not Teleport.AntiThrow
+    UpdateButtonState("防甩模式", Teleport.AntiThrow)
+
+    if Teleport.AntiThrow then
+        ShowNotification("防甩模式已启用", Color3.fromRGB(0, 255, 100))
+    else
+        ShowNotification("防甩模式已禁用", Color3.fromRGB(255, 100, 0))
+    end
+end
+
+-- 开始传送
+local function StartTeleport()
     if Teleport.Active then return end
 
     Teleport.Origin = Players.LocalPlayer.Character.HumanoidRootPart.CFrame
@@ -353,27 +424,31 @@ function StartTeleport()
     Teleport.Target = FindNearestPlayer()
 
     if not Teleport.Target then
-        warn("未找到目标玩家")
+        ShowNotification("未找到目标玩家", Color3.fromRGB(255, 50, 50))
         return
     end
 
     Teleport.Active = true
     Teleport.Connection = RunService.Heartbeat:Connect(function()
         TeleportRoutine()
-        task.wait(0.001) -- 0.001秒间隔
+        task.wait(0.001)
     end)
-    
-    print("传送开始 - 目标: "..Teleport.Target.Name)
+
+    ShowNotification("传送已启动 - 目标: "..Teleport.Target.Name, Color3.fromRGB(0, 255, 100))
+    Status.BackgroundColor3 = Color3.fromRGB(0, 255, 100)
 end
 
--- 换人功能
-function SwapTarget()
-    if not Teleport.Active then return end
+-- 切换目标
+local function SwapTarget()
+    if not Teleport.Active then
+        ShowNotification("请先启动传送", Color3.fromRGB(255, 150, 0))
+        return
+    end
 
     Teleport.PlayerList = GetAllPlayers()
 
     if #Teleport.PlayerList == 0 then
-        warn("没有其他玩家可切换")
+        ShowNotification("没有其他玩家可切换", Color3.fromRGB(255, 50, 50))
         return
     end
 
@@ -388,25 +463,36 @@ function SwapTarget()
     local nextIndex = currentIndex % #Teleport.PlayerList + 1
     Teleport.Target = Teleport.PlayerList[nextIndex]
 
-    print("已切换到: "..Teleport.Target.Name)
+    ShowNotification("已切换到: "..Teleport.Target.Name, Color3.fromRGB(0, 200, 255))
 end
 
--- 结束功能
-function StopTeleport()
-    if not Teleport.Active then return end
+-- 停止传送
+local function StopTeleport()
+    if not Teleport.Active then
+        ShowNotification("传送未启动", Color3.fromRGB(255, 150, 0))
+        return
+    end
 
     Teleport.Active = false
     if Teleport.Connection then
         Teleport.Connection:Disconnect()
     end
-    
+
     -- 移除零重力
     RemoveZeroGravity()
-    
+
     Teleport.LastPosition = nil
 
-    print("传送已停止，重力已恢复")
+    ShowNotification("传送已停止", Color3.fromRGB(255, 100, 0))
+    Status.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
 end
+
+-- 按钮点击事件
+StartButton.MouseButton1Click:Connect(StartTeleport)
+SwapButton.MouseButton1Click:Connect(SwapTarget)
+StopButton.MouseButton1Click:Connect(StopTeleport)
+AntiThrowButton.MouseButton1Click:Connect(ToggleAntiThrow)
+WallVisionButton.MouseButton1Click:Connect(ToggleWallVision)
 
 -- 玩家加入/离开事件
 Players.PlayerAdded:Connect(function(player)
@@ -431,14 +517,16 @@ Players.LocalPlayer.CharacterAdded:Connect(function(char)
             StopTeleport()
         end
     end)
-    
+
     -- 角色重生时重新应用零重力
     if Teleport.Active then
-        wait(1) -- 等待角色完全加载
+        wait(1)
         SetZeroGravity(char)
     end
 end)
 
--- 执行
-InitMobileUI()
-print("传送脚本加载完成 | 初始位置：右上角 | 支持按钮区域拖动")
+-- 显示启动通知
+ShowNotification("传送控制面板已加载", Color3.fromRGB(0, 150, 255))
+
+print("高级传送UI已加载完成")
+print("功能: 开始传送 | 切换目标 | 停止传送 | 防甩模式 | 穿墙视野 | 最小化")
