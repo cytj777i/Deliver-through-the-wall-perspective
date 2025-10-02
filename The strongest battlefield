@@ -5,13 +5,13 @@ local UIS = game:GetService("UserInputService")
 local Lighting = game:GetService("Lighting")
 local Camera = workspace.CurrentCamera
 
--- UI配置 - 进一步缩小整体界面
+-- UI配置 - 使用FPS计数器样式
 local UI = {
-    ButtonSize = UDim2.new(0.9, 0, 0.14, 0), -- 缩小按钮尺寸
-    Spacing = UDim2.new(0, 0, 0.008, 0),     -- 更紧凑的间距
-    Position = UDim2.new(0.78, 0, 0.4, 0),   -- 调整位置
-    ContainerHeight = 0.65, -- 进一步缩小容器高度
-    ContainerWidth = 0.18   -- 进一步缩小容器宽度
+    ButtonSize = UDim2.new(0, 100, 0, 30), -- 类似FPS计数器的尺寸
+    Spacing = UDim2.new(0, 0, 0, 5),       -- 按钮间距
+    Position = UDim2.new(0, 10, 0, 10),    -- 类似FPS计数器的位置
+    ContainerHeight = 0.65, 
+    ContainerWidth = 0.18   
 }
 
 local Teleport = {
@@ -27,27 +27,27 @@ local Teleport = {
     OriginalTransparency = {} -- 存储原始透明度
 }
 
--- 创建按钮（缩小按钮）
+-- 创建按钮（FPS计数器样式）
 local function CreateButton(name, parent, position, isStateButton)
     local button = Instance.new("TextButton")
     button.Name = name
     button.Size = UI.ButtonSize
     button.Position = position
-    button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    button.BackgroundTransparency = 0.25 -- 类似FPS计数器的半透明效果
     button.TextColor3 = Color3.new(1, 1, 1)
     button.Text = name
-    button.TextSize = 12 -- 缩小字体
+    button.TextSize = 14
     button.Parent = parent
     
-    -- 状态指示器
+    -- 状态指示器（更小的圆形指示器）
     if isStateButton then
         local stateIndicator = Instance.new("Frame")
         stateIndicator.Name = "StateIndicator"
-        stateIndicator.Size = UDim2.new(0.06, 0, 0.06, 0)
-        stateIndicator.Position = UDim2.new(0.92, 0, 0.1, 0)
+        stateIndicator.Size = UDim2.new(0, 8, 0, 8)
+        stateIndicator.Position = UDim2.new(1, -10, 0, 5)
         stateIndicator.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-        stateIndicator.BorderSizePixel = 1
-        stateIndicator.BorderColor3 = Color3.new(1, 1, 1)
+        stateIndicator.BorderSizePixel = 0
         stateIndicator.Parent = button
     end
 
@@ -91,16 +91,16 @@ local function UpdateButtonState(buttonName, isActive)
         if stateIndicator then
             if isActive then
                 stateIndicator.BackgroundColor3 = Color3.fromRGB(0, 255, 0) -- 绿色（开启）
-                button.BackgroundColor3 = Color3.fromRGB(0, 80, 0) -- 深绿色背景
+                button.BackgroundColor3 = Color3.fromRGB(0, 60, 0) -- 深绿色背景
             else
                 stateIndicator.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- 红色（关闭）
-                button.BackgroundColor3 = Color3.fromRGB(80, 0, 0) -- 深红色背景
+                button.BackgroundColor3 = Color3.fromRGB(60, 0, 0) -- 深红色背景
             end
         end
     end
 end
 
--- 初始化UI - 进一步缩小整体界面
+-- 初始化UI - FPS计数器样式
 local function InitMobileUI()
     local player = Players.LocalPlayer
     local playerGui = player:WaitForChild("PlayerGui")
@@ -111,15 +111,14 @@ local function InitMobileUI()
     screenGui.ResetOnSpawn = false
     screenGui.Parent = playerGui
 
-    -- 创建更小的容器
+    -- 创建紧凑容器（类似FPS计数器的简约风格）
     local container = Instance.new("Frame")
     container.Name = "ButtonContainer"
-    container.Size = UDim2.new(UI.ContainerWidth, 0, UI.ContainerHeight, 0)
+    container.Size = UDim2.new(0, 110, 0, 175) -- 固定像素尺寸
     container.Position = UI.Position
-    container.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    container.BackgroundTransparency = 0.1
-    container.BorderSizePixel = 2
-    container.BorderColor3 = Color3.fromRGB(60, 60, 60)
+    container.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    container.BackgroundTransparency = 0.3 -- 半透明背景
+    container.BorderSizePixel = 0 -- 无边框
     container.Parent = screenGui
 
     -- 创建拖动区域（覆盖整个容器但透明）
@@ -132,18 +131,13 @@ local function InitMobileUI()
     dragArea.TextTransparency = 1
     dragArea.Parent = container
 
-    -- 计算按钮位置 - 垂直排列填满容器
-    local buttonHeight = UI.ButtonSize.Y.Scale
-    local spacing = UI.Spacing.Y.Scale
-    local totalHeight = (buttonHeight * 5) + (spacing * 4) -- 5个按钮，4个间距
-    local startY = (1 - totalHeight) / 2 -- 垂直居中
-    
-    -- 创建按钮 - 填满容器宽度
-    CreateButton("开始", container, UDim2.new(0.05, 0, startY, 0), false)
-    CreateButton("换人", container, UDim2.new(0.05, 0, startY + buttonHeight + spacing, 0), false)
-    CreateButton("结束", container, UDim2.new(0.05, 0, startY + (buttonHeight + spacing)*2, 0), false)
-    CreateButton("防甩", container, UDim2.new(0.05, 0, startY + (buttonHeight + spacing)*3, 0), true)
-    CreateButton("视野", container, UDim2.new(0.05, 0, startY + (buttonHeight + spacing)*4, 0), true)
+    -- 创建按钮 - 垂直排列
+    local startY = 5
+    CreateButton("开始", container, UDim2.new(0, 5, 0, startY), false)
+    CreateButton("换人", container, UDim2.new(0, 5, 0, startY + 35), false)
+    CreateButton("结束", container, UDim2.new(0, 5, 0, startY + 70), false)
+    CreateButton("防甩", container, UDim2.new(0, 5, 0, startY + 105), true)
+    CreateButton("视野", container, UDim2.new(0, 5, 0, startY + 140), true)
 
     -- 初始化状态显示
     UpdateButtonState("防甩", Teleport.AntiThrow)
@@ -169,7 +163,7 @@ local function InitMobileUI()
         dragStartPos = nil
     end)
 
-    print("优化UI已加载 - 整体界面进一步缩小")
+    print("FPS样式UI已加载")
 end
 
 -- 视野穿墙模式
@@ -430,4 +424,4 @@ end)
 
 -- 执行
 InitMobileUI()
-print("传送脚本加载完成 | 方向:正下方(Y-5.5) | 间隔:0.001秒 | 增强防甩:循环传送+零重力 | 透视功能已修复 | UI整体缩小")
+print("传送脚本加载完成 | FPS样式UI")
