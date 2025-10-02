@@ -1,4 +1,4 @@
--- Roblox手机端极速传送脚本 (UI优化版)
+-- Roblox手机端极速传送脚本 (修复版)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
@@ -23,14 +23,17 @@ local Teleport = {
 
 -- UI配置 - 优化手机端体验
 local UI = {
-    ButtonSize = UDim2.new(0.8, 0, 0.12, 0), -- 更大的按钮尺寸
-    Spacing = 0.02, -- 间距
+    ButtonSize = UDim2.new(0.8, 0, 0.12, 0),
+    Spacing = 0.02,
     Position = UDim2.new(0.7, 0, 0.2, 0),
     DragHandleHeight = 0.1,
     ContainerHeight = 0.65,
     ContainerWidth = 0.3,
-    FontSize = 16 -- 更大的字体
+    FontSize = 16
 }
+
+-- 全局变量存储UI元素
+local ScreenGui, MainFrame, StartButton, StopButton, SwapTargetButton, WallhackButton, WallVisionButton, StatusLabel, DragHandle, PlayerListFrame
 
 -- 创建按钮（优化点击体验）
 local function CreateButton(name, parent, position, backgroundColor)
@@ -43,6 +46,7 @@ local function CreateButton(name, parent, position, backgroundColor)
     button.Text = name
     button.TextSize = UI.FontSize
     button.TextWrapped = true
+    button.ZIndex = 10  -- 确保按钮在顶层
     button.Parent = parent
     
     -- 添加圆角
@@ -63,6 +67,7 @@ local function CreatePlayerListUI(parentFrame)
     PlayerListFrame.BackgroundTransparency = 0.1
     PlayerListFrame.BorderSizePixel = 0
     PlayerListFrame.Visible = false
+    PlayerListFrame.ZIndex = 20  -- 确保在按钮之上
     PlayerListFrame.Parent = parentFrame
     
     local UICorner = Instance.new("UICorner")
@@ -76,6 +81,7 @@ local function CreatePlayerListUI(parentFrame)
     ScrollFrame.BackgroundTransparency = 1
     ScrollFrame.BorderSizePixel = 0
     ScrollFrame.ScrollBarThickness = 6
+    ScrollFrame.ZIndex = 21
     ScrollFrame.Parent = PlayerListFrame
     
     local UIListLayout = Instance.new("UIListLayout")
@@ -91,6 +97,7 @@ local function CreatePlayerListUI(parentFrame)
     TitleLabel.TextColor3 = Color3.new(1, 1, 1)
     TitleLabel.TextSize = UI.FontSize
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TitleLabel.ZIndex = 21
     TitleLabel.Parent = PlayerListFrame
     
     return PlayerListFrame
@@ -98,13 +105,14 @@ end
 
 -- 创建UI界面
 local function CreateUI()
-    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "TeleportGui"
     ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
     ScreenGui.ResetOnSpawn = false
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling  -- 重要：设置ZIndex行为
 
     -- 主容器
-    local MainFrame = Instance.new("Frame")
+    MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainFrame"
     MainFrame.Size = UDim2.new(UI.ContainerWidth, 0, UI.ContainerHeight, 0)
     MainFrame.Position = UI.Position
@@ -112,6 +120,7 @@ local function CreateUI()
     MainFrame.BackgroundTransparency = 0.2
     MainFrame.BorderSizePixel = 0
     MainFrame.ClipsDescendants = true
+    MainFrame.ZIndex = 5
     MainFrame.Parent = ScreenGui
 
     -- 添加圆角
@@ -120,7 +129,7 @@ local function CreateUI()
     UICorner.Parent = MainFrame
 
     -- 拖拽区域
-    local DragHandle = Instance.new("TextButton")
+    DragHandle = Instance.new("TextButton")
     DragHandle.Name = "DragHandle"
     DragHandle.Size = UDim2.new(1, 0, UI.DragHandleHeight, 0)
     DragHandle.Position = UDim2.new(0, 0, 0, 0)
@@ -131,6 +140,7 @@ local function CreateUI()
     DragHandle.TextColor3 = Color3.fromRGB(255, 255, 255)
     DragHandle.TextSize = UI.FontSize
     DragHandle.TextWrapped = true
+    DragHandle.ZIndex = 6
     DragHandle.Parent = MainFrame
 
     -- 按钮容器
@@ -139,6 +149,7 @@ local function CreateUI()
     ButtonContainer.Size = UDim2.new(1, 0, 1 - UI.DragHandleHeight, 0)
     ButtonContainer.Position = UDim2.new(0, 0, UI.DragHandleHeight, 0)
     ButtonContainer.BackgroundTransparency = 1
+    ButtonContainer.ZIndex = 6
     ButtonContainer.Parent = MainFrame
 
     -- 按钮布局计算
@@ -147,23 +158,15 @@ local function CreateUI()
         return UDim2.new(0.1, 0, yPosition, 0)
     end
 
-    -- 开始传送按钮
-    local StartButton = CreateButton("开始传送", ButtonContainer, GetButtonPosition(1), Color3.fromRGB(50, 150, 50))
-    
-    -- 停止传送按钮
-    local StopButton = CreateButton("停止传送", ButtonContainer, GetButtonPosition(2), Color3.fromRGB(150, 50, 50))
-    
-    -- 切换目标按钮
-    local SwapTargetButton = CreateButton("切换目标", ButtonContainer, GetButtonPosition(3), Color3.fromRGB(150, 150, 50))
-    
-    -- 穿墙模式按钮
-    local WallhackButton = CreateButton("穿墙模式: 关闭", ButtonContainer, GetButtonPosition(4), Color3.fromRGB(50, 100, 150))
-    
-    -- 穿墙视野按钮
-    local WallVisionButton = CreateButton("穿墙视野: 关闭", ButtonContainer, GetButtonPosition(5), Color3.fromRGB(50, 50, 150))
+    -- 创建所有按钮
+    StartButton = CreateButton("开始传送", ButtonContainer, GetButtonPosition(1), Color3.fromRGB(50, 150, 50))
+    StopButton = CreateButton("停止传送", ButtonContainer, GetButtonPosition(2), Color3.fromRGB(150, 50, 50))
+    SwapTargetButton = CreateButton("切换目标", ButtonContainer, GetButtonPosition(3), Color3.fromRGB(150, 150, 50))
+    WallhackButton = CreateButton("穿墙模式: 关闭", ButtonContainer, GetButtonPosition(4), Color3.fromRGB(50, 100, 150))
+    WallVisionButton = CreateButton("穿墙视野: 关闭", ButtonContainer, GetButtonPosition(5), Color3.fromRGB(50, 50, 150))
 
     -- 状态显示
-    local StatusLabel = Instance.new("TextLabel")
+    StatusLabel = Instance.new("TextLabel")
     StatusLabel.Name = "StatusLabel"
     StatusLabel.Size = UDim2.new(0.8, 0, 0.15, 0)
     StatusLabel.Position = GetButtonPosition(6)
@@ -174,6 +177,7 @@ local function CreateUI()
     StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
     StatusLabel.TextSize = UI.FontSize
     StatusLabel.TextWrapped = true
+    StatusLabel.ZIndex = 6
     StatusLabel.Parent = ButtonContainer
     
     local StatusCorner = Instance.new("UICorner")
@@ -181,9 +185,9 @@ local function CreateUI()
     StatusCorner.Parent = StatusLabel
 
     -- 创建玩家列表UI
-    local PlayerListFrame = CreatePlayerListUI(MainFrame)
+    PlayerListFrame = CreatePlayerListUI(MainFrame)
 
-    return ScreenGui, MainFrame, StartButton, StopButton, SwapTargetButton, WallhackButton, WallVisionButton, StatusLabel, DragHandle, PlayerListFrame
+    return true
 end
 
 -- 获取所有玩家
@@ -198,8 +202,8 @@ local function GetAllPlayers()
 end
 
 -- 更新玩家列表显示
-local function UpdatePlayerList(playerListFrame)
-    local scrollFrame = playerListFrame:FindFirstChild("ScrollFrame")
+local function UpdatePlayerList()
+    local scrollFrame = PlayerListFrame:FindFirstChild("ScrollFrame")
     if not scrollFrame then return end
     
     -- 清空现有玩家按钮
@@ -220,6 +224,7 @@ local function UpdatePlayerList(playerListFrame)
         playerButton.Text = player.Name
         playerButton.TextColor3 = Color3.new(1, 1, 1)
         playerButton.TextSize = 14
+        playerButton.ZIndex = 22
         playerButton.Parent = scrollFrame
         
         local buttonCorner = Instance.new("UICorner")
@@ -235,7 +240,7 @@ local function UpdatePlayerList(playerListFrame)
                 print("请先开始传送再选择目标")
             end
             -- 选择后自动关闭列表
-            playerListFrame.Visible = false
+            PlayerListFrame.Visible = false
             Teleport.PlayerListVisible = false
         end)
     end
@@ -245,12 +250,12 @@ local function UpdatePlayerList(playerListFrame)
 end
 
 -- 切换玩家列表显示
-local function TogglePlayerList(playerListFrame)
+local function TogglePlayerList()
     Teleport.PlayerListVisible = not Teleport.PlayerListVisible
-    playerListFrame.Visible = Teleport.PlayerListVisible
+    PlayerListFrame.Visible = Teleport.PlayerListVisible
     
     if Teleport.PlayerListVisible then
-        UpdatePlayerList(playerListFrame)
+        UpdatePlayerList()
     end
 end
 
@@ -282,9 +287,12 @@ local function FindNearestPlayer()
     return nearestPlayer
 end
 
--- 切换目标玩家
+-- 切换目标玩家（自动切换）
 function SwapTarget()
-    if not Teleport.Active then return end
+    if not Teleport.Active then 
+        print("请先开始传送")
+        return 
+    end
 
     Teleport.PlayerList = GetAllPlayers()
 
@@ -342,8 +350,11 @@ local function TeleportRoutine()
 end
 
 -- 开始传送
-local function StartTeleport()
-    if Teleport.Active then return end
+function StartTeleport()
+    if Teleport.Active then 
+        print("传送已在运行中")
+        return 
+    end
 
     local myChar = LocalPlayer.Character
     if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then
@@ -364,14 +375,18 @@ local function StartTeleport()
     Teleport.Connection = RunService.Heartbeat:Connect(function()
         TeleportRoutine()
     end)
+    print("传送已开始，目标: " .. Teleport.Target.Name)
 end
 
 -- 切换穿墙模式
-local function ToggleWallhack()
+function ToggleWallhack()
     Teleport.Wallhack = not Teleport.Wallhack
     
     local localChar = LocalPlayer.Character
-    if not localChar then return end
+    if not localChar then 
+        print("角色未加载")
+        return 
+    end
     
     if Teleport.Wallhack then
         -- 启用穿墙
@@ -393,7 +408,7 @@ local function ToggleWallhack()
 end
 
 -- 切换穿墙视野
-local function ToggleWallVision()
+function ToggleWallVision()
     Teleport.WallVision = not Teleport.WallVision
 
     if Teleport.WallVision then
@@ -427,69 +442,59 @@ local function ToggleWallVision()
     end
 end
 
--- 初始化UI和功能
-local function Initialize()
-    -- 确保玩家和PlayerGui存在
-    if not LocalPlayer or not LocalPlayer:FindFirstChild("PlayerGui") then
-        warn("等待玩家加载...")
-        LocalPlayer:WaitForChild("PlayerGui")
-    end
+-- 设置拖拽功能（使用你提供的代码）
+local function SetupDrag()
+    local dragging = false
+    local dragInput, dragStart, startPos
 
-    -- 创建UI
-    local success, result = pcall(function()
-        return CreateUI()
-    end)
-    
-    if not success then
-        warn("创建UI失败: " .. tostring(result))
-        return
-    end
-
-    local ScreenGui, MainFrame, StartButton, StopButton, SwapTargetButton, WallhackButton, WallVisionButton, StatusLabel, DragHandle, PlayerListFrame = result
-
-    -- 拖拽功能（优化的手机端拖拽）
-    local dragStartPos, containerStartPos
-    
     DragHandle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch then
-            dragStartPos = input.Position
-            containerStartPos = Vector2.new(MainFrame.AbsolutePosition.X, MainFrame.AbsolutePosition.Y)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = MainFrame.Position
+            
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
         end
     end)
-    
+
+    DragHandle.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+
     UIS.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch and dragStartPos then
-            local delta = input.Position - dragStartPos
-            MainFrame.Position = UDim2.new(0, containerStartPos.X + delta.X, 0, containerStartPos.Y + delta.Y)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            MainFrame.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
         end
     end)
-    
-    UIS.InputEnded:Connect(function()
-        dragStartPos = nil
-    end)
+end
 
-    -- 绑定按钮事件
-    StartButton.MouseButton1Click:Connect(function()
-        StartTeleport()
-    end)
-    
-    StopButton.MouseButton1Click:Connect(function()
-        StopTeleport()
-    end)
-    
+-- 绑定按钮事件
+local function BindButtonEvents()
+    StartButton.MouseButton1Click:Connect(StartTeleport)
+    StopButton.MouseButton1Click:Connect(StopTeleport)
     SwapTargetButton.MouseButton1Click:Connect(function()
-        TogglePlayerList(PlayerListFrame)
+        TogglePlayerList()
     end)
+    WallhackButton.MouseButton1Click:Connect(ToggleWallhack)
+    WallVisionButton.MouseButton1Click:Connect(ToggleWallVision)
     
-    WallhackButton.MouseButton1Click:Connect(function()
-        ToggleWallhack()
-    end)
-    
-    WallVisionButton.MouseButton1Click:Connect(function()
-        ToggleWallVision()
-    end)
+    print("按钮事件绑定完成")
+end
 
-    -- 更新UI状态
+-- 更新UI状态
+local function SetupUIUpdates()
     RunService.Heartbeat:Connect(function()
         -- 更新传送状态
         if Teleport.Active then
@@ -518,6 +523,32 @@ local function Initialize()
             WallVisionButton.BackgroundColor3 = Color3.fromRGB(50, 50, 150)
         end
     end)
+end
+
+-- 初始化UI和功能
+local function Initialize()
+    -- 确保玩家和PlayerGui存在
+    if not LocalPlayer or not LocalPlayer:FindFirstChild("PlayerGui") then
+        warn("等待玩家加载...")
+        LocalPlayer:WaitForChild("PlayerGui")
+    end
+
+    -- 创建UI
+    local success = pcall(CreateUI)
+    
+    if not success then
+        warn("创建UI失败")
+        return
+    end
+
+    -- 设置拖拽
+    SetupDrag()
+    
+    -- 绑定按钮事件
+    BindButtonEvents()
+    
+    -- 设置UI更新
+    SetupUIUpdates()
     
     print("传送UI已成功加载！")
 end
@@ -564,4 +595,4 @@ end)
 
 -- 开始初始化
 SafeInitialize()
-print("传送脚本加载完成 | 方向:正下方(Y-5.5) | UI优化版")
+print("传送脚本加载完成 | 方向:正下方(Y-5.5) | 修复版")
