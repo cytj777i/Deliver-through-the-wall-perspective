@@ -1,4 +1,4 @@
-，-- Roblox手机端极速传送脚本 (UI优化增强版)
+-- Roblox手机端极速传送脚本 (UI优化增强版)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
@@ -428,4 +428,3 @@ end)
 -- 执行
 InitMobileUI()
 print("传送脚本加载完成 | 方向:正下方(Y-5.5) | 间隔:0.001秒 | 防甩:碰撞关闭 | 重力控制已移除")
-       
