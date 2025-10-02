@@ -20,10 +20,9 @@ local Teleport = {
     Origin = nil,
     Connection = nil,
     PlayerList = {},
-    Wallhack = false,
+    AntiThrow = false, -- 防甩飞模式
     WallVision = false,
-    OriginalTransparency = {},
-    NoclipConnection = nil  -- 新增：穿墙事件连接
+    OriginalTransparency = {}
 }
 
 -- 创建按钮（增大尺寸）
@@ -37,7 +36,7 @@ local function CreateButton(name, parent, position)
     button.Text = name
     button.TextSize = 14 -- 增大字体
     button.Parent = parent
-    
+
     -- 扩大点击区域（热区）
     local hitbox = Instance.new("Frame")
     hitbox.Name = "Hitbox"
@@ -45,27 +44,27 @@ local function CreateButton(name, parent, position)
     hitbox.Position = UDim2.new(-0.1, 0, -0.1, 0)
     hitbox.BackgroundTransparency = 1
     hitbox.Parent = button
-    
+
     local lastTap = 0
     hitbox.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.Touch then
             if os.clock() - lastTap < 0.5 then return end
             lastTap = os.clock()
-            
+
             if name == "开始" then
                 StartTeleport()
             elseif name == "换人" then
                 SwapTarget()
             elseif name == "结束" then
                 StopTeleport()
-            elseif name == "穿墙" then
-                ToggleWallhack()
+            elseif name == "防甩飞" then
+                ToggleAntiThrow()
             elseif name == "视野" then
                 ToggleWallVision()
             end
         end
     end)
-    
+
     return button
 end
 
@@ -74,13 +73,13 @@ local function InitMobileUI()
     -- 确保PlayerGui存在
     local player = Players.LocalPlayer
     local playerGui = player:WaitForChild("PlayerGui")
-    
+
     -- 创建ScreenGui
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "NinjaInjectorUI"
     screenGui.ResetOnSpawn = false
     screenGui.Parent = playerGui
-    
+
     -- 创建容器Frame（增大尺寸）
     local container = Instance.new("Frame")
     container.Name = "ButtonContainer"
@@ -88,7 +87,7 @@ local function InitMobileUI()
     container.Position = UI.Position
     container.BackgroundTransparency = 1
     container.Parent = screenGui
-    
+
     -- 创建拖动手柄
     local dragHandle = Instance.new("Frame")
     dragHandle.Name = "DragHandle"
@@ -98,14 +97,14 @@ local function InitMobileUI()
     dragHandle.BackgroundTransparency = 0.7
     dragHandle.BorderSizePixel = 0
     dragHandle.Parent = container
-    
+
     -- 垂直排列按钮（增大间距）
     CreateButton("开始", container, UDim2.new(0, 0, UI.DragHandleHeight, 0))
     CreateButton("换人", container, UDim2.new(0, 0, UI.DragHandleHeight + UI.Spacing.Y.Scale + UI.ButtonSize.Y.Scale, 0))
     CreateButton("结束", container, UDim2.new(0, 0, UI.DragHandleHeight + (UI.Spacing.Y.Scale + UI.ButtonSize.Y.Scale)*2, 0))
-    CreateButton("穿墙", container, UDim2.new(0, 0, UI.DragHandleHeight + (UI.Spacing.Y.Scale + UI.ButtonSize.Y.Scale)*3, 0))
+    CreateButton("防甩飞", container, UDim2.new(0, 0, UI.DragHandleHeight + (UI.Spacing.Y.Scale + UI.ButtonSize.Y.Scale)*3, 0))
     CreateButton("视野", container, UDim2.new(0, 0, UI.DragHandleHeight + (UI.Spacing.Y.Scale + UI.ButtonSize.Y.Scale)*4, 0))
-    
+
     -- 拖拽功能（仅作用于拖动手柄）
     local dragStartPos, containerStartPos
     dragHandle.InputBegan:Connect(function(input)
@@ -114,18 +113,18 @@ local function InitMobileUI()
             containerStartPos = Vector2.new(container.AbsolutePosition.X, container.AbsolutePosition.Y)
         end
     end)
-    
+
     UIS.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.Touch and dragStartPos then
             local delta = input.Position - dragStartPos
             container.Position = UDim2.new(0, containerStartPos.X + delta.X, 0, containerStartPos.Y + delta.Y)
         end
     end)
-    
+
     UIS.InputEnded:Connect(function()
         dragStartPos = nil
     end)
-    
+
     print("UI已优化，按钮更大更易点击")
 end
 
@@ -145,7 +144,7 @@ local function FindNearestPlayer()
     local nearest, minDist = nil, math.huge
     local myChar = Players.LocalPlayer.Character
     if not myChar then return end
-    
+
     local myRoot = myChar:FindFirstChild("HumanoidRootPart")
     if not myRoot then return end
 
@@ -165,18 +164,18 @@ end
 -- 传送逻辑 - 0.001秒间隔
 local function TeleportRoutine()
     if not Teleport.Active then return end
-    
+
     local myChar = Players.LocalPlayer.Character
     local targetChar = Teleport.Target and Teleport.Target.Character
-    
+
     if not myChar or not targetChar then
         StopTeleport()
         return
     end
-    
+
     local myRoot = myChar:FindFirstChild("HumanoidRootPart")
     local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
-    
+
     if myRoot and targetRoot then
         -- 正下方传送：5.5格高度
         local newPos = Vector3.new(
@@ -184,68 +183,66 @@ local function TeleportRoutine()
             targetRoot.Position.Y - 5.5, -- 正下方5.5格
             targetRoot.Position.Z
         )
-        
+
         -- 设置位置并面向目标
         myRoot.CFrame = CFrame.new(newPos, targetRoot.Position)
     end
 end
 
--- 穿墙模式 - 按照提供的代码修复
-function ToggleWallhack()
-    Teleport.Wallhack = not Teleport.Wallhack
-    
-    if Teleport.Wallhack then
-        -- 启用穿墙
-        if Teleport.NoclipConnection then
-            Teleport.NoclipConnection:Disconnect()
-        end
-        
-        Teleport.NoclipConnection = RunService.Stepped:Connect(function()
-            if not Teleport.Wallhack then
-                Teleport.NoclipConnection:Disconnect()
-                return
-            end
-            
-            local player = Players.LocalPlayer
-            if player and player.Character then
-                for _, part in ipairs(player.Character:GetChildren()) do
+-- 防甩飞模式 - 删除玩家与玩家之间的碰撞
+function ToggleAntiThrow()
+    Teleport.AntiThrow = not Teleport.AntiThrow
+
+    if Teleport.AntiThrow then
+        -- 启用防甩飞
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= Players.LocalPlayer and player.Character then
+                for _, part in ipairs(player.Character:GetDescendants()) do
                     if part:IsA("BasePart") then
                         part.CanCollide = false
                     end
                 end
             end
-        end)
-        
-        print("穿墙模式已启用")
-    else
-        -- 禁用穿墙
-        if Teleport.NoclipConnection then
-            Teleport.NoclipConnection:Disconnect()
-            Teleport.NoclipConnection = nil
         end
         
-        -- 恢复碰撞
-        local player = Players.LocalPlayer
-        if player and player.Character then
-            for _, part in ipairs(player.Character:GetChildren()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = true
+        -- 监听新玩家加入
+        Players.PlayerAdded:Connect(function(player)
+            if Teleport.AntiThrow then
+                player.CharacterAdded:Connect(function(character)
+                    wait(1) -- 等待角色加载完成
+                    for _, part in ipairs(character:GetDescendants()) do
+                        if part:IsA("BasePart") then
+                            part.CanCollide = false
+                        end
+                    end
+                end)
+            end
+        end)
+        
+        print("防甩飞模式已启用 - 玩家间碰撞已关闭")
+    else
+        -- 禁用防甩飞
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= Players.LocalPlayer and player.Character then
+                for _, part in ipairs(player.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = true
+                    end
                 end
             end
         end
-        
-        print("穿墙模式已禁用")
+        print("防甩飞模式已禁用 - 玩家间碰撞已恢复")
     end
 end
 
 -- 视野穿墙模式
 function ToggleWallVision()
     Teleport.WallVision = not Teleport.WallVision
-    
+
     if Teleport.WallVision then
         -- 启用视野穿墙
         Teleport.OriginalTransparency = {}
-        
+
         -- 使所有墙壁透明
         for _, part in ipairs(workspace:GetDescendants()) do
             if part:IsA("BasePart") and part.Transparency < 0.5 then
@@ -253,7 +250,7 @@ function ToggleWallVision()
                 part.Transparency = 0.7
             end
         end
-        
+
         -- 使地面透明
         for _, terrain in ipairs(workspace:GetChildren()) do
             if terrain:IsA("Terrain") then
@@ -261,7 +258,7 @@ function ToggleWallVision()
                 terrain.Transparency = 0.6
             end
         end
-        
+
         print("视野穿墙模式已启用")
     else
         -- 禁用视野穿墙
@@ -278,16 +275,16 @@ end
 -- 按钮功能
 function StartTeleport()
     if Teleport.Active then return end
-    
+
     Teleport.Origin = Players.LocalPlayer.Character.HumanoidRootPart.CFrame
     Teleport.PlayerList = GetAllPlayers()
     Teleport.Target = FindNearestPlayer()
-    
+
     if not Teleport.Target then
         warn("未找到目标玩家")
         return
     end
-    
+
     Teleport.Active = true
     Teleport.Connection = RunService.Heartbeat:Connect(function()
         TeleportRoutine()
@@ -298,14 +295,14 @@ end
 -- 换人功能
 function SwapTarget()
     if not Teleport.Active then return end
-    
+
     Teleport.PlayerList = GetAllPlayers()
-    
+
     if #Teleport.PlayerList == 0 then
         warn("没有其他玩家可切换")
         return
     end
-    
+
     local currentIndex = 1
     for i, player in ipairs(Teleport.PlayerList) do
         if player == Teleport.Target then
@@ -313,22 +310,22 @@ function SwapTarget()
             break
         end
     end
-    
+
     local nextIndex = currentIndex % #Teleport.PlayerList + 1
     Teleport.Target = Teleport.PlayerList[nextIndex]
-    
+
     print("已切换到: "..Teleport.Target.Name)
 end
 
 -- 结束功能 - 不再返回初始位置
 function StopTeleport()
     if not Teleport.Active then return end
-    
+
     Teleport.Active = false
     if Teleport.Connection then
         Teleport.Connection:Disconnect()
     end
-    
+
     print("传送已停止，位置保持不变")
 end
 
@@ -336,6 +333,18 @@ end
 Players.PlayerAdded:Connect(function(player)
     if player ~= Players.LocalPlayer then
         table.insert(Teleport.PlayerList, player)
+        
+        -- 如果防甩飞启用，处理新玩家
+        if Teleport.AntiThrow then
+            player.CharacterAdded:Connect(function(character)
+                wait(1) -- 等待角色加载完成
+                for _, part in ipairs(character:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = false
+                    end
+                end
+            end)
+        end
     end
 end)
 
@@ -355,31 +364,8 @@ Players.LocalPlayer.CharacterAdded:Connect(function(char)
             StopTeleport()
         end
     end)
-    
-    -- 角色重生时重新应用穿墙效果
-    if Teleport.Wallhack and Teleport.NoclipConnection then
-        -- 先断开旧的连接
-        Teleport.NoclipConnection:Disconnect()
-        
-        -- 重新建立连接
-        Teleport.NoclipConnection = RunService.Stepped:Connect(function()
-            if not Teleport.Wallhack then
-                Teleport.NoclipConnection:Disconnect()
-                return
-            end
-            
-            local player = Players.LocalPlayer
-            if player and player.Character then
-                for _, part in ipairs(player.Character:GetChildren()) do
-                    if part:IsA("BasePart") then
-                        part.CanCollide = false
-                    end
-                end
-            end
-        end)
-    end
 end)
 
 -- 执行
 InitMobileUI()
-print("传送脚本加载完成 | 方向:正下方(Y-5.5) | 间隔:0.001秒 | UI优化版")
+print("传送脚本加载完成 | 方向:正下方(Y-5.5) | 间隔:0.001秒 | 防甩飞功能已添加")
