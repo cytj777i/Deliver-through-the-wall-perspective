@@ -1,4 +1,4 @@
--- Roblox手机端极速传送脚本 (修复版)
+-- 别看了 这个无法正常工作
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
