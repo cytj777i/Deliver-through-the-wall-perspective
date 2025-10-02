@@ -20,7 +20,7 @@ local Teleport = {
     Origin = nil,
     Connection = nil,
     PlayerList = {},
-    AntiThrow = false, -- 防甩飞模式
+    AntiThrow = false, -- 防甩模式
     WallVision = false,
     OriginalTransparency = {}
 }
@@ -57,7 +57,7 @@ local function CreateButton(name, parent, position)
                 SwapTarget()
             elseif name == "结束" then
                 StopTeleport()
-            elseif name == "防甩飞" then
+            elseif name == "防甩" then
                 ToggleAntiThrow()
             elseif name == "视野" then
                 ToggleWallVision()
@@ -102,7 +102,7 @@ local function InitMobileUI()
     CreateButton("开始", container, UDim2.new(0, 0, UI.DragHandleHeight, 0))
     CreateButton("换人", container, UDim2.new(0, 0, UI.DragHandleHeight + UI.Spacing.Y.Scale + UI.ButtonSize.Y.Scale, 0))
     CreateButton("结束", container, UDim2.new(0, 0, UI.DragHandleHeight + (UI.Spacing.Y.Scale + UI.ButtonSize.Y.Scale)*2, 0))
-    CreateButton("防甩飞", container, UDim2.new(0, 0, UI.DragHandleHeight + (UI.Spacing.Y.Scale + UI.ButtonSize.Y.Scale)*3, 0))
+    CreateButton("防甩", container, UDim2.new(0, 0, UI.DragHandleHeight + (UI.Spacing.Y.Scale + UI.ButtonSize.Y.Scale)*3, 0))
     CreateButton("视野", container, UDim2.new(0, 0, UI.DragHandleHeight + (UI.Spacing.Y.Scale + UI.ButtonSize.Y.Scale)*4, 0))
 
     -- 拖拽功能（仅作用于拖动手柄）
@@ -194,7 +194,7 @@ function ToggleAntiThrow()
     Teleport.AntiThrow = not Teleport.AntiThrow
 
     if Teleport.AntiThrow then
-        -- 启用防甩飞
+        -- 启用防甩
         for _, player in ipairs(Players:GetPlayers()) do
             if player ~= Players.LocalPlayer and player.Character then
                 for _, part in ipairs(player.Character:GetDescendants()) do
@@ -219,7 +219,7 @@ function ToggleAntiThrow()
             end
         end)
         
-        print("防甩飞模式已启用 - 玩家间碰撞已关闭")
+        print("防甩模式已启用 - 玩家间碰撞已关闭")
     else
         -- 禁用防甩飞
         for _, player in ipairs(Players:GetPlayers()) do
@@ -231,7 +231,7 @@ function ToggleAntiThrow()
                 end
             end
         end
-        print("防甩飞模式已禁用 - 玩家间碰撞已恢复")
+        print("防甩模式已禁用 - 玩家间碰撞已恢复")
     end
 end
 
@@ -334,7 +334,7 @@ Players.PlayerAdded:Connect(function(player)
     if player ~= Players.LocalPlayer then
         table.insert(Teleport.PlayerList, player)
         
-        -- 如果防甩飞启用，处理新玩家
+        -- 如果防甩启用，处理新玩家
         if Teleport.AntiThrow then
             player.CharacterAdded:Connect(function(character)
                 wait(1) -- 等待角色加载完成
@@ -368,4 +368,4 @@ end)
 
 -- 执行
 InitMobileUI()
-print("传送脚本加载完成 | 方向:正下方(Y-5.5) | 间隔:0.001秒 | 防甩飞功能已添加")
+print("传送脚本加载完成 | 方向:正下方(Y-5.5) | 间隔:0.001秒 | 防甩功能已添加")
