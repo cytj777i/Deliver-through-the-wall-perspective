@@ -1,9 +1,10 @@
--- Roblox手机端极速传送脚本 (高级UI版)
+-- Roblox手机端极速传送脚本 (高级UI滚动版)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
 local Lighting = game:GetService("Lighting")
 local Camera = workspace.CurrentCamera
+local TweenService = game:GetService("TweenService")
 
 -- 传送功能变量
 local Teleport = {
@@ -77,8 +78,8 @@ ScreenGui.Name = "AdvancedTeleportUI"
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Parent = ScreenGui
-MainFrame.Size = UDim2.new(0, 180, 0, 290) -- 增加高度以容纳新按钮和控件
-MainFrame.Position = UDim2.new(0.5, -90, 0.5, -145)
+MainFrame.Size = UDim2.new(0, 200, 0, 300)
+MainFrame.Position = UDim2.new(0.5, -100, 0.5, -150)
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
 MainFrame.Active = true
 MainFrame.Draggable = true
@@ -122,7 +123,7 @@ HeaderCorner.CornerRadius = UDim.new(0, 12)
 -- 标题文字
 local Title = Instance.new("TextLabel")
 Title.Parent = Header
-Title.Size = UDim2.new(1, -50, 1, 0) -- 为最小化按钮留出空间
+Title.Size = UDim2.new(1, -50, 1, 0)
 Title.Position = UDim2.new(0, 10, 0, 0)
 Title.BackgroundTransparency = 1
 Title.Text = "传送控制面板"
@@ -135,7 +136,7 @@ Title.TextXAlignment = Enum.TextXAlignment.Left
 local Status = Instance.new("Frame")
 Status.Parent = Header
 Status.Size = UDim2.new(0, 8, 0, 8)
-Status.Position = UDim2.new(1, -40, 0.5, -4) -- 调整位置为最小化按钮留出空间
+Status.Position = UDim2.new(1, -40, 0.5, -4)
 Status.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
 Status.BorderSizePixel = 0
 
@@ -165,30 +166,39 @@ MinimizeStroke.Parent = MinimizeButton
 MinimizeStroke.Color = Color3.fromRGB(100, 150, 255)
 MinimizeStroke.Thickness = 1
 
--- 内容区域
+-- 创建滚动框架
+local ScrollFrame = Instance.new("ScrollingFrame")
+ScrollFrame.Parent = MainFrame
+ScrollFrame.Size = UDim2.new(1, -16, 1, -48)
+ScrollFrame.Position = UDim2.new(0, 8, 0, 40)
+ScrollFrame.BackgroundTransparency = 1
+ScrollFrame.ScrollBarThickness = 6
+ScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(80, 120, 200)
+ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 500) -- 足够的高度容纳所有按钮
+
+-- 内容容器
 local Content = Instance.new("Frame")
-Content.Parent = MainFrame
-Content.Size = UDim2.new(1, -16, 1, -48)
-Content.Position = UDim2.new(0, 8, 0, 40)
+Content.Parent = ScrollFrame
+Content.Size = UDim2.new(1, 0, 0, 500)
 Content.BackgroundTransparency = 1
 
 -- 创建功能按钮
 local function CreateButton(name, yPosition, hasIndicator)
     local Button = Instance.new("TextButton")
     Button.Name = name
-    Button.Size = UDim2.new(1, 0, 0, 30)
+    Button.Size = UDim2.new(1, 0, 0, 35)
     Button.Position = UDim2.new(0, 0, 0, yPosition)
     Button.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
     Button.BackgroundTransparency = 0.2
     Button.TextColor3 = Color3.fromRGB(220, 220, 255)
     Button.Text = name
-    Button.TextSize = 12
+    Button.TextSize = 13
     Button.Font = Enum.Font.Gotham
     Button.Parent = Content
     
     local ButtonCorner = Instance.new("UICorner")
     ButtonCorner.Parent = Button
-    ButtonCorner.CornerRadius = UDim.new(0, 6)
+    ButtonCorner.CornerRadius = UDim.new(0, 8)
     
     local ButtonStroke = Instance.new("UIStroke")
     ButtonStroke.Parent = Button
@@ -213,10 +223,10 @@ local function CreateButton(name, yPosition, hasIndicator)
     return Button
 end
 
--- 创建半径和速度控制
-local function CreateControl(label, yPosition, defaultValue, minValue, maxValue)
+-- 创建可点击输入的控制项
+local function CreateInputControl(label, yPosition, defaultValue, minValue, maxValue)
     local ControlFrame = Instance.new("Frame")
-    ControlFrame.Size = UDim2.new(1, 0, 0, 25)
+    ControlFrame.Size = UDim2.new(1, 0, 0, 30)
     ControlFrame.Position = UDim2.new(0, 0, 0, yPosition)
     ControlFrame.BackgroundTransparency = 1
     ControlFrame.Parent = Content
@@ -227,72 +237,68 @@ local function CreateControl(label, yPosition, defaultValue, minValue, maxValue)
     Label.BackgroundTransparency = 1
     Label.Text = label
     Label.TextColor3 = Color3.fromRGB(180, 200, 255)
-    Label.TextSize = 11
+    Label.TextSize = 12
     Label.Font = Enum.Font.Gotham
     Label.TextXAlignment = Enum.TextXAlignment.Left
     Label.Parent = ControlFrame
     
-    local DecreaseButton = Instance.new("TextButton")
-    DecreaseButton.Size = UDim2.new(0, 20, 1, 0)
-    DecreaseButton.Position = UDim2.new(0.4, 0, 0, 0)
-    DecreaseButton.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
-    DecreaseButton.Text = "-"
-    DecreaseButton.TextColor3 = Color3.fromRGB(220, 220, 255)
-    DecreaseButton.TextSize = 14
-    DecreaseButton.Font = Enum.Font.GothamBold
-    DecreaseButton.Parent = ControlFrame
-    
-    local IncreaseButton = Instance.new("TextButton")
-    IncreaseButton.Size = UDim2.new(0, 20, 1, 0)
-    IncreaseButton.Position = UDim2.new(0.6, 0, 0, 0)
-    IncreaseButton.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
-    IncreaseButton.Text = "+"
-    IncreaseButton.TextColor3 = Color3.fromRGB(220, 220, 255)
-    IncreaseButton.TextSize = 14
-    IncreaseButton.Font = Enum.Font.GothamBold
-    IncreaseButton.Parent = ControlFrame
-    
-    local ValueDisplay = Instance.new("TextLabel")
-    ValueDisplay.Size = UDim2.new(0.2, 0, 1, 0)
-    ValueDisplay.Position = UDim2.new(0.8, 0, 0, 0)
-    ValueDisplay.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
-    ValueDisplay.Text = tostring(defaultValue)
-    ValueDisplay.TextColor3 = Color3.fromRGB(0, 200, 255)
-    ValueDisplay.TextSize = 11
-    ValueDisplay.Font = Enum.Font.Gotham
-    ValueDisplay.Parent = ControlFrame
+    local ValueBox = Instance.new("TextButton") -- 改为TextButton以便点击
+    ValueBox.Size = UDim2.new(0.6, 0, 1, 0)
+    ValueBox.Position = UDim2.new(0.4, 0, 0, 0)
+    ValueBox.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+    ValueBox.Text = tostring(defaultValue)
+    ValueBox.TextColor3 = Color3.fromRGB(0, 200, 255)
+    ValueBox.TextSize = 12
+    ValueBox.Font = Enum.Font.Gotham
+    ValueBox.Parent = ControlFrame
     
     local ValueCorner = Instance.new("UICorner")
-    ValueCorner.Parent = ValueDisplay
-    ValueCorner.CornerRadius = UDim.new(0, 4)
+    ValueCorner.Parent = ValueBox
+    ValueCorner.CornerRadius = UDim.new(0, 6)
     
     local ValueStroke = Instance.new("UIStroke")
-    ValueStroke.Parent = ValueDisplay
+    ValueStroke.Parent = ValueBox
     ValueStroke.Color = Color3.fromRGB(80, 120, 200)
     ValueStroke.Thickness = 1
     
     return {
         Frame = ControlFrame,
-        Decrease = DecreaseButton,
-        Increase = IncreaseButton,
-        Display = ValueDisplay,
+        Box = ValueBox,
         Value = defaultValue,
         Min = minValue,
         Max = maxValue
     }
 end
 
--- 创建所有按钮
+-- 创建所有按钮和控件
 local StartButton = CreateButton("开始传送", 0, false)
-local SwapButton = CreateButton("切换目标", 35, false)
-local StopButton = CreateButton("停止传送", 70, false)
-local AntiThrowButton = CreateButton("防甩模式", 105, true)
-local WallVisionButton = CreateButton("穿墙视野", 140, true)
-local OrbitButton = CreateButton("环绕传送", 175, true)
+local SwapButton = CreateButton("切换目标", 40, false)
+local StopButton = CreateButton("停止传送", 80, false)
+local AntiThrowButton = CreateButton("防甩模式", 120, true)
+local WallVisionButton = CreateButton("穿墙视野", 160, true)
+local OrbitButton = CreateButton("环绕传送", 200, true)
+
+-- 分隔线
+local Separator1 = Instance.new("Frame")
+Separator1.Parent = Content
+Separator1.Size = UDim2.new(1, 0, 0, 1)
+Separator1.Position = UDim2.new(0, 0, 0, 240)
+Separator1.BackgroundColor3 = Color3.fromRGB(60, 120, 255)
+Separator1.BackgroundTransparency = 0.5
+
+local SeparatorLabel1 = Instance.new("TextLabel")
+SeparatorLabel1.Parent = Content
+SeparatorLabel1.Size = UDim2.new(1, 0, 0, 20)
+SeparatorLabel1.Position = UDim2.new(0, 0, 0, 245)
+SeparatorLabel1.BackgroundTransparency = 1
+SeparatorLabel1.Text = "环绕设置"
+SeparatorLabel1.TextColor3 = Color3.fromRGB(120, 160, 255)
+SeparatorLabel1.TextSize = 12
+SeparatorLabel1.Font = Enum.Font.GothamBold
 
 -- 创建环绕控制
-local RadiusControl = CreateControl("半径:", 210, 10, 5, 50)
-local SpeedControl = CreateControl("速度:", 240, 2, 1, 10)
+local RadiusControl = CreateInputControl("环绕半径:", 270, 10, 5, 50)
+local SpeedControl = CreateInputControl("环绕速度:", 310, 2, 0.5, 10)
 
 -- 更新按钮状态
 local function UpdateButtonState(buttonName, isActive)
@@ -311,9 +317,129 @@ local function UpdateButtonState(buttonName, isActive)
     end
 end
 
--- 更新控制显示
-local function UpdateControlDisplay(control)
-    control.Display.Text = tostring(control.Value)
+-- 创建数字输入弹窗
+local function CreateNumberInputPopup(currentValue, minValue, maxValue, callback)
+    local PopupGui = Instance.new("ScreenGui")
+    PopupGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+    
+    local PopupFrame = Instance.new("Frame")
+    PopupFrame.Parent = PopupGui
+    PopupFrame.Size = UDim2.new(0, 250, 0, 150)
+    PopupFrame.Position = UDim2.new(0.5, -125, 0.5, -75)
+    PopupFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 35)
+    PopupFrame.Active = true
+    PopupFrame.Draggable = true
+    
+    local PopupCorner = Instance.new("UICorner")
+    PopupCorner.Parent = PopupFrame
+    PopupCorner.CornerRadius = UDim.new(0, 12)
+    
+    local PopupStroke = Instance.new("UIStroke")
+    PopupStroke.Parent = PopupFrame
+    PopupStroke.Color = Color3.fromRGB(80, 120, 200)
+    PopupStroke.Thickness = 2
+    
+    local Title = Instance.new("TextLabel")
+    Title.Parent = PopupFrame
+    Title.Size = UDim2.new(1, -20, 0, 30)
+    Title.Position = UDim2.new(0, 10, 0, 10)
+    Title.BackgroundTransparency = 1
+    Title.Text = "输入数值 ("..minValue.."-"..maxValue..")"
+    Title.TextColor3 = Color3.fromRGB(220, 220, 255)
+    Title.TextSize = 14
+    Title.Font = Enum.Font.GothamBold
+    
+    local InputBox = Instance.new("TextBox")
+    InputBox.Parent = PopupFrame
+    InputBox.Size = UDim2.new(1, -40, 0, 35)
+    InputBox.Position = UDim2.new(0, 20, 0, 50)
+    InputBox.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+    InputBox.Text = tostring(currentValue)
+    InputBox.TextColor3 = Color3.fromRGB(220, 220, 255)
+    InputBox.TextSize = 16
+    InputBox.Font = Enum.Font.Gotham
+    InputBox.ClearTextOnFocus = false
+    
+    local InputCorner = Instance.new("UICorner")
+    InputCorner.Parent = InputBox
+    InputCorner.CornerRadius = UDim.new(0, 6)
+    
+    local InputStroke = Instance.new("UIStroke")
+    InputStroke.Parent = InputBox
+    InputStroke.Color = Color3.fromRGB(80, 120, 200)
+    InputStroke.Thickness = 1
+    
+    local ConfirmButton = Instance.new("TextButton")
+    ConfirmButton.Parent = PopupFrame
+    ConfirmButton.Size = UDim2.new(0, 80, 0, 30)
+    ConfirmButton.Position = UDim2.new(0.5, -90, 1, -50)
+    ConfirmButton.BackgroundColor3 = Color3.fromRGB(40, 120, 80)
+    ConfirmButton.Text = "确认"
+    ConfirmButton.TextColor3 = Color3.fromRGB(220, 220, 255)
+    ConfirmButton.TextSize = 14
+    ConfirmButton.Font = Enum.Font.Gotham
+    
+    local ConfirmCorner = Instance.new("UICorner")
+    ConfirmCorner.Parent = ConfirmButton
+    ConfirmCorner.CornerRadius = UDim.new(0, 6)
+    
+    local CancelButton = Instance.new("TextButton")
+    CancelButton.Parent = PopupFrame
+    CancelButton.Size = UDim2.new(0, 80, 0, 30)
+    CancelButton.Position = UDim2.new(0.5, 10, 1, -50)
+    CancelButton.BackgroundColor3 = Color3.fromRGB(120, 40, 40)
+    CancelButton.Text = "取消"
+    CancelButton.TextColor3 = Color3.fromRGB(220, 220, 255)
+    CancelButton.TextSize = 14
+    CancelButton.Font = Enum.Font.Gotham
+    
+    local CancelCorner = Instance.new("UICorner")
+    CancelCorner.Parent = CancelButton
+    CancelCorner.CornerRadius = UDim.new(0, 6)
+    
+    -- 确认按钮点击事件
+    ConfirmButton.MouseButton1Click:Connect(function()
+        local inputText = InputBox.Text
+        local numberValue = tonumber(inputText)
+        
+        if numberValue then
+            -- 限制在最小最大值范围内
+            if numberValue < minValue then
+                numberValue = minValue
+            elseif numberValue > maxValue then
+                numberValue = maxValue
+            end
+            
+            callback(numberValue)
+        end
+        
+        PopupGui:Destroy()
+    end)
+    
+    -- 取消按钮点击事件
+    CancelButton.MouseButton1Click:Connect(function()
+        PopupGui:Destroy()
+    end)
+    
+    -- 回车确认
+    InputBox.FocusLost:Connect(function(enterPressed)
+        if enterPressed then
+            local inputText = InputBox.Text
+            local numberValue = tonumber(inputText)
+            
+            if numberValue then
+                if numberValue < minValue then
+                    numberValue = minValue
+                elseif numberValue > maxValue then
+                    numberValue = maxValue
+                end
+                
+                callback(numberValue)
+            end
+            
+            PopupGui:Destroy()
+        end
+    end)
 end
 
 -- 最小化功能
@@ -322,17 +448,17 @@ MinimizeButton.MouseButton1Click:Connect(function()
     minimized = not minimized
     if minimized then
         -- 最小化状态
-        MainFrame:TweenSize(UDim2.new(0, 180, 0, 32), "Out", "Quad", 0.3, true)
+        MainFrame:TweenSize(UDim2.new(0, 200, 0, 32), "Out", "Quad", 0.3, true)
         MinimizeButton.Text = "+"
-        Content.Visible = false
+        ScrollFrame.Visible = false
         
         -- 隐藏外发光效果
         Glow.Visible = false
     else
         -- 恢复正常状态
-        MainFrame:TweenSize(UDim2.new(0, 180, 0, 290), "Out", "Quad", 0.3, true)
+        MainFrame:TweenSize(UDim2.new(0, 200, 0, 300), "Out", "Quad", 0.3, true)
         MinimizeButton.Text = "-"
-        Content.Visible = true
+        ScrollFrame.Visible = true
         
         -- 显示外发光效果
         Glow.Visible = true
@@ -668,29 +794,21 @@ WallVisionButton.MouseButton1Click:Connect(ToggleWallVision)
 OrbitButton.MouseButton1Click:Connect(ToggleOrbit)
 
 -- 半径控制事件
-RadiusControl.Decrease.MouseButton1Click:Connect(function()
-    RadiusControl.Value = math.max(RadiusControl.Min, RadiusControl.Value - 1)
-    Teleport.OrbitRadius = RadiusControl.Value
-    UpdateControlDisplay(RadiusControl)
-end)
-
-RadiusControl.Increase.MouseButton1Click:Connect(function()
-    RadiusControl.Value = math.min(RadiusControl.Max, RadiusControl.Value + 1)
-    Teleport.OrbitRadius = RadiusControl.Value
-    UpdateControlDisplay(RadiusControl)
+RadiusControl.Box.MouseButton1Click:Connect(function()
+    CreateNumberInputPopup(RadiusControl.Value, RadiusControl.Min, RadiusControl.Max, function(newValue)
+        RadiusControl.Value = newValue
+        RadiusControl.Box.Text = tostring(newValue)
+        Teleport.OrbitRadius = newValue
+    end)
 end)
 
 -- 速度控制事件
-SpeedControl.Decrease.MouseButton1Click:Connect(function()
-    SpeedControl.Value = math.max(SpeedControl.Min, SpeedControl.Value - 0.5)
-    Teleport.OrbitSpeed = SpeedControl.Value
-    UpdateControlDisplay(SpeedControl)
-end)
-
-SpeedControl.Increase.MouseButton1Click:Connect(function()
-    SpeedControl.Value = math.min(SpeedControl.Max, SpeedControl.Value + 0.5)
-    Teleport.OrbitSpeed = SpeedControl.Value
-    UpdateControlDisplay(SpeedControl)
+SpeedControl.Box.MouseButton1Click:Connect(function()
+    CreateNumberInputPopup(SpeedControl.Value, SpeedControl.Min, SpeedControl.Max, function(newValue)
+        SpeedControl.Value = newValue
+        SpeedControl.Box.Text = tostring(newValue)
+        Teleport.OrbitSpeed = newValue
+    end)
 end)
 
 -- 玩家加入/离开事件
@@ -732,3 +850,4 @@ ShowNotification("传送控制面板已加载", Color3.fromRGB(0, 150, 255))
 
 print("高级传送UI已加载完成")
 print("功能: 开始传送 | 切换目标 | 停止传送 | 防甩模式 | 穿墙视野 | 环绕传送 | 最小化")
+print("新增: 滚动界面 | 直接数字输入")
