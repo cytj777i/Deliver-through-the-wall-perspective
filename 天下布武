@@ -1,4 +1,4 @@
--- Roblox手机端传送控制脚本 (优化版 - 紧凑UI + 改进功能)
+-- Roblox手机端传送控制脚本 (优化版 - 紧凑UI + 改进功能 + Touch Fling整合)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -21,12 +21,9 @@ local Teleport = {
     HorizontalSpeed = 2,
     HorizontalAngle = 0,
     
-    -- 甩飞功能
-    ThrowForce = 50,
-    ThrowActive = false,
-    ThrowTargetPlayer = nil,
-    LastThrowTime = 0,
-    ThrowConnection = nil
+    -- Touch Fling 功能
+    TouchFlingActive = false,
+    TouchFlingTarget = nil
 }
 
 -- 创建通知系统
@@ -82,7 +79,7 @@ ScreenGui.ResetOnSpawn = false
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Parent = ScreenGui
-MainFrame.Size = UDim2.new(0, 180, 0, 280) -- 缩小UI高度
+MainFrame.Size = UDim2.new(0, 180, 0, 280)
 MainFrame.Position = UDim2.new(0.5, -90, 0.5, -140)
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
 MainFrame.Active = true
@@ -177,7 +174,7 @@ ScrollFrame.Position = UDim2.new(0, 6, 0, 32)
 ScrollFrame.BackgroundTransparency = 1
 ScrollFrame.ScrollBarThickness = 4
 ScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(80, 120, 200)
-ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 480) -- 调整内容高度
+ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 480)
 
 -- 内容容器
 local Content = Instance.new("Frame")
@@ -315,16 +312,15 @@ SeparatorLabel2.Parent = Content
 SeparatorLabel2.Size = UDim2.new(1, 0, 0, 18)
 SeparatorLabel2.Position = UDim2.new(0, 0, 0, 308)
 SeparatorLabel2.BackgroundTransparency = 1
-SeparatorLabel2.Text = "甩飞设置"
+SeparatorLabel2.Text = "Touch Fling"
 SeparatorLabel2.TextColor3 = Color3.fromRGB(255, 160, 120)
 SeparatorLabel2.TextSize = 10
 SeparatorLabel2.Font = Enum.Font.GothamBold
 
--- 甩飞控制
-local ThrowTargetButton = CreateButton("选择甩飞目标", 331, false)
-local ThrowForceControl = CreateInputControl("甩飞力度:", 366, 150, 50, 99999)
-local ThrowToggleButton = CreateButton("开启持续甩飞", 396, true)
-local DeleteUIButton = CreateButton("删除UI", 431, false)
+-- Touch Fling 控制
+local TouchFlingTargetButton = CreateButton("选择Fling目标", 331, false)
+local TouchFlingToggleButton = CreateButton("开启Touch Fling", 366, true)
+local DeleteUIButton = CreateButton("删除UI", 401, false)
 
 -- 更新按钮状态
 local function UpdateButtonState(buttonName, isActive)
@@ -698,88 +694,120 @@ local function ParallelOrbitRoutine()
     end
 end
 
--- 改进甩飞功能 - 持续多重方向高速撞击
-local function ThrowRoutine()
-    if not Teleport.ThrowActive or not Teleport.ThrowTargetPlayer then return end
+-- Touch Fling 功能 (原样整合)
+local function CreateTouchFlingUI()
+    local TouchFlingGui = Instance.new("ScreenGui")
+    local Frame = Instance.new("Frame")
+    local Frame_2 = Instance.new("Frame")
+    local TextLabel = Instance.new("TextLabel")
+    local TextButton = Instance.new("TextButton")
 
-    local target = Teleport.ThrowTargetPlayer
-    local targetChar = target.Character
-    if not targetChar then return end
+    --Properties:
+    TouchFlingGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+    TouchFlingGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    TouchFlingGui.ResetOnSpawn = false
 
-    local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
-    if not targetRoot then return end
+    Frame.Parent = TouchFlingGui
+    Frame.BackgroundColor3 = Color3.fromRGB(34, 34, 34)
+    Frame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    Frame.BorderSizePixel = 0
+    Frame.Position = UDim2.new(0.388539821, 0, 0.427821517, 0)
+    Frame.Size = UDim2.new(0, 158, 0, 110)
 
-    -- 随机生成多个方向的力
-    local randomDirections = {
-        Vector3.new(math.random() - 0.5, math.random() * 0.8 + 0.2, math.random() - 0.5),
-        Vector3.new(math.random() - 0.5, math.random() * 0.8 + 0.2, math.random() - 0.5),
-        Vector3.new(math.random() - 0.5, math.random() * 0.8 + 0.2, math.random() - 0.5)
-    }
-    
-    -- 对每个方向施加力
-    for _, direction in ipairs(randomDirections) do
-        local bodyVelocity = Instance.new("BodyVelocity")
-        bodyVelocity.Velocity = direction.Unit * Teleport.ThrowForce
-        bodyVelocity.MaxForce = Vector3.new(400000, 400000, 400000) -- 增加力度
-        bodyVelocity.Parent = targetRoot
+    Frame_2.Parent = Frame
+    Frame_2.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    Frame_2.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    Frame_2.BorderSizePixel = 0
+    Frame_2.Size = UDim2.new(0, 158, 0, 25)
+
+    TextLabel.Parent = Frame_2
+    TextLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    TextLabel.BackgroundTransparency = 1.000
+    TextLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    TextLabel.BorderSizePixel = 0
+    TextLabel.Position = UDim2.new(0.112792775, 0, -0.0151660154, 0)
+    TextLabel.Size = UDim2.new(0, 121, 0, 26)
+    TextLabel.Font = Enum.Font.Sarpanch
+    TextLabel.Text = "Touch Fling"
+    TextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TextLabel.TextSize = 25.000
+
+    TextButton.Parent = Frame
+    TextButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    TextButton.BorderColor3 = Color3.fromRGB(255, 255, 255)
+    TextButton.BorderSizePixel = 0
+    TextButton.Position = UDim2.new(0.113924049, 0, 0.418181807, 0)
+    TextButton.Size = UDim2.new(0, 121, 0, 37)
+    TextButton.Font = Enum.Font.SourceSansItalic
+    TextButton.Text = "OFF"
+    TextButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+    TextButton.TextSize = 20.000
+
+    -- Scripts:
+    local function IIMAWH_fake_script() -- TextButton.LocalScript 
+        local script = Instance.new('LocalScript', TextButton)
+
+        local ReplicatedStorage = game:GetService("ReplicatedStorage")
+        local RunService = game:GetService("RunService")
+        local Players = game:GetService("Players")
         
-        -- 添加旋转效果
-        local bodyAngularVelocity = Instance.new("BodyAngularVelocity")
-        bodyAngularVelocity.AngularVelocity = Vector3.new(
-            (math.random() - 0.5) * Teleport.ThrowForce * 2,
-            (math.random() - 0.5) * Teleport.ThrowForce * 2,
-            (math.random() - 0.5) * Teleport.ThrowForce * 2
-        )
-        bodyAngularVelocity.MaxTorque = Vector3.new(100000, 100000, 100000) -- 增加扭矩
-        bodyAngularVelocity.Parent = targetRoot
+        local toggleButton = script.Parent
+        local hiddenfling = false
+        local flingThread 
+        if not ReplicatedStorage:FindFirstChild("juisdfj0i32i0eidsuf0iok") then
+            local detection = Instance.new("Decal")
+            detection.Name = "juisdfj0i32i0eidsuf0iok"
+            detection.Parent = ReplicatedStorage
+        end
         
-        -- 短暂延迟后移除效果
-        delay(0.3, function()
-            if bodyVelocity and bodyVelocity.Parent then
-                bodyVelocity:Destroy()
+        local function fling()
+            local lp = Players.LocalPlayer
+            local c, hrp, vel, movel = nil, nil, nil, 0.1
+        
+            while hiddenfling do
+                RunService.Heartbeat:Wait()
+                c = lp.Character
+                hrp = c and c:FindFirstChild("HumanoidRootPart")
+        
+                if hrp then
+                    vel = hrp.Velocity
+                    hrp.Velocity = vel * 10000 + Vector3.new(0, 10000, 0)
+                    RunService.RenderStepped:Wait()
+                    hrp.Velocity = vel
+                    RunService.Stepped:Wait()
+                    hrp.Velocity = vel + Vector3.new(0, movel, 0)
+                    movel = -movel
+                end
             end
-            if bodyAngularVelocity and bodyAngularVelocity.Parent then
-                bodyAngularVelocity:Destroy()
+        end
+        
+        toggleButton.MouseButton1Click:Connect(function()
+            hiddenfling = not hiddenfling
+            toggleButton.Text = hiddenfling and "ON" or "OFF"
+        
+            if hiddenfling then
+                flingThread = coroutine.create(fling)
+                coroutine.resume(flingThread)
+            else
+                hiddenfling = false
             end
         end)
+        
     end
+    coroutine.wrap(IIMAWH_fake_script)()
+    local function QCJQJL_fake_script() -- Frame.LocalScript 
+        local script = Instance.new('LocalScript', Frame)
+
+        script.Parent.Active = true
+        script.Parent.Draggable = true
+    end
+    coroutine.wrap(QCJQJL_fake_script)()
+
+    return TouchFlingGui
 end
 
--- 开始持续甩飞
-local function StartContinuousThrow()
-    if not Teleport.ThrowTargetPlayer then
-        ShowNotification("请先选择甩飞目标", Color3.fromRGB(255, 150, 0))
-        return
-    end
-
-    Teleport.ThrowActive = true
-    Teleport.ThrowConnection = RunService.Heartbeat:Connect(function()
-        ThrowRoutine()
-        task.wait(0.1) -- 每0.1秒执行一次甩飞
-    end)
-
-    UpdateButtonState("开启持续甩飞", true)
-    ShowNotification("持续甩飞已启动 - 目标: "..Teleport.ThrowTargetPlayer.Name, Color3.fromRGB(255, 100, 0))
-end
-
--- 停止持续甩飞
-local function StopContinuousThrow()
-    if not Teleport.ThrowActive then
-        ShowNotification("甩飞未启动", Color3.fromRGB(255, 150, 0))
-        return
-    end
-
-    Teleport.ThrowActive = false
-    if Teleport.ThrowConnection then
-        Teleport.ThrowConnection:Disconnect()
-    end
-
-    UpdateButtonState("开启持续甩飞", false)
-    ShowNotification("持续甩飞已停止", Color3.fromRGB(255, 100, 0))
-end
-
--- 选择甩飞目标
-local function SelectThrowTarget()
+-- 选择Touch Fling目标
+local function SelectTouchFlingTarget()
     Teleport.PlayerList = GetAllPlayers()
 
     if #Teleport.PlayerList == 0 then
@@ -787,42 +815,51 @@ local function SelectThrowTarget()
         return
     end
 
-    -- 如果没有当前甩飞目标，从最近玩家开始
-    if not Teleport.ThrowTargetPlayer then
-        Teleport.ThrowTargetPlayer = FindNearestPlayer()
-        if Teleport.ThrowTargetPlayer then
-            ShowNotification("甩飞目标: "..Teleport.ThrowTargetPlayer.Name, Color3.fromRGB(255, 150, 0))
+    -- 如果没有当前目标，从最近玩家开始
+    if not Teleport.TouchFlingTarget then
+        Teleport.TouchFlingTarget = FindNearestPlayer()
+        if Teleport.TouchFlingTarget then
+            ShowNotification("Touch Fling目标: "..Teleport.TouchFlingTarget.Name, Color3.fromRGB(255, 150, 0))
             return
         end
     end
 
-    -- 循环选择下一个玩家作为甩飞目标
+    -- 循环选择下一个玩家作为目标
     local currentIndex = 1
     for i, player in ipairs(Teleport.PlayerList) do
-        if player == Teleport.ThrowTargetPlayer then
+        if player == Teleport.TouchFlingTarget then
             currentIndex = i
             break
         end
     end
 
     local nextIndex = currentIndex % #Teleport.PlayerList + 1
-    Teleport.ThrowTargetPlayer = Teleport.PlayerList[nextIndex]
+    Teleport.TouchFlingTarget = Teleport.PlayerList[nextIndex]
 
-    ShowNotification("甩飞目标: "..Teleport.ThrowTargetPlayer.Name, Color3.fromRGB(255, 150, 0))
+    ShowNotification("Touch Fling目标: "..Teleport.TouchFlingTarget.Name, Color3.fromRGB(255, 150, 0))
 end
 
--- 切换持续甩飞
-local function ToggleContinuousThrow()
-    if Teleport.ThrowActive then
-        StopContinuousThrow()
+-- 开启/关闭Touch Fling UI
+local TouchFlingGUI = nil
+local function ToggleTouchFling()
+    if TouchFlingGUI then
+        TouchFlingGUI:Destroy()
+        TouchFlingGUI = nil
+        UpdateButtonState("开启Touch Fling", false)
+        ShowNotification("Touch Fling 已关闭", Color3.fromRGB(255, 100, 0))
     else
-        StartContinuousThrow()
+        TouchFlingGUI = CreateTouchFlingUI()
+        UpdateButtonState("开启Touch Fling", true)
+        ShowNotification("Touch Fling 已开启 - 使用独立界面控制", Color3.fromRGB(255, 150, 0))
     end
 end
 
 -- 删除UI
 local function DeleteUI()
     ScreenGui:Destroy()
+    if TouchFlingGUI then
+        TouchFlingGUI:Destroy()
+    end
     ShowNotification("UI界面已删除", Color3.fromRGB(255, 100, 0))
 end
 
@@ -853,11 +890,6 @@ end
 
 -- 防甩飞切换
 local function ToggleAntiThrow()
-    if Teleport.ThrowActive then
-        ShowNotification("甩飞功能开启时无法启用防甩飞", Color3.fromRGB(255, 150, 0))
-        return
-    end
-    
     Teleport.AntiThrow = not Teleport.AntiThrow
     AntiThrowButton.Text = Teleport.AntiThrow and "防甩飞: 开启" or "防甩飞: 关闭"
     UpdateButtonState("防甩飞: 开启", Teleport.AntiThrow)
@@ -959,8 +991,8 @@ StopButton.MouseButton1Click:Connect(StopTeleport)
 AntiThrowButton.MouseButton1Click:Connect(ToggleAntiThrow)
 WallVisionButton.MouseButton1Click:Connect(ToggleWallVision)
 ParallelOrbitButton.MouseButton1Click:Connect(ToggleParallelOrbit)
-ThrowTargetButton.MouseButton1Click:Connect(SelectThrowTarget)
-ThrowToggleButton.MouseButton1Click:Connect(ToggleContinuousThrow)
+TouchFlingTargetButton.MouseButton1Click:Connect(SelectTouchFlingTarget)
+TouchFlingToggleButton.MouseButton1Click:Connect(ToggleTouchFling)
 DeleteUIButton.MouseButton1Click:Connect(DeleteUI)
 
 -- 控制项事件
@@ -977,14 +1009,6 @@ OrbitSpeedControl.Box.MouseButton1Click:Connect(function()
         OrbitSpeedControl.Value = newValue
         OrbitSpeedControl.Box.Text = tostring(newValue)
         Teleport.HorizontalSpeed = newValue
-    end)
-end)
-
-ThrowForceControl.Box.MouseButton1Click:Connect(function()
-    CreateNumberInputPopup(ThrowForceControl.Value, ThrowForceControl.Min, ThrowForceControl.Max, function(newValue)
-        ThrowForceControl.Value = newValue
-        ThrowForceControl.Box.Text = tostring(newValue)
-        Teleport.ThrowForce = newValue
     end)
 end)
 
@@ -1013,9 +1037,6 @@ Players.LocalPlayer.CharacterAdded:Connect(function(char)
         if Teleport.HorizontalOrbitActive then
             StopParallelOrbit()
         end
-        if Teleport.ThrowActive then
-            StopContinuousThrow()
-        end
     end)
 end)
 
@@ -1023,11 +1044,11 @@ end)
 UpdateButtonState("防甩飞: 开启", Teleport.AntiThrow)
 UpdateButtonState("穿墙视野", Teleport.WallVision)
 UpdateButtonState("平行环绕", false)
-UpdateButtonState("开启持续甩飞", Teleport.ThrowActive)
+UpdateButtonState("开启Touch Fling", false)
 
 -- 显示启动通知
 ShowNotification("传送控制面板已加载", Color3.fromRGB(0, 150, 255))
 
 print("紧凑传送UI已加载完成")
-print("功能: 开始传送 | 选择玩家 | 停止传送 | 防甩飞 | 穿墙视野 | 平行环绕 | 持续甩飞 | 删除UI")
-print("特性: 紧凑UI设计 | 改进甩飞机制 | 优化平行环绕 | 地面检测 | 持续多重方向甩飞")
+print("功能: 开始传送 | 选择玩家 | 停止传送 | 防甩飞 | 穿墙视野 | 平行环绕 | Touch Fling | 删除UI")
+print("特性: 紧凑UI设计 | 改进平行环绕 | 地面检测 | 原版Touch Fling整合")
