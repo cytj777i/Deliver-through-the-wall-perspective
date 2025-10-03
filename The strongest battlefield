@@ -16,7 +16,13 @@ local Teleport = {
     BodyForce = nil,
     LastPosition = nil,
     WallVision = false,
-    OriginalTransparency = {}
+    OriginalTransparency = {},
+    -- 新增环绕传送变量
+    OrbitActive = false,
+    OrbitConnection = nil,
+    OrbitRadius = 10,  -- 默认环绕半径
+    OrbitSpeed = 2,    -- 默认环绕速度
+    OrbitAngle = 0     -- 当前角度
 }
 
 -- 创建通知系统
@@ -71,8 +77,8 @@ ScreenGui.Name = "AdvancedTeleportUI"
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Parent = ScreenGui
-MainFrame.Size = UDim2.new(0, 180, 0, 220)
-MainFrame.Position = UDim2.new(0.5, -90, 0.5, -110)
+MainFrame.Size = UDim2.new(0, 180, 0, 290) -- 增加高度以容纳新按钮和控件
+MainFrame.Position = UDim2.new(0.5, -90, 0.5, -145)
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
 MainFrame.Active = true
 MainFrame.Draggable = true
@@ -207,12 +213,86 @@ local function CreateButton(name, yPosition, hasIndicator)
     return Button
 end
 
+-- 创建半径和速度控制
+local function CreateControl(label, yPosition, defaultValue, minValue, maxValue)
+    local ControlFrame = Instance.new("Frame")
+    ControlFrame.Size = UDim2.new(1, 0, 0, 25)
+    ControlFrame.Position = UDim2.new(0, 0, 0, yPosition)
+    ControlFrame.BackgroundTransparency = 1
+    ControlFrame.Parent = Content
+    
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(0.4, 0, 1, 0)
+    Label.Position = UDim2.new(0, 0, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.Text = label
+    Label.TextColor3 = Color3.fromRGB(180, 200, 255)
+    Label.TextSize = 11
+    Label.Font = Enum.Font.Gotham
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = ControlFrame
+    
+    local DecreaseButton = Instance.new("TextButton")
+    DecreaseButton.Size = UDim2.new(0, 20, 1, 0)
+    DecreaseButton.Position = UDim2.new(0.4, 0, 0, 0)
+    DecreaseButton.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+    DecreaseButton.Text = "-"
+    DecreaseButton.TextColor3 = Color3.fromRGB(220, 220, 255)
+    DecreaseButton.TextSize = 14
+    DecreaseButton.Font = Enum.Font.GothamBold
+    DecreaseButton.Parent = ControlFrame
+    
+    local IncreaseButton = Instance.new("TextButton")
+    IncreaseButton.Size = UDim2.new(0, 20, 1, 0)
+    IncreaseButton.Position = UDim2.new(0.6, 0, 0, 0)
+    IncreaseButton.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+    IncreaseButton.Text = "+"
+    IncreaseButton.TextColor3 = Color3.fromRGB(220, 220, 255)
+    IncreaseButton.TextSize = 14
+    IncreaseButton.Font = Enum.Font.GothamBold
+    IncreaseButton.Parent = ControlFrame
+    
+    local ValueDisplay = Instance.new("TextLabel")
+    ValueDisplay.Size = UDim2.new(0.2, 0, 1, 0)
+    ValueDisplay.Position = UDim2.new(0.8, 0, 0, 0)
+    ValueDisplay.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+    ValueDisplay.Text = tostring(defaultValue)
+    ValueDisplay.TextColor3 = Color3.fromRGB(0, 200, 255)
+    ValueDisplay.TextSize = 11
+    ValueDisplay.Font = Enum.Font.Gotham
+    ValueDisplay.Parent = ControlFrame
+    
+    local ValueCorner = Instance.new("UICorner")
+    ValueCorner.Parent = ValueDisplay
+    ValueCorner.CornerRadius = UDim.new(0, 4)
+    
+    local ValueStroke = Instance.new("UIStroke")
+    ValueStroke.Parent = ValueDisplay
+    ValueStroke.Color = Color3.fromRGB(80, 120, 200)
+    ValueStroke.Thickness = 1
+    
+    return {
+        Frame = ControlFrame,
+        Decrease = DecreaseButton,
+        Increase = IncreaseButton,
+        Display = ValueDisplay,
+        Value = defaultValue,
+        Min = minValue,
+        Max = maxValue
+    }
+end
+
 -- 创建所有按钮
 local StartButton = CreateButton("开始传送", 0, false)
 local SwapButton = CreateButton("切换目标", 35, false)
 local StopButton = CreateButton("停止传送", 70, false)
 local AntiThrowButton = CreateButton("防甩模式", 105, true)
 local WallVisionButton = CreateButton("穿墙视野", 140, true)
+local OrbitButton = CreateButton("环绕传送", 175, true)
+
+-- 创建环绕控制
+local RadiusControl = CreateControl("半径:", 210, 10, 5, 50)
+local SpeedControl = CreateControl("速度:", 240, 2, 1, 10)
 
 -- 更新按钮状态
 local function UpdateButtonState(buttonName, isActive)
@@ -231,6 +311,11 @@ local function UpdateButtonState(buttonName, isActive)
     end
 end
 
+-- 更新控制显示
+local function UpdateControlDisplay(control)
+    control.Display.Text = tostring(control.Value)
+end
+
 -- 最小化功能
 local minimized = false
 MinimizeButton.MouseButton1Click:Connect(function()
@@ -245,7 +330,7 @@ MinimizeButton.MouseButton1Click:Connect(function()
         Glow.Visible = false
     else
         -- 恢复正常状态
-        MainFrame:TweenSize(UDim2.new(0, 180, 0, 220), "Out", "Quad", 0.3, true)
+        MainFrame:TweenSize(UDim2.new(0, 180, 0, 290), "Out", "Quad", 0.3, true)
         MinimizeButton.Text = "-"
         Content.Visible = true
         
@@ -365,6 +450,40 @@ local function TeleportRoutine()
     end
 end
 
+-- 环绕传送逻辑
+local function OrbitRoutine()
+    if not Teleport.OrbitActive then return end
+
+    local myChar = Players.LocalPlayer.Character
+    local targetChar = Teleport.Target and Teleport.Target.Character
+
+    if not myChar or not targetChar then
+        StopOrbit()
+        return
+    end
+
+    local myRoot = myChar:FindFirstChild("HumanoidRootPart")
+    local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
+
+    if myRoot and targetRoot then
+        -- 设置零重力防止掉落
+        SetZeroGravity(myChar)
+
+        -- 计算环绕位置
+        Teleport.OrbitAngle = Teleport.OrbitAngle + Teleport.OrbitSpeed * 0.1
+        
+        local radius = Teleport.OrbitRadius
+        local x = targetRoot.Position.X + math.cos(Teleport.OrbitAngle) * radius
+        local z = targetRoot.Position.Z + math.sin(Teleport.OrbitAngle) * radius
+        local y = targetRoot.Position.Y + 2  -- 稍微高于目标
+        
+        local newPos = Vector3.new(x, y, z)
+        
+        -- 设置位置并面向目标
+        myRoot.CFrame = CFrame.new(newPos, targetRoot.Position)
+    end
+end
+
 -- 视野穿墙模式
 local function ToggleWallVision()
     Teleport.WallVision = not Teleport.WallVision
@@ -440,8 +559,8 @@ end
 
 -- 切换目标
 local function SwapTarget()
-    if not Teleport.Active then
-        ShowNotification("请先启动传送", Color3.fromRGB(255, 150, 0))
+    if not Teleport.Active and not Teleport.OrbitActive then
+        ShowNotification("请先启动传送或环绕", Color3.fromRGB(255, 150, 0))
         return
     end
 
@@ -487,12 +606,92 @@ local function StopTeleport()
     Status.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
 end
 
+-- 开始环绕传送
+local function StartOrbit()
+    if Teleport.OrbitActive then return end
+
+    Teleport.PlayerList = GetAllPlayers()
+    Teleport.Target = FindNearestPlayer()
+
+    if not Teleport.Target then
+        ShowNotification("未找到目标玩家", Color3.fromRGB(255, 50, 50))
+        return
+    end
+
+    Teleport.OrbitActive = true
+    Teleport.OrbitAngle = 0
+    Teleport.OrbitConnection = RunService.Heartbeat:Connect(function()
+        OrbitRoutine()
+        task.wait(0.001)
+    end)
+
+    UpdateButtonState("环绕传送", true)
+    ShowNotification("环绕传送已启动 - 目标: "..Teleport.Target.Name, Color3.fromRGB(0, 200, 255))
+    Status.BackgroundColor3 = Color3.fromRGB(0, 200, 255)
+end
+
+-- 停止环绕传送
+local function StopOrbit()
+    if not Teleport.OrbitActive then
+        ShowNotification("环绕传送未启动", Color3.fromRGB(255, 150, 0))
+        return
+    end
+
+    Teleport.OrbitActive = false
+    if Teleport.OrbitConnection then
+        Teleport.OrbitConnection:Disconnect()
+    end
+
+    -- 移除零重力
+    RemoveZeroGravity()
+
+    UpdateButtonState("环绕传送", false)
+    ShowNotification("环绕传送已停止", Color3.fromRGB(255, 100, 0))
+    Status.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+end
+
+-- 切换环绕传送
+local function ToggleOrbit()
+    if Teleport.OrbitActive then
+        StopOrbit()
+    else
+        StartOrbit()
+    end
+end
+
 -- 按钮点击事件
 StartButton.MouseButton1Click:Connect(StartTeleport)
 SwapButton.MouseButton1Click:Connect(SwapTarget)
 StopButton.MouseButton1Click:Connect(StopTeleport)
 AntiThrowButton.MouseButton1Click:Connect(ToggleAntiThrow)
 WallVisionButton.MouseButton1Click:Connect(ToggleWallVision)
+OrbitButton.MouseButton1Click:Connect(ToggleOrbit)
+
+-- 半径控制事件
+RadiusControl.Decrease.MouseButton1Click:Connect(function()
+    RadiusControl.Value = math.max(RadiusControl.Min, RadiusControl.Value - 1)
+    Teleport.OrbitRadius = RadiusControl.Value
+    UpdateControlDisplay(RadiusControl)
+end)
+
+RadiusControl.Increase.MouseButton1Click:Connect(function()
+    RadiusControl.Value = math.min(RadiusControl.Max, RadiusControl.Value + 1)
+    Teleport.OrbitRadius = RadiusControl.Value
+    UpdateControlDisplay(RadiusControl)
+end)
+
+-- 速度控制事件
+SpeedControl.Decrease.MouseButton1Click:Connect(function()
+    SpeedControl.Value = math.max(SpeedControl.Min, SpeedControl.Value - 0.5)
+    Teleport.OrbitSpeed = SpeedControl.Value
+    UpdateControlDisplay(SpeedControl)
+end)
+
+SpeedControl.Increase.MouseButton1Click:Connect(function()
+    SpeedControl.Value = math.min(SpeedControl.Max, SpeedControl.Value + 0.5)
+    Teleport.OrbitSpeed = SpeedControl.Value
+    UpdateControlDisplay(SpeedControl)
+end)
 
 -- 玩家加入/离开事件
 Players.PlayerAdded:Connect(function(player)
@@ -516,10 +715,13 @@ Players.LocalPlayer.CharacterAdded:Connect(function(char)
         if Teleport.Active then
             StopTeleport()
         end
+        if Teleport.OrbitActive then
+            StopOrbit()
+        end
     end)
 
     -- 角色重生时重新应用零重力
-    if Teleport.Active then
+    if Teleport.Active or Teleport.OrbitActive then
         wait(1)
         SetZeroGravity(char)
     end
@@ -529,4 +731,4 @@ end)
 ShowNotification("传送控制面板已加载", Color3.fromRGB(0, 150, 255))
 
 print("高级传送UI已加载完成")
-print("功能: 开始传送 | 切换目标 | 停止传送 | 防甩模式 | 穿墙视野 | 最小化")
+print("功能: 开始传送 | 切换目标 | 停止传送 | 防甩模式 | 穿墙视野 | 环绕传送 | 最小化")
