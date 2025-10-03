@@ -1,4 +1,4 @@
--- Roblox手机端传送控制脚本 (优化版 - 紧凑UI + 改进功能)
+-- Roblox手机端传送控制脚本 (最终优化版)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -10,6 +10,7 @@ local Teleport = {
     Target = nil,
     Connection = nil,
     PlayerList = {},
+    NPCTarget = nil,
     AntiThrow = true,
     WallVision = false,
     OriginalTransparency = {},
@@ -81,8 +82,8 @@ ScreenGui.ResetOnSpawn = false
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Parent = ScreenGui
-MainFrame.Size = UDim2.new(0, 180, 0, 400) -- 缩小宽度和高度
-MainFrame.Position = UDim2.new(0.5, -90, 0.5, -200)
+MainFrame.Size = UDim2.new(0, 160, 0, 380) -- 进一步缩小
+MainFrame.Position = UDim2.new(0.5, -80, 0.5, -190)
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
 MainFrame.Active = true
 MainFrame.Draggable = true
@@ -114,7 +115,7 @@ Stroke.Transparency = 0.3
 -- 标题栏
 local Header = Instance.new("Frame")
 Header.Parent = MainFrame
-Header.Size = UDim2.new(1, 0, 0, 28) -- 缩小标题栏
+Header.Size = UDim2.new(1, 0, 0, 25) -- 缩小标题栏
 Header.Position = UDim2.new(0, 0, 0, 0)
 Header.BackgroundColor3 = Color3.fromRGB(25, 25, 40)
 Header.BackgroundTransparency = 0.1
@@ -131,14 +132,14 @@ Title.Position = UDim2.new(0, 8, 0, 0)
 Title.BackgroundTransparency = 1
 Title.Text = "传送控制"
 Title.TextColor3 = Color3.fromRGB(180, 200, 255)
-Title.TextSize = 12 -- 缩小字体
+Title.TextSize = 11 -- 缩小字体
 Title.Font = Enum.Font.GothamBold
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
 -- 状态指示器
 local Status = Instance.new("Frame")
 Status.Parent = Header
-Status.Size = UDim2.new(0, 6, 0, 6) -- 缩小指示器
+Status.Size = UDim2.new(0, 6, 0, 6)
 Status.Position = UDim2.new(1, -35, 0.5, -3)
 Status.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
 Status.BorderSizePixel = 0
@@ -150,13 +151,13 @@ StatusCorner.CornerRadius = UDim.new(1, 0)
 -- 最小化按钮
 local MinimizeButton = Instance.new("TextButton")
 MinimizeButton.Parent = Header
-MinimizeButton.Size = UDim2.new(0, 22, 0, 22) -- 缩小按钮
-MinimizeButton.Position = UDim2.new(1, -25, 0.5, -11)
+MinimizeButton.Size = UDim2.new(0, 20, 0, 20)
+MinimizeButton.Position = UDim2.new(1, -25, 0.5, -10)
 MinimizeButton.BackgroundColor3 = Color3.fromRGB(50, 50, 80)
 MinimizeButton.BackgroundTransparency = 0.2
 MinimizeButton.Text = "-"
 MinimizeButton.TextColor3 = Color3.fromRGB(220, 220, 255)
-MinimizeButton.TextSize = 14 -- 缩小字体
+MinimizeButton.TextSize = 13
 MinimizeButton.Font = Enum.Font.GothamBold
 
 local MinimizeCorner = Instance.new("UICorner")
@@ -171,30 +172,30 @@ MinimizeStroke.Thickness = 1
 -- 滚动框架
 local ScrollFrame = Instance.new("ScrollingFrame")
 ScrollFrame.Parent = MainFrame
-ScrollFrame.Size = UDim2.new(1, -12, 1, -40) -- 调整内边距
-ScrollFrame.Position = UDim2.new(0, 6, 0, 32)
+ScrollFrame.Size = UDim2.new(1, -10, 1, -35)
+ScrollFrame.Position = UDim2.new(0, 5, 0, 28)
 ScrollFrame.BackgroundTransparency = 1
-ScrollFrame.ScrollBarThickness = 4 -- 缩小滚动条
+ScrollFrame.ScrollBarThickness = 3
 ScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(80, 120, 200)
-ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 650) -- 调整内容高度
+ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 620)
 
 -- 内容容器
 local Content = Instance.new("Frame")
 Content.Parent = ScrollFrame
-Content.Size = UDim2.new(1, 0, 0, 650)
+Content.Size = UDim2.new(1, 0, 0, 620)
 Content.BackgroundTransparency = 1
 
 -- 创建紧凑功能按钮
 local function CreateButton(name, yPosition, hasIndicator)
     local Button = Instance.new("TextButton")
     Button.Name = name
-    Button.Size = UDim2.new(1, 0, 0, 30) -- 缩小按钮高度
+    Button.Size = UDim2.new(1, 0, 0, 28) -- 缩小按钮高度
     Button.Position = UDim2.new(0, 0, 0, yPosition)
     Button.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
     Button.BackgroundTransparency = 0.2
     Button.TextColor3 = Color3.fromRGB(220, 220, 255)
     Button.Text = name
-    Button.TextSize = 11 -- 缩小字体
+    Button.TextSize = 10 -- 缩小字体
     Button.Font = Enum.Font.Gotham
     Button.Parent = Content
     
@@ -210,7 +211,7 @@ local function CreateButton(name, yPosition, hasIndicator)
     if hasIndicator then
         local Indicator = Instance.new("Frame")
         Indicator.Name = "Indicator"
-        Indicator.Size = UDim2.new(0, 6, 0, 6) -- 缩小指示器
+        Indicator.Size = UDim2.new(0, 6, 0, 6)
         Indicator.Position = UDim2.new(1, -10, 0.5, -3)
         Indicator.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
         Indicator.BorderSizePixel = 0
@@ -227,7 +228,7 @@ end
 -- 创建紧凑输入控件
 local function CreateInputControl(label, yPosition, defaultValue, minValue, maxValue)
     local ControlFrame = Instance.new("Frame")
-    ControlFrame.Size = UDim2.new(1, 0, 0, 25) -- 缩小控件高度
+    ControlFrame.Size = UDim2.new(1, 0, 0, 23) -- 缩小控件高度
     ControlFrame.Position = UDim2.new(0, 0, 0, yPosition)
     ControlFrame.BackgroundTransparency = 1
     ControlFrame.Parent = Content
@@ -238,7 +239,7 @@ local function CreateInputControl(label, yPosition, defaultValue, minValue, maxV
     Label.BackgroundTransparency = 1
     Label.Text = label
     Label.TextColor3 = Color3.fromRGB(180, 200, 255)
-    Label.TextSize = 10 -- 缩小字体
+    Label.TextSize = 9 -- 缩小字体
     Label.Font = Enum.Font.Gotham
     Label.TextXAlignment = Enum.TextXAlignment.Left
     Label.Parent = ControlFrame
@@ -249,7 +250,7 @@ local function CreateInputControl(label, yPosition, defaultValue, minValue, maxV
     ValueBox.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
     ValueBox.Text = tostring(defaultValue)
     ValueBox.TextColor3 = Color3.fromRGB(0, 200, 255)
-    ValueBox.TextSize = 10 -- 缩小字体
+    ValueBox.TextSize = 9 -- 缩小字体
     ValueBox.Font = Enum.Font.Gotham
     ValueBox.Parent = ControlFrame
     
@@ -273,58 +274,78 @@ end
 
 -- 创建所有按钮和控件
 local StartButton = CreateButton("开始传送", 0, false)
-local PlayerSelectButton = CreateButton("选择玩家", 35, false)
-local StopButton = CreateButton("停止传送", 70, false)
-local AntiThrowButton = CreateButton("防甩飞: 开启", 105, true)
-local WallVisionButton = CreateButton("穿墙视野", 140, true)
-local ParallelOrbitButton = CreateButton("平行环绕", 175, true)
-local ThrowToggleButton = CreateButton("开启甩飞功能", 210, true)
-local ThrowTargetButton = CreateButton("选择甩飞目标", 245, false)
-local ThrowExecuteButton = CreateButton("执行甩飞", 280, false)
-local DeleteUIButton = CreateButton("删除UI", 315, false)
+local PlayerSelectButton = CreateButton("选择玩家", 32, false)
+local NPCSelectButton = CreateButton("选择NPC", 64, false)
+local StopButton = CreateButton("停止传送", 96, false)
+local AntiThrowButton = CreateButton("防甩飞: 开启", 128, true)
+local WallVisionButton = CreateButton("穿墙视野", 160, true)
+local ParallelOrbitButton = CreateButton("平行环绕", 192, true)
 
 -- 分隔线1
 local Separator1 = Instance.new("Frame")
 Separator1.Parent = Content
 Separator1.Size = UDim2.new(1, 0, 0, 1)
-Separator1.Position = UDim2.new(0, 0, 0, 350)
+Separator1.Position = UDim2.new(0, 0, 0, 224)
 Separator1.BackgroundColor3 = Color3.fromRGB(60, 120, 255)
 Separator1.BackgroundTransparency = 0.5
 
 local SeparatorLabel1 = Instance.new("TextLabel")
 SeparatorLabel1.Parent = Content
-SeparatorLabel1.Size = UDim2.new(1, 0, 0, 18) -- 缩小标签高度
-SeparatorLabel1.Position = UDim2.new(0, 0, 0, 355)
+SeparatorLabel1.Size = UDim2.new(1, 0, 0, 16)
+SeparatorLabel1.Position = UDim2.new(0, 0, 0, 228)
 SeparatorLabel1.BackgroundTransparency = 1
 SeparatorLabel1.Text = "环绕设置"
 SeparatorLabel1.TextColor3 = Color3.fromRGB(120, 160, 255)
-SeparatorLabel1.TextSize = 10 -- 缩小字体
+SeparatorLabel1.TextSize = 9
 SeparatorLabel1.Font = Enum.Font.GothamBold
 
 -- 环绕控制
-local RadiusControl = CreateInputControl("环绕半径:", 378, 10, 5, 50)
-local OrbitSpeedControl = CreateInputControl("环绕速度:", 408, 2, 0.5, 10)
+local RadiusControl = CreateInputControl("环绕半径:", 248, 10, 5, 50)
+local OrbitSpeedControl = CreateInputControl("环绕速度:", 275, 2, 0.5, 10)
 
 -- 分隔线2
 local Separator2 = Instance.new("Frame")
 Separator2.Parent = Content
 Separator2.Size = UDim2.new(1, 0, 0, 1)
-Separator2.Position = UDim2.new(0, 0, 0, 443)
+Separator2.Position = UDim2.new(0, 0, 0, 302)
 Separator2.BackgroundColor3 = Color3.fromRGB(255, 120, 60)
 Separator2.BackgroundTransparency = 0.5
 
 local SeparatorLabel2 = Instance.new("TextLabel")
 SeparatorLabel2.Parent = Content
-SeparatorLabel2.Size = UDim2.new(1, 0, 0, 18)
-SeparatorLabel2.Position = UDim2.new(0, 0, 0, 448)
+SeparatorLabel2.Size = UDim2.new(1, 0, 0, 16)
+SeparatorLabel2.Position = UDim2.new(0, 0, 0, 306)
 SeparatorLabel2.BackgroundTransparency = 1
 SeparatorLabel2.Text = "甩飞设置"
 SeparatorLabel2.TextColor3 = Color3.fromRGB(255, 160, 120)
-SeparatorLabel2.TextSize = 10
+SeparatorLabel2.TextSize = 9
 SeparatorLabel2.Font = Enum.Font.GothamBold
 
--- 甩飞控制
-local ThrowForceControl = CreateInputControl("甩飞力度:", 471, 50, 10, 99999) -- 提高上限到99999
+-- 甩飞功能按钮
+local ThrowToggleButton = CreateButton("开启甩飞功能", 326, true)
+local ThrowTargetButton = CreateButton("选择甩飞目标", 358, false)
+local ThrowExecuteButton = CreateButton("执行甩飞", 390, false)
+local ThrowForceControl = CreateInputControl("甩飞力度:", 422, 50, 10, 99999)
+
+-- 分隔线3
+local Separator3 = Instance.new("Frame")
+Separator3.Parent = Content
+Separator3.Size = UDim2.new(1, 0, 0, 1)
+Separator3.Position = UDim2.new(0, 0, 0, 454)
+Separator3.BackgroundColor3 = Color3.fromRGB(120, 255, 80)
+Separator3.BackgroundTransparency = 0.5
+
+local SeparatorLabel3 = Instance.new("TextLabel")
+SeparatorLabel3.Parent = Content
+SeparatorLabel3.Size = UDim2.new(1, 0, 0, 16)
+SeparatorLabel3.Position = UDim2.new(0, 0, 0, 458)
+SeparatorLabel3.BackgroundTransparency = 1
+SeparatorLabel3.Text = "其他功能"
+SeparatorLabel3.TextColor3 = Color3.fromRGB(160, 255, 120)
+SeparatorLabel3.TextSize = 9
+SeparatorLabel3.Font = Enum.Font.GothamBold
+
+local DeleteUIButton = CreateButton("删除UI", 478, false)
 
 -- 更新按钮状态
 local function UpdateButtonState(buttonName, isActive)
@@ -350,8 +371,8 @@ local function CreateNumberInputPopup(currentValue, minValue, maxValue, callback
     
     local PopupFrame = Instance.new("Frame")
     PopupFrame.Parent = PopupGui
-    PopupFrame.Size = UDim2.new(0, 220, 0, 130) -- 缩小弹窗
-    PopupFrame.Position = UDim2.new(0.5, -110, 0.5, -65)
+    PopupFrame.Size = UDim2.new(0, 200, 0, 120)
+    PopupFrame.Position = UDim2.new(0.5, -100, 0.5, -60)
     PopupFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 35)
     PopupFrame.Active = true
     PopupFrame.Draggable = true
@@ -367,22 +388,22 @@ local function CreateNumberInputPopup(currentValue, minValue, maxValue, callback
     
     local Title = Instance.new("TextLabel")
     Title.Parent = PopupFrame
-    Title.Size = UDim2.new(1, -20, 0, 25)
+    Title.Size = UDim2.new(1, -20, 0, 20)
     Title.Position = UDim2.new(0, 10, 0, 8)
     Title.BackgroundTransparency = 1
     Title.Text = "输入数值 ("..minValue.."-"..maxValue..")"
     Title.TextColor3 = Color3.fromRGB(220, 220, 255)
-    Title.TextSize = 12 -- 缩小字体
+    Title.TextSize = 11
     Title.Font = Enum.Font.GothamBold
     
     local InputBox = Instance.new("TextBox")
     InputBox.Parent = PopupFrame
-    InputBox.Size = UDim2.new(1, -40, 0, 30)
-    InputBox.Position = UDim2.new(0, 20, 0, 40)
+    InputBox.Size = UDim2.new(1, -40, 0, 25)
+    InputBox.Position = UDim2.new(0, 20, 0, 35)
     InputBox.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
     InputBox.Text = tostring(currentValue)
     InputBox.TextColor3 = Color3.fromRGB(220, 220, 255)
-    InputBox.TextSize = 14
+    InputBox.TextSize = 12
     InputBox.Font = Enum.Font.Gotham
     InputBox.ClearTextOnFocus = false
     
@@ -397,12 +418,12 @@ local function CreateNumberInputPopup(currentValue, minValue, maxValue, callback
     
     local ConfirmButton = Instance.new("TextButton")
     ConfirmButton.Parent = PopupFrame
-    ConfirmButton.Size = UDim2.new(0, 70, 0, 25)
-    ConfirmButton.Position = UDim2.new(0.5, -80, 1, -40)
+    ConfirmButton.Size = UDim2.new(0, 60, 0, 22)
+    ConfirmButton.Position = UDim2.new(0.5, -70, 1, -35)
     ConfirmButton.BackgroundColor3 = Color3.fromRGB(40, 120, 80)
     ConfirmButton.Text = "确认"
     ConfirmButton.TextColor3 = Color3.fromRGB(220, 220, 255)
-    ConfirmButton.TextSize = 12
+    ConfirmButton.TextSize = 11
     ConfirmButton.Font = Enum.Font.Gotham
     
     local ConfirmCorner = Instance.new("UICorner")
@@ -411,12 +432,12 @@ local function CreateNumberInputPopup(currentValue, minValue, maxValue, callback
     
     local CancelButton = Instance.new("TextButton")
     CancelButton.Parent = PopupFrame
-    CancelButton.Size = UDim2.new(0, 70, 0, 25)
-    CancelButton.Position = UDim2.new(0.5, 10, 1, -40)
+    CancelButton.Size = UDim2.new(0, 60, 0, 22)
+    CancelButton.Position = UDim2.new(0.5, 10, 1, -35)
     CancelButton.BackgroundColor3 = Color3.fromRGB(120, 40, 40)
     CancelButton.Text = "取消"
     CancelButton.TextColor3 = Color3.fromRGB(220, 220, 255)
-    CancelButton.TextSize = 12
+    CancelButton.TextSize = 11
     CancelButton.Font = Enum.Font.Gotham
     
     local CancelCorner = Instance.new("UICorner")
@@ -465,12 +486,12 @@ local minimized = false
 MinimizeButton.MouseButton1Click:Connect(function()
     minimized = not minimized
     if minimized then
-        MainFrame:TweenSize(UDim2.new(0, 180, 0, 28), "Out", "Quad", 0.3, true)
+        MainFrame:TweenSize(UDim2.new(0, 160, 0, 25), "Out", "Quad", 0.3, true)
         MinimizeButton.Text = "+"
         ScrollFrame.Visible = false
         Glow.Visible = false
     else
-        MainFrame:TweenSize(UDim2.new(0, 180, 0, 400), "Out", "Quad", 0.3, true)
+        MainFrame:TweenSize(UDim2.new(0, 160, 0, 380), "Out", "Quad", 0.3, true)
         MinimizeButton.Text = "-"
         ScrollFrame.Visible = true
         Glow.Visible = true
@@ -488,8 +509,19 @@ local function GetAllPlayers()
     return players
 end
 
--- 寻找最近玩家
-local function FindNearestPlayer()
+-- 获取所有NPC
+local function GetAllNPCs()
+    local npcs = {}
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and not Players:GetPlayerFromCharacter(obj) then
+            table.insert(npcs, obj)
+        end
+    end
+    return npcs
+end
+
+-- 寻找最近目标
+local function FindNearestTarget(targetList)
     local nearest, minDist = nil, math.huge
     local myChar = Players.LocalPlayer.Character
     if not myChar then return end
@@ -497,110 +529,120 @@ local function FindNearestPlayer()
     local myRoot = myChar:FindFirstChild("HumanoidRootPart")
     if not myRoot then return end
 
-    for _, player in ipairs(Teleport.PlayerList) do
-        local char = player.Character
+    for _, target in ipairs(targetList) do
+        local char = target.Character or target
         if char and char:FindFirstChild("HumanoidRootPart") then
             local dist = (myRoot.Position - char.HumanoidRootPart.Position).Magnitude
             if dist < minDist then
                 minDist = dist
-                nearest = player
+                nearest = target
             end
         end
     end
     return nearest
 end
 
--- 创建玩家选择UI
-local function CreatePlayerSelectionUI()
-    local PlayerSelectGui = Instance.new("ScreenGui")
-    PlayerSelectGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-    PlayerSelectGui.Name = "PlayerSelectionUI"
-    PlayerSelectGui.ResetOnSpawn = false
+-- 创建选择UI (玩家/NPC/甩飞目标)
+local function CreateSelectionUI(title, itemList, isThrowTarget)
+    local SelectGui = Instance.new("ScreenGui")
+    SelectGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+    SelectGui.Name = "SelectionUI"
+    SelectGui.ResetOnSpawn = false
     
-    local PlayerSelectFrame = Instance.new("Frame")
-    PlayerSelectFrame.Parent = PlayerSelectGui
-    PlayerSelectFrame.Size = UDim2.new(0, 200, 0, 300)
-    PlayerSelectFrame.Position = UDim2.new(0.5, -100, 0.5, -150)
-    PlayerSelectFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 35)
-    PlayerSelectFrame.Active = true
-    PlayerSelectFrame.Draggable = true
+    local SelectFrame = Instance.new("Frame")
+    SelectFrame.Parent = SelectGui
+    SelectFrame.Size = UDim2.new(0, 180, 0, 280)
+    SelectFrame.Position = UDim2.new(0.5, -90, 0.5, -140)
+    SelectFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 35)
+    SelectFrame.Active = true
+    SelectFrame.Draggable = true
     
-    local PlayerSelectCorner = Instance.new("UICorner")
-    PlayerSelectCorner.Parent = PlayerSelectFrame
-    PlayerSelectCorner.CornerRadius = UDim.new(0, 10)
+    local SelectCorner = Instance.new("UICorner")
+    SelectCorner.Parent = SelectFrame
+    SelectCorner.CornerRadius = UDim.new(0, 10)
     
-    local PlayerSelectStroke = Instance.new("UIStroke")
-    PlayerSelectStroke.Parent = PlayerSelectFrame
-    PlayerSelectStroke.Color = Color3.fromRGB(80, 120, 200)
-    PlayerSelectStroke.Thickness = 2
+    local SelectStroke = Instance.new("UIStroke")
+    SelectStroke.Parent = SelectFrame
+    SelectStroke.Color = Color3.fromRGB(80, 120, 200)
+    SelectStroke.Thickness = 2
     
     local Title = Instance.new("TextLabel")
-    Title.Parent = PlayerSelectFrame
-    Title.Size = UDim2.new(1, -20, 0, 30)
-    Title.Position = UDim2.new(0, 10, 0, 10)
+    Title.Parent = SelectFrame
+    Title.Size = UDim2.new(1, -20, 0, 25)
+    Title.Position = UDim2.new(0, 10, 0, 8)
     Title.BackgroundTransparency = 1
-    Title.Text = "选择玩家"
+    Title.Text = title
     Title.TextColor3 = Color3.fromRGB(220, 220, 255)
-    Title.TextSize = 14
+    Title.TextSize = 12
     Title.Font = Enum.Font.GothamBold
     
-    local PlayerScroll = Instance.new("ScrollingFrame")
-    PlayerScroll.Parent = PlayerSelectFrame
-    PlayerScroll.Size = UDim2.new(1, -20, 1, -80)
-    PlayerScroll.Position = UDim2.new(0, 10, 0, 50)
-    PlayerScroll.BackgroundTransparency = 1
-    PlayerScroll.ScrollBarThickness = 4
+    local ItemScroll = Instance.new("ScrollingFrame")
+    ItemScroll.Parent = SelectFrame
+    ItemScroll.Size = UDim2.new(1, -20, 1, -70)
+    ItemScroll.Position = UDim2.new(0, 10, 0, 40)
+    ItemScroll.BackgroundTransparency = 1
+    ItemScroll.ScrollBarThickness = 4
     
-    local PlayerListLayout = Instance.new("UIListLayout")
-    PlayerListLayout.Parent = PlayerScroll
-    PlayerListLayout.SortOrder = Enum.SortOrder.Name
+    local ItemListLayout = Instance.new("UIListLayout")
+    ItemListLayout.Parent = ItemScroll
+    ItemListLayout.SortOrder = Enum.SortOrder.Name
     
     local CloseButton = Instance.new("TextButton")
-    CloseButton.Parent = PlayerSelectFrame
-    CloseButton.Size = UDim2.new(0, 80, 0, 25)
-    CloseButton.Position = UDim2.new(0.5, -40, 1, -35)
+    CloseButton.Parent = SelectFrame
+    CloseButton.Size = UDim2.new(0, 70, 0, 22)
+    CloseButton.Position = UDim2.new(0.5, -35, 1, -32)
     CloseButton.BackgroundColor3 = Color3.fromRGB(120, 40, 40)
     CloseButton.Text = "关闭"
     CloseButton.TextColor3 = Color3.fromRGB(220, 220, 255)
-    CloseButton.TextSize = 12
+    CloseButton.TextSize = 11
     CloseButton.Font = Enum.Font.Gotham
     
     local CloseCorner = Instance.new("UICorner")
     CloseCorner.Parent = CloseButton
     CloseCorner.CornerRadius = UDim.new(0, 5)
     
-    -- 填充玩家列表
-    Teleport.PlayerList = GetAllPlayers()
-    PlayerScroll.CanvasSize = UDim2.new(0, 0, 0, #Teleport.PlayerList * 35)
+    -- 填充列表
+    ItemScroll.CanvasSize = UDim2.new(0, 0, 0, #itemList * 32)
     
-    for _, player in ipairs(Teleport.PlayerList) do
-        local PlayerButton = Instance.new("TextButton")
-        PlayerButton.Size = UDim2.new(1, 0, 0, 30)
-        PlayerButton.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
-        PlayerButton.Text = player.Name
-        PlayerButton.TextColor3 = Color3.fromRGB(220, 220, 255)
-        PlayerButton.TextSize = 11
-        PlayerButton.Font = Enum.Font.Gotham
-        PlayerButton.Parent = PlayerScroll
+    for _, item in ipairs(itemList) do
+        local ItemButton = Instance.new("TextButton")
+        ItemButton.Size = UDim2.new(1, 0, 0, 28)
+        ItemButton.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+        ItemButton.Text = item.Name or "未知目标"
+        ItemButton.TextColor3 = Color3.fromRGB(220, 220, 255)
+        ItemButton.TextSize = 10
+        ItemButton.Font = Enum.Font.Gotham
+        ItemButton.Parent = ItemScroll
         
-        local PlayerButtonCorner = Instance.new("UICorner")
-        PlayerButtonCorner.Parent = PlayerButton
-        PlayerButtonCorner.CornerRadius = UDim.new(0, 6)
+        local ItemButtonCorner = Instance.new("UICorner")
+        ItemButtonCorner.Parent = ItemButton
+        ItemButtonCorner.CornerRadius = UDim.new(0, 6)
         
-        local PlayerButtonStroke = Instance.new("UIStroke")
-        PlayerButtonStroke.Parent = PlayerButton
-        PlayerButtonStroke.Color = Color3.fromRGB(80, 120, 200)
-        PlayerButtonStroke.Thickness = 1
+        local ItemButtonStroke = Instance.new("UIStroke")
+        ItemButtonStroke.Parent = ItemButton
+        ItemButtonStroke.Color = Color3.fromRGB(80, 120, 200)
+        ItemButtonStroke.Thickness = 1
         
-        PlayerButton.MouseButton1Click:Connect(function()
-            Teleport.Target = player
-            ShowNotification("已选择: "..player.Name, Color3.fromRGB(0, 200, 255))
-            PlayerSelectGui:Destroy()
+        ItemButton.MouseButton1Click:Connect(function()
+            if isThrowTarget then
+                Teleport.ThrowTargetPlayer = item
+                ShowNotification("甩飞目标: "..(item.Name or "未知"), Color3.fromRGB(255, 150, 0))
+            else
+                if item:IsA("Player") then
+                    Teleport.Target = item
+                    Teleport.NPCTarget = nil
+                else
+                    Teleport.NPCTarget = item
+                    Teleport.Target = nil
+                end
+                ShowNotification("已选择: "..(item.Name or "未知"), Color3.fromRGB(0, 200, 255))
+            end
+            SelectGui:Destroy()
         end)
     end
     
     CloseButton.MouseButton1Click:Connect(function()
-        PlayerSelectGui:Destroy()
+        SelectGui:Destroy()
     end)
 end
 
@@ -614,7 +656,10 @@ local function CheckAntiThrow()
     local myRoot = myChar:FindFirstChild("HumanoidRootPart")
     if not myRoot then return end
     
-    local targetChar = Teleport.Target and Teleport.Target.Character
+    local target = Teleport.Target or Teleport.NPCTarget
+    if not target then return end
+    
+    local targetChar = target.Character or target
     if not targetChar then return end
     
     local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
@@ -623,7 +668,6 @@ local function CheckAntiThrow()
     local expectedDistance = 5.5
     local currentDistance = (myRoot.Position - targetRoot.Position).Magnitude
     
-    -- 更严格的防甩飞检测
     if currentDistance > expectedDistance + 2 then
         local newPos = Vector3.new(
             targetRoot.Position.X,
@@ -631,8 +675,6 @@ local function CheckAntiThrow()
             targetRoot.Position.Z
         )
         myRoot.CFrame = CFrame.new(newPos, targetRoot.Position)
-        
-        -- 添加轻微延迟防止频繁重置
         task.wait(0.1)
     end
 end
@@ -642,8 +684,13 @@ local function TeleportRoutine()
     if not Teleport.Active then return end
 
     local myChar = Players.LocalPlayer.Character
-    local targetChar = Teleport.Target and Teleport.Target.Character
+    local target = Teleport.Target or Teleport.NPCTarget
+    if not target then
+        StopTeleport()
+        return
+    end
 
+    local targetChar = target.Character or target
     if not myChar or not targetChar then
         StopTeleport()
         return
@@ -663,13 +710,18 @@ local function TeleportRoutine()
     end
 end
 
--- 改进平行环绕逻辑 - 圆形轨迹
+-- 修复平行环绕逻辑 - 真正的水平环绕
 local function ParallelOrbitRoutine()
     if not Teleport.HorizontalOrbitActive then return end
 
     local myChar = Players.LocalPlayer.Character
-    local targetChar = Teleport.Target and Teleport.Target.Character
+    local target = Teleport.Target or Teleport.NPCTarget
+    if not target then
+        StopParallelOrbit()
+        return
+    end
 
+    local targetChar = target.Character or target
     if not myChar or not targetChar then
         StopParallelOrbit()
         return
@@ -681,18 +733,18 @@ local function ParallelOrbitRoutine()
     if myRoot and targetRoot then
         Teleport.HorizontalAngle = Teleport.HorizontalAngle + Teleport.HorizontalSpeed * 0.05
         
-        -- 圆形轨迹计算
+        -- 真正的水平环绕 (y=0平面)
         local radius = Teleport.OrbitRadius
         local x = targetRoot.Position.X + math.cos(Teleport.HorizontalAngle) * radius
         local z = targetRoot.Position.Z + math.sin(Teleport.HorizontalAngle) * radius
-        local y = targetRoot.Position.Y - 3  -- 保持在下方的平行平面
+        local y = 0  -- 固定在地面高度
         
         local newPos = Vector3.new(x, y, z)
         myRoot.CFrame = CFrame.new(newPos, targetRoot.Position)
     end
 end
 
--- 改进甩飞功能 - 前后撞击效果
+-- 强力甩飞功能
 local function ThrowTarget()
     local target = Teleport.ThrowTargetPlayer
     if not target then
@@ -700,7 +752,7 @@ local function ThrowTarget()
         return
     end
 
-    local targetChar = target.Character
+    local targetChar = target.Character or target
     if not targetChar then
         ShowNotification("目标角色不存在", Color3.fromRGB(255, 50, 50))
         return
@@ -712,12 +764,6 @@ local function ThrowTarget()
         return
     end
 
-    local myChar = Players.LocalPlayer.Character
-    if not myChar then return end
-    
-    local myRoot = myChar:FindFirstChild("HumanoidRootPart")
-    if not myRoot then return end
-    
     -- 检查冷却时间
     local currentTime = tick()
     if currentTime - Teleport.LastThrowTime < 1 then
@@ -726,27 +772,12 @@ local function ThrowTarget()
     end
     Teleport.LastThrowTime = currentTime
 
-    -- 获取目标移动方向
-    local targetVelocity = Vector3.new(0, 0, 0)
-    local humanoid = targetChar:FindFirstChild("Humanoid")
-    if humanoid then
-        targetVelocity = humanoid.MoveDirection
-    end
-    
-    -- 如果目标不动，使用随机方向
-    if targetVelocity.Magnitude < 0.1 then
-        targetVelocity = Vector3.new(
-            math.random() - 0.5,
-            0,
-            math.random() - 0.5
-        ).Unit
-    end
-    
-    -- 计算甩飞方向 - 前后撞击效果
-    local throwDirection = targetVelocity * Teleport.ThrowForce
-    
-    -- 添加向上分量
-    throwDirection = throwDirection + Vector3.new(0, Teleport.ThrowForce * 0.3, 0)
+    -- 强力甩飞效果
+    local throwDirection = Vector3.new(
+        (math.random() - 0.5) * 2 * Teleport.ThrowForce,
+        Teleport.ThrowForce * 0.8,  -- 向上分量
+        (math.random() - 0.5) * 2 * Teleport.ThrowForce
+    )
     
     -- 创建BodyVelocity施加力
     local bodyVelocity = Instance.new("BodyVelocity")
@@ -754,18 +785,18 @@ local function ThrowTarget()
     bodyVelocity.MaxForce = Vector3.new(40000, 40000, 40000)
     bodyVelocity.Parent = targetRoot
 
-    -- 添加旋转效果
+    -- 强力旋转效果
     local bodyAngularVelocity = Instance.new("BodyAngularVelocity")
     bodyAngularVelocity.AngularVelocity = Vector3.new(
-        (math.random() - 0.5) * Teleport.ThrowForce * 0.1,
-        (math.random() - 0.5) * Teleport.ThrowForce * 0.1,
-        (math.random() - 0.5) * Teleport.ThrowForce * 0.1
+        (math.random() - 0.5) * Teleport.ThrowForce * 0.5,
+        (math.random() - 0.5) * Teleport.ThrowForce * 0.5,
+        (math.random() - 0.5) * Teleport.ThrowForce * 0.5
     )
-    bodyAngularVelocity.MaxTorque = Vector3.new(10000, 10000, 10000)
+    bodyAngularVelocity.MaxTorque = Vector3.new(100000, 100000, 100000)
     bodyAngularVelocity.Parent = targetRoot
 
-    -- 1.5秒后移除物理效果
-    delay(1.5, function()
+    -- 3秒后移除物理效果
+    delay(3, function()
         if bodyVelocity and bodyVelocity.Parent then
             bodyVelocity:Destroy()
         end
@@ -774,8 +805,7 @@ local function ThrowTarget()
         end
     end)
 
-    ShowNotification("已甩飞 " .. target.Name, Color3.fromRGB(255, 150, 0))
-    print("甩飞目标: " .. target.Name .. " 力度: " .. Teleport.ThrowForce)
+    ShowNotification("已强力甩飞 " .. (target.Name or "目标"), Color3.fromRGB(255, 150, 0))
 end
 
 -- 选择甩飞目标
@@ -785,35 +815,26 @@ local function SelectThrowTarget()
         return
     end
 
-    Teleport.PlayerList = GetAllPlayers()
+    local allTargets = {}
+    
+    -- 添加玩家
+    local players = GetAllPlayers()
+    for _, player in ipairs(players) do
+        table.insert(allTargets, player)
+    end
+    
+    -- 添加NPC
+    local npcs = GetAllNPCs()
+    for _, npc in ipairs(npcs) do
+        table.insert(allTargets, npc)
+    end
 
-    if #Teleport.PlayerList == 0 then
-        ShowNotification("没有其他玩家可选择", Color3.fromRGB(255, 50, 50))
+    if #allTargets == 0 then
+        ShowNotification("没有可选择的甩飞目标", Color3.fromRGB(255, 50, 50))
         return
     end
 
-    -- 如果没有当前甩飞目标，从最近玩家开始
-    if not Teleport.ThrowTargetPlayer then
-        Teleport.ThrowTargetPlayer = FindNearestPlayer()
-        if Teleport.ThrowTargetPlayer then
-            ShowNotification("甩飞目标: "..Teleport.ThrowTargetPlayer.Name, Color3.fromRGB(255, 150, 0))
-            return
-        end
-    end
-
-    -- 循环选择下一个玩家作为甩飞目标
-    local currentIndex = 1
-    for i, player in ipairs(Teleport.PlayerList) do
-        if player == Teleport.ThrowTargetPlayer then
-            currentIndex = i
-            break
-        end
-    end
-
-    local nextIndex = currentIndex % #Teleport.PlayerList + 1
-    Teleport.ThrowTargetPlayer = Teleport.PlayerList[nextIndex]
-
-    ShowNotification("甩飞目标: "..Teleport.ThrowTargetPlayer.Name, Color3.fromRGB(255, 150, 0))
+    CreateSelectionUI("选择甩飞目标", allTargets, true)
 end
 
 -- 删除UI
@@ -869,8 +890,8 @@ end
 local function StartTeleport()
     if Teleport.Active then return end
 
-    if not Teleport.Target then
-        ShowNotification("请先选择目标玩家", Color3.fromRGB(255, 50, 50))
+    if not Teleport.Target and not Teleport.NPCTarget then
+        ShowNotification("请先选择目标玩家或NPC", Color3.fromRGB(255, 50, 50))
         return
     end
 
@@ -880,11 +901,12 @@ local function StartTeleport()
         task.wait(0.001)
     end)
 
-    ShowNotification("传送已启动 - 目标: "..Teleport.Target.Name, Color3.fromRGB(0, 255, 100))
+    local targetName = Teleport.Target and Teleport.Target.Name or (Teleport.NPCTarget and Teleport.NPCTarget.Name or "未知")
+    ShowNotification("传送已启动 - 目标: "..targetName, Color3.fromRGB(0, 255, 100))
     Status.BackgroundColor3 = Color3.fromRGB(0, 255, 100)
 end
 
--- 停止传送 - 不传送到初始位置
+-- 停止传送
 local function StopTeleport()
     if not Teleport.Active then
         ShowNotification("传送未启动", Color3.fromRGB(255, 150, 0))
@@ -904,8 +926,8 @@ end
 local function StartParallelOrbit()
     if Teleport.HorizontalOrbitActive then return end
 
-    if not Teleport.Target then
-        ShowNotification("请先选择目标玩家", Color3.fromRGB(255, 50, 50))
+    if not Teleport.Target and not Teleport.NPCTarget then
+        ShowNotification("请先选择目标玩家或NPC", Color3.fromRGB(255, 50, 50))
         return
     end
 
@@ -975,9 +997,30 @@ local function ToggleThrow()
     end
 end
 
+-- 选择玩家
+local function SelectPlayer()
+    local players = GetAllPlayers()
+    if #players == 0 then
+        ShowNotification("没有其他玩家", Color3.fromRGB(255, 50, 50))
+        return
+    end
+    CreateSelectionUI("选择玩家", players, false)
+end
+
+-- 选择NPC
+local function SelectNPC()
+    local npcs = GetAllNPCs()
+    if #npcs == 0 then
+        ShowNotification("没有找到NPC", Color3.fromRGB(255, 50, 50))
+        return
+    end
+    CreateSelectionUI("选择NPC", npcs, false)
+end
+
 -- 按钮点击事件
 StartButton.MouseButton1Click:Connect(StartTeleport)
-PlayerSelectButton.MouseButton1Click:Connect(CreatePlayerSelectionUI)
+PlayerSelectButton.MouseButton1Click:Connect(SelectPlayer)
+NPCSelectButton.MouseButton1Click:Connect(SelectNPC)
 StopButton.MouseButton1Click:Connect(StopTeleport)
 AntiThrowButton.MouseButton1Click:Connect(ToggleAntiThrow)
 WallVisionButton.MouseButton1Click:Connect(ToggleWallVision)
@@ -1050,5 +1093,5 @@ UpdateButtonState("开启甩飞功能", Teleport.ThrowActive)
 ShowNotification("传送控制面板已加载", Color3.fromRGB(0, 150, 255))
 
 print("紧凑传送UI已加载完成")
-print("功能: 开始传送 | 选择玩家 | 停止传送 | 防甩飞 | 穿墙视野 | 平行环绕 | 甩飞功能 | 删除UI")
-print("特性: 紧凑UI设计 | 改进甩飞机制 | 优化防甩飞 | 圆形平行环绕 | 玩家选择界面 | 甩飞力度上限99999")
+print("功能: 开始传送 | 选择玩家 | 选择NPC | 停止传送 | 防甩飞 | 穿墙视野 | 平行环绕 | 甩飞功能 | 删除UI")
+print("特性: 更小UI设计 | 修复平行环绕 | 强力甩飞机制 | NPC支持 | 统一选择界面")
