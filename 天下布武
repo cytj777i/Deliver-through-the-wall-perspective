@@ -1,4 +1,4 @@
--- Roblox手机端传送控制脚本 (优化版 - 紧凑UI + 改进功能 + Touch Fling整合)
+-- Roblox手机端传送控制脚本 (优化版 - 紧凑UI + 改进功能 + 整合甩飞)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -21,9 +21,10 @@ local Teleport = {
     HorizontalSpeed = 2,
     HorizontalAngle = 0,
     
-    -- Touch Fling 功能
-    TouchFlingActive = false,
-    TouchFlingTarget = nil
+    -- 甩飞功能 (基于Touch Fling原理但针对其他玩家)
+    FlingActive = false,
+    FlingTargetPlayer = nil,
+    FlingConnection = nil
 }
 
 -- 创建通知系统
@@ -312,14 +313,14 @@ SeparatorLabel2.Parent = Content
 SeparatorLabel2.Size = UDim2.new(1, 0, 0, 18)
 SeparatorLabel2.Position = UDim2.new(0, 0, 0, 308)
 SeparatorLabel2.BackgroundTransparency = 1
-SeparatorLabel2.Text = "Touch Fling"
+SeparatorLabel2.Text = "甩飞设置"
 SeparatorLabel2.TextColor3 = Color3.fromRGB(255, 160, 120)
 SeparatorLabel2.TextSize = 10
 SeparatorLabel2.Font = Enum.Font.GothamBold
 
--- Touch Fling 控制
-local TouchFlingTargetButton = CreateButton("选择Fling目标", 331, false)
-local TouchFlingToggleButton = CreateButton("开启Touch Fling", 366, true)
+-- 甩飞控制
+local ThrowTargetButton = CreateButton("选择甩飞目标", 331, false)
+local ThrowToggleButton = CreateButton("开启甩飞", 366, true)
 local DeleteUIButton = CreateButton("删除UI", 401, false)
 
 -- 更新按钮状态
@@ -694,120 +695,69 @@ local function ParallelOrbitRoutine()
     end
 end
 
--- Touch Fling 功能 (原样整合)
-local function CreateTouchFlingUI()
-    local TouchFlingGui = Instance.new("ScreenGui")
-    local Frame = Instance.new("Frame")
-    local Frame_2 = Instance.new("Frame")
-    local TextLabel = Instance.new("TextLabel")
-    local TextButton = Instance.new("TextButton")
-
-    --Properties:
-    TouchFlingGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-    TouchFlingGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    TouchFlingGui.ResetOnSpawn = false
-
-    Frame.Parent = TouchFlingGui
-    Frame.BackgroundColor3 = Color3.fromRGB(34, 34, 34)
-    Frame.BorderColor3 = Color3.fromRGB(0, 0, 0)
-    Frame.BorderSizePixel = 0
-    Frame.Position = UDim2.new(0.388539821, 0, 0.427821517, 0)
-    Frame.Size = UDim2.new(0, 158, 0, 110)
-
-    Frame_2.Parent = Frame
-    Frame_2.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    Frame_2.BorderColor3 = Color3.fromRGB(0, 0, 0)
-    Frame_2.BorderSizePixel = 0
-    Frame_2.Size = UDim2.new(0, 158, 0, 25)
-
-    TextLabel.Parent = Frame_2
-    TextLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    TextLabel.BackgroundTransparency = 1.000
-    TextLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
-    TextLabel.BorderSizePixel = 0
-    TextLabel.Position = UDim2.new(0.112792775, 0, -0.0151660154, 0)
-    TextLabel.Size = UDim2.new(0, 121, 0, 26)
-    TextLabel.Font = Enum.Font.Sarpanch
-    TextLabel.Text = "Touch Fling"
-    TextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    TextLabel.TextSize = 25.000
-
-    TextButton.Parent = Frame
-    TextButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    TextButton.BorderColor3 = Color3.fromRGB(255, 255, 255)
-    TextButton.BorderSizePixel = 0
-    TextButton.Position = UDim2.new(0.113924049, 0, 0.418181807, 0)
-    TextButton.Size = UDim2.new(0, 121, 0, 37)
-    TextButton.Font = Enum.Font.SourceSansItalic
-    TextButton.Text = "OFF"
-    TextButton.TextColor3 = Color3.fromRGB(0, 0, 0)
-    TextButton.TextSize = 20.000
-
-    -- Scripts:
-    local function IIMAWH_fake_script() -- TextButton.LocalScript 
-        local script = Instance.new('LocalScript', TextButton)
-
-        local ReplicatedStorage = game:GetService("ReplicatedStorage")
-        local RunService = game:GetService("RunService")
-        local Players = game:GetService("Players")
+-- 整合Touch Fling功能 - 针对目标玩家进行高速碰撞
+local function FlingRoutine()
+    while Teleport.FlingActive and Teleport.FlingTargetPlayer do
+        RunService.Heartbeat:Wait()
         
-        local toggleButton = script.Parent
-        local hiddenfling = false
-        local flingThread 
-        if not ReplicatedStorage:FindFirstChild("juisdfj0i32i0eidsuf0iok") then
-            local detection = Instance.new("Decal")
-            detection.Name = "juisdfj0i32i0eidsuf0iok"
-            detection.Parent = ReplicatedStorage
+        local targetChar = Teleport.FlingTargetPlayer.Character
+        local hrp = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
+        
+        if hrp then
+            -- 高速碰撞效果 - 使用Touch Fling原理但针对目标玩家
+            local vel = hrp.Velocity
+            hrp.Velocity = vel * 10000 + Vector3.new(0, 10000, 0)
+            RunService.RenderStepped:Wait()
+            hrp.Velocity = vel
+            RunService.Stepped:Wait()
+            hrp.Velocity = vel + Vector3.new(0, 0.1, 0)
         end
-        
-        local function fling()
-            local lp = Players.LocalPlayer
-            local c, hrp, vel, movel = nil, nil, nil, 0.1
-        
-            while hiddenfling do
-                RunService.Heartbeat:Wait()
-                c = lp.Character
-                hrp = c and c:FindFirstChild("HumanoidRootPart")
-        
-                if hrp then
-                    vel = hrp.Velocity
-                    hrp.Velocity = vel * 10000 + Vector3.new(0, 10000, 0)
-                    RunService.RenderStepped:Wait()
-                    hrp.Velocity = vel
-                    RunService.Stepped:Wait()
-                    hrp.Velocity = vel + Vector3.new(0, movel, 0)
-                    movel = -movel
-                end
-            end
-        end
-        
-        toggleButton.MouseButton1Click:Connect(function()
-            hiddenfling = not hiddenfling
-            toggleButton.Text = hiddenfling and "ON" or "OFF"
-        
-            if hiddenfling then
-                flingThread = coroutine.create(fling)
-                coroutine.resume(flingThread)
-            else
-                hiddenfling = false
-            end
-        end)
-        
     end
-    coroutine.wrap(IIMAWH_fake_script)()
-    local function QCJQJL_fake_script() -- Frame.LocalScript 
-        local script = Instance.new('LocalScript', Frame)
-
-        script.Parent.Active = true
-        script.Parent.Draggable = true
-    end
-    coroutine.wrap(QCJQJL_fake_script)()
-
-    return TouchFlingGui
 end
 
--- 选择Touch Fling目标
-local function SelectTouchFlingTarget()
+-- 开始甩飞
+local function StartFling()
+    if not Teleport.FlingTargetPlayer then
+        ShowNotification("请先选择甩飞目标", Color3.fromRGB(255, 150, 0))
+        return
+    end
+
+    Teleport.FlingActive = true
+    Teleport.FlingConnection = RunService.Heartbeat:Connect(function()
+        FlingRoutine()
+    end)
+
+    UpdateButtonState("开启甩飞", true)
+    ShowNotification("甩飞已启动 - 目标: "..Teleport.FlingTargetPlayer.Name, Color3.fromRGB(255, 100, 0))
+end
+
+-- 停止甩飞
+local function StopFling()
+    if not Teleport.FlingActive then
+        ShowNotification("甩飞未启动", Color3.fromRGB(255, 150, 0))
+        return
+    end
+
+    Teleport.FlingActive = false
+    if Teleport.FlingConnection then
+        Teleport.FlingConnection:Disconnect()
+    end
+
+    UpdateButtonState("开启甩飞", false)
+    ShowNotification("甩飞已停止", Color3.fromRGB(255, 100, 0))
+end
+
+-- 切换甩飞
+local function ToggleFling()
+    if Teleport.FlingActive then
+        StopFling()
+    else
+        StartFling()
+    end
+end
+
+-- 选择甩飞目标
+local function SelectThrowTarget()
     Teleport.PlayerList = GetAllPlayers()
 
     if #Teleport.PlayerList == 0 then
@@ -815,51 +765,33 @@ local function SelectTouchFlingTarget()
         return
     end
 
-    -- 如果没有当前目标，从最近玩家开始
-    if not Teleport.TouchFlingTarget then
-        Teleport.TouchFlingTarget = FindNearestPlayer()
-        if Teleport.TouchFlingTarget then
-            ShowNotification("Touch Fling目标: "..Teleport.TouchFlingTarget.Name, Color3.fromRGB(255, 150, 0))
+    -- 如果没有当前甩飞目标，从最近玩家开始
+    if not Teleport.FlingTargetPlayer then
+        Teleport.FlingTargetPlayer = FindNearestPlayer()
+        if Teleport.FlingTargetPlayer then
+            ShowNotification("甩飞目标: "..Teleport.FlingTargetPlayer.Name, Color3.fromRGB(255, 150, 0))
             return
         end
     end
 
-    -- 循环选择下一个玩家作为目标
+    -- 循环选择下一个玩家作为甩飞目标
     local currentIndex = 1
     for i, player in ipairs(Teleport.PlayerList) do
-        if player == Teleport.TouchFlingTarget then
+        if player == Teleport.FlingTargetPlayer then
             currentIndex = i
             break
         end
     end
 
     local nextIndex = currentIndex % #Teleport.PlayerList + 1
-    Teleport.TouchFlingTarget = Teleport.PlayerList[nextIndex]
+    Teleport.FlingTargetPlayer = Teleport.PlayerList[nextIndex]
 
-    ShowNotification("Touch Fling目标: "..Teleport.TouchFlingTarget.Name, Color3.fromRGB(255, 150, 0))
-end
-
--- 开启/关闭Touch Fling UI
-local TouchFlingGUI = nil
-local function ToggleTouchFling()
-    if TouchFlingGUI then
-        TouchFlingGUI:Destroy()
-        TouchFlingGUI = nil
-        UpdateButtonState("开启Touch Fling", false)
-        ShowNotification("Touch Fling 已关闭", Color3.fromRGB(255, 100, 0))
-    else
-        TouchFlingGUI = CreateTouchFlingUI()
-        UpdateButtonState("开启Touch Fling", true)
-        ShowNotification("Touch Fling 已开启 - 使用独立界面控制", Color3.fromRGB(255, 150, 0))
-    end
+    ShowNotification("甩飞目标: "..Teleport.FlingTargetPlayer.Name, Color3.fromRGB(255, 150, 0))
 end
 
 -- 删除UI
 local function DeleteUI()
     ScreenGui:Destroy()
-    if TouchFlingGUI then
-        TouchFlingGUI:Destroy()
-    end
     ShowNotification("UI界面已删除", Color3.fromRGB(255, 100, 0))
 end
 
@@ -991,8 +923,8 @@ StopButton.MouseButton1Click:Connect(StopTeleport)
 AntiThrowButton.MouseButton1Click:Connect(ToggleAntiThrow)
 WallVisionButton.MouseButton1Click:Connect(ToggleWallVision)
 ParallelOrbitButton.MouseButton1Click:Connect(ToggleParallelOrbit)
-TouchFlingTargetButton.MouseButton1Click:Connect(SelectTouchFlingTarget)
-TouchFlingToggleButton.MouseButton1Click:Connect(ToggleTouchFling)
+ThrowTargetButton.MouseButton1Click:Connect(SelectThrowTarget)
+ThrowToggleButton.MouseButton1Click:Connect(ToggleFling)
 DeleteUIButton.MouseButton1Click:Connect(DeleteUI)
 
 -- 控制项事件
@@ -1037,6 +969,9 @@ Players.LocalPlayer.CharacterAdded:Connect(function(char)
         if Teleport.HorizontalOrbitActive then
             StopParallelOrbit()
         end
+        if Teleport.FlingActive then
+            StopFling()
+        end
     end)
 end)
 
@@ -1044,11 +979,11 @@ end)
 UpdateButtonState("防甩飞: 开启", Teleport.AntiThrow)
 UpdateButtonState("穿墙视野", Teleport.WallVision)
 UpdateButtonState("平行环绕", false)
-UpdateButtonState("开启Touch Fling", false)
+UpdateButtonState("开启甩飞", false)
 
 -- 显示启动通知
 ShowNotification("传送控制面板已加载", Color3.fromRGB(0, 150, 255))
 
 print("紧凑传送UI已加载完成")
-print("功能: 开始传送 | 选择玩家 | 停止传送 | 防甩飞 | 穿墙视野 | 平行环绕 | Touch Fling | 删除UI")
-print("特性: 紧凑UI设计 | 改进平行环绕 | 地面检测 | 原版Touch Fling整合")
+print("功能: 开始传送 | 选择玩家 | 停止传送 | 防甩飞 | 穿墙视野 | 平行环绕 | 甩飞功能 | 删除UI")
+print("特性: 紧凑UI设计 | 改进平行环绕 | 地面检测 | 整合Touch Fling甩飞")
