@@ -298,8 +298,8 @@ SeparatorLabel1.Font = Enum.Font.GothamBold
 
 -- 环绕控制
 local ParallelOrbitButton = CreateButton("平行环绕", 203, true)
-local RadiusControl = CreateInputControl("环绕半径:", 238, 10, 5, 50)
-local OrbitSpeedControl = CreateInputControl("环绕速度:", 268, 2, 0.5, 10)
+local RadiusControl = CreateInputControl("环绕半径:", 238, 10, 1, 999999)
+local OrbitSpeedControl = CreateInputControl("环绕速度:", 268, 2, 0.1, 999999)
 
 -- 分隔线2
 local Separator2 = Instance.new("Frame")
@@ -320,7 +320,7 @@ SeparatorLabel2.TextSize = 10
 SeparatorLabel2.Font = Enum.Font.GothamBold
 
 -- 高级设置
-local AntiThrowSpeedControl = CreateInputControl("防甩阈值:", 331, 50, 20, 200)
+local AntiThrowSpeedControl = CreateInputControl("防甩阈值:", 331, 50, 1, 999999)
 local DeleteUIButton = CreateButton("删除UI", 361, false)
 
 -- 更新按钮状态
@@ -619,7 +619,7 @@ local function CheckAntiThrow()
 
     -- 获取当前位置
     local currentPosition = myRoot.Position
-    
+
     -- 更新位置历史
     table.insert(Teleport.PositionHistory, 1, currentPosition)
     if #Teleport.PositionHistory > Teleport.HistorySize then
@@ -632,7 +632,7 @@ local function CheckAntiThrow()
         local distance = (currentPosition - oldestPos).Magnitude
         local timeElapsed = #Teleport.PositionHistory * 0.1 -- 假设每帧0.1秒
         local speed = distance / timeElapsed
-        
+
         -- 如果速度超过阈值，认为是异常移动
         if speed > Teleport.MaxAllowedSpeed then
             -- 重置到目标位置
@@ -642,14 +642,14 @@ local function CheckAntiThrow()
                 targetRoot.Position.Z
             )
             myRoot.CFrame = CFrame.new(newPos, targetRoot.Position)
-            
+
             -- 重置速度
             myRoot.Velocity = Vector3.new(0, 0, 0)
             myRoot.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-            
+
             -- 清除位置历史
             Teleport.PositionHistory = {}
-            
+
             ShowNotification("检测到异常移动，已重置位置", Color3.fromRGB(255, 100, 0))
             return
         end
@@ -666,11 +666,11 @@ local function CheckAntiThrow()
             targetRoot.Position.Z
         )
         myRoot.CFrame = CFrame.new(newPos, targetRoot.Position)
-        
+
         -- 重置物理属性
         myRoot.Velocity = Vector3.new(0, 0, 0)
         myRoot.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-        
+
         -- 清除位置历史
         Teleport.PositionHistory = {}
     end
@@ -737,7 +737,7 @@ local function ParallelOrbitRoutine()
 
         local newPos = Vector3.new(x, y + 3, z) -- 保持在地面上方3个单位
         myRoot.CFrame = CFrame.new(newPos, targetRoot.Position) -- 始终面向目标
-        
+
         -- 在环绕模式下也检查防甩飞
         if Teleport.AntiThrow then
             CheckAntiThrow()
