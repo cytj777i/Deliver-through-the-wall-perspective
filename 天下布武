@@ -1,968 +1,2376 @@
--- Roblox手机端传送控制脚本 (优化版 - 紧凑UI + 改进功能 - 移除甩飞功能)
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
+--[[
+ .____                  ________ ___.    _____                           __                
+ |    |    __ _______   \_____  \\_ |___/ ____\_ __  ______ ____ _____ _/  |_  ___________ 
+ |    |   |  |  \__  \   /   |   \| __ \   __\  |  \/  ___// ___\\__  \\   __\/  _ \_  __ \
+ |    |___|  |  // __ \_/    |    \ \_\ \  | |  |  /\___ \\  \___ / __ \|  | (  <_> )  | \/
+ |_______ \____/(____  /\_______  /___  /__| |____//____  >\___  >____  /__|  \____/|__|   
+         \/          \/         \/    \/                \/     \/     \/                   
+          \_Welcome to LuaObfuscator.com   (Alpha 0.10.9) ~  Much Love, Ferib 
 
--- 传送功能变量
-local Teleport = {
-    Active = false,
-    Target = nil,
-    Connection = nil,
-    PlayerList = {},
-    AntiThrow = true,
-    WallVision = false,
-    OriginalTransparency = {},
+]]--
 
-    -- 环绕模式
-    HorizontalOrbitActive = false,
-    HorizontalOrbitConnection = nil,
-    OrbitRadius = 10,
-    HorizontalSpeed = 2,
-    HorizontalAngle = 0,
-
-    -- 防甩飞变量
-    LastPosition = nil,
-    MaxAllowedSpeed = 50, -- 最大允许速度
-    PositionHistory = {},
-    HistorySize = 10
-}
-
--- 创建通知系统
-local function ShowNotification(message, color)
-    color = color or Color3.fromRGB(0, 150, 255)
-
-    local NotificationGui = Instance.new("ScreenGui")
-    NotificationGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-    NotificationGui.ResetOnSpawn = false
-
-    local NotificationFrame = Instance.new("Frame")
-    NotificationFrame.Parent = NotificationGui
-    NotificationFrame.Size = UDim2.new(0, 200, 0, 50)
-    NotificationFrame.Position = UDim2.new(0.5, -100, 0.1, 0)
-    NotificationFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-    NotificationFrame.BackgroundTransparency = 0.1
-
-    local NotificationCorner = Instance.new("UICorner")
-    NotificationCorner.Parent = NotificationFrame
-    NotificationCorner.CornerRadius = UDim.new(0, 8)
-
-    local NotificationStroke = Instance.new("UIStroke")
-    NotificationStroke.Parent = NotificationFrame
-    NotificationStroke.Color = color
-    NotificationStroke.Thickness = 2
-
-    local NotificationText = Instance.new("TextLabel")
-    NotificationText.Parent = NotificationFrame
-    NotificationText.Size = UDim2.new(1, -20, 1, -10)
-    NotificationText.Position = UDim2.new(0, 10, 0, 5)
-    NotificationText.BackgroundTransparency = 1
-    NotificationText.Text = message
-    NotificationText.TextColor3 = Color3.fromRGB(220, 220, 255)
-    NotificationText.TextSize = 14
-    NotificationText.Font = Enum.Font.Gotham
-    NotificationText.TextWrapped = true
-
-    delay(2, function()
-        for i = 0, 1, 0.1 do
-            NotificationFrame.BackgroundTransparency = i
-            NotificationText.TextTransparency = i
-            wait(0.05)
-        end
-        NotificationGui:Destroy()
-    end)
+local v0 = game:GetService("Players");
+local v1 = game:GetService("RunService");
+local v2 = game:GetService("UserInputService");
+local v3 = game:GetService("TweenService");
+local v4 = {Active=false,Target=nil,Connection=nil,PlayerList={},AntiThrow=true,WallVision=false,OriginalTransparency={},HorizontalOrbitActive=false,HorizontalOrbitConnection=nil,OrbitRadius=(14 - 4),HorizontalSpeed=(4 - (159 - (26 + 131))),HorizontalAngle=(0 + 0 + (0 - 0)),LastPosition=nil,MaxAllowedSpeed=(15 + (894 - (240 + 619))),PositionHistory={},HistorySize=(22 - 12)};
+local function v5(v154, v155)
+	v155 = v155 or Color3.fromRGB((4 + 10) - ((13 - 4) + 1 + 4), (2270 - (1344 + 400)) - ((490 - (255 + 150)) + 291), (1198 + 322) - (131 + 112 + 1022));
+	local v156 = Instance.new("ScreenGui");
+	v156.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui");
+	v156.ResetOnSpawn = false;
+	local v159 = Instance.new("Frame");
+	v159.Parent = v156;
+	v159.Size = UDim2.new((0 - 0) - (0 - 0), (1904 - (404 + 1335)) + (441 - (183 + 223)), 1180 - ((1365 - 242) + 38 + 19), (37 + 65) - (389 - (10 + 327)));
+	v159.Position = UDim2.new(0.5 + 0 + (338 - (118 + 220)), -(354 - (55 + 108 + (540 - (108 + 341)))), (867.0999999999999 + 1063) - (1869 + (257 - 196)), 0 - (1493 - (711 + 782)));
+	v159.BackgroundColor3 = Color3.fromRGB(6 + 14, 70 - (95 - 45), (515 - (270 + 199)) - (6 + 10));
+	v159.BackgroundTransparency = 0.1;
+	local v165 = Instance.new("UICorner");
+	v165.Parent = v159;
+	v165.CornerRadius = UDim.new((1819 - (580 + 1239)) + (0 - 0), 3 + 5 + 0);
+	local v168 = Instance.new("UIStroke");
+	v168.Parent = v159;
+	v168.Color = v155;
+	v168.Thickness = 2 - 0;
+	local v172 = Instance.new("TextLabel");
+	v172.Parent = v159;
+	v172.Size = UDim2.new(1 + 0 + 0, -((651 + 843) - ((3469 - 2140) + 91 + 54)), (2139 - (645 + 522)) - ((1930 - (1010 + 780)) + 831 + 0), -((8860 - 7000) - (1409 + 441)));
+	v172.Position = UDim2.new((5444 - 3586) - (673 + (3021 - (1045 + 791))), (1842 - 1114) - (15 + 703), 0 + 0, (676 - 233) - ((767 - (351 + 154)) + (1750 - (1281 + 293))));
+	v172.BackgroundTransparency = 1722 - (345 + (1642 - (28 + 238)));
+	v172.Text = v154;
+	v172.TextColor3 = Color3.fromRGB((368 - 203) + 55, (2467 - (1381 + 178)) - (198 + 460 + 30), 1126 - 871);
+	v172.TextSize = 33 - (16 + 3);
+	v172.Font = Enum.Font.Gotham;
+	v172.TextWrapped = true;
+	delay(1 + 1, function()
+		local v278 = 0;
+		local v279;
+		while true do
+			if (v278 == (0 - 0)) then
+				v279 = 1206 - (361 + 335 + 510);
+				while true do
+					if (v279 == ((470 - (381 + 89)) - (0 + 0))) then
+						for v508 = (0 + 0) - (0 - 0), 1157 - (1074 + 82), 0.1 - (0 - 0) do
+							local v509 = (3664 - (214 + 1570)) - ((1901 - (990 + 465)) + 592 + 842);
+							while true do
+								if (v509 == ((550 + 713) - (1061 + 30 + 171))) then
+									wait((0.05 - 0) + (1726 - (1668 + 58)));
+									break;
+								end
+								if (v509 == ((626 - (512 + 114)) - (0 - 0))) then
+									local v594 = 0 - 0;
+									local v595;
+									while true do
+										if (0 == v594) then
+											v595 = 0;
+											while true do
+												if (v595 == (0 - 0)) then
+													v159.BackgroundTransparency = v508;
+													v172.TextTransparency = v508;
+													v595 = 1 + 0;
+												end
+												if (v595 == (1 + 0)) then
+													v509 = (1680 + 252) - (609 + (4458 - 3136));
+													break;
+												end
+											end
+											break;
+										end
+									end
+								end
+							end
+						end
+						v156:Destroy();
+						break;
+					end
+				end
+				break;
+			end
+		end
+	end);
 end
-
--- 创建紧凑主UI
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-ScreenGui.Name = "TeleportControlUI"
-ScreenGui.ResetOnSpawn = false
-
-local MainFrame = Instance.new("Frame")
-MainFrame.Parent = ScreenGui
-MainFrame.Size = UDim2.new(0, 180, 0, 250)
-MainFrame.Position = UDim2.new(0.5, -90, 0.5, -125)
-MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
-MainFrame.Active = true
-MainFrame.Draggable = true
-
--- 外发光效果
-local Glow = Instance.new("ImageLabel")
-Glow.Parent = MainFrame
-Glow.Size = UDim2.new(1, 20, 1, 20)
-Glow.Position = UDim2.new(0, -10, 0, -10)
-Glow.BackgroundTransparency = 1
-Glow.Image = "rbxassetid://8992230673"
-Glow.ImageColor3 = Color3.fromRGB(0, 80, 255)
-Glow.ImageTransparency = 0.8
-Glow.ScaleType = Enum.ScaleType.Slice
-Glow.SliceCenter = Rect.new(49, 49, 450, 450)
-
--- 圆角
-local Corner = Instance.new("UICorner")
-Corner.Parent = MainFrame
-Corner.CornerRadius = UDim.new(0, 10)
-
--- 边框
-local Stroke = Instance.new("UIStroke")
-Stroke.Parent = MainFrame
-Stroke.Color = Color3.fromRGB(60, 120, 255)
-Stroke.Thickness = 2
-Stroke.Transparency = 0.3
-
--- 标题栏
-local Header = Instance.new("Frame")
-Header.Parent = MainFrame
-Header.Size = UDim2.new(1, 0, 0, 28)
-Header.Position = UDim2.new(0, 0, 0, 0)
-Header.BackgroundColor3 = Color3.fromRGB(25, 25, 40)
-Header.BackgroundTransparency = 0.1
-
-local HeaderCorner = Instance.new("UICorner")
-HeaderCorner.Parent = Header
-HeaderCorner.CornerRadius = UDim.new(0, 10)
-
--- 标题文字
-local Title = Instance.new("TextLabel")
-Title.Parent = Header
-Title.Size = UDim2.new(1, -50, 1, 0)
-Title.Position = UDim2.new(0, 8, 0, 0)
-Title.BackgroundTransparency = 1
-Title.Text = "传送控制"
-Title.TextColor3 = Color3.fromRGB(180, 200, 255)
-Title.TextSize = 12
-Title.Font = Enum.Font.GothamBold
-Title.TextXAlignment = Enum.TextXAlignment.Left
-
--- 状态指示器
-local Status = Instance.new("Frame")
-Status.Parent = Header
-Status.Size = UDim2.new(0, 6, 0, 6)
-Status.Position = UDim2.new(1, -35, 0.5, -3)
-Status.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-Status.BorderSizePixel = 0
-
-local StatusCorner = Instance.new("UICorner")
-StatusCorner.Parent = Status
-StatusCorner.CornerRadius = UDim.new(1, 0)
-
--- 最小化按钮
-local MinimizeButton = Instance.new("TextButton")
-MinimizeButton.Parent = Header
-MinimizeButton.Size = UDim2.new(0, 22, 0, 22)
-MinimizeButton.Position = UDim2.new(1, -25, 0.5, -11)
-MinimizeButton.BackgroundColor3 = Color3.fromRGB(50, 50, 80)
-MinimizeButton.BackgroundTransparency = 0.2
-MinimizeButton.Text = "-"
-MinimizeButton.TextColor3 = Color3.fromRGB(220, 220, 255)
-MinimizeButton.TextSize = 14
-MinimizeButton.Font = Enum.Font.GothamBold
-
-local MinimizeCorner = Instance.new("UICorner")
-MinimizeCorner.Parent = MinimizeButton
-MinimizeCorner.CornerRadius = UDim.new(0, 5)
-
-local MinimizeStroke = Instance.new("UIStroke")
-MinimizeStroke.Parent = MinimizeButton
-MinimizeStroke.Color = Color3.fromRGB(100, 150, 255)
-MinimizeStroke.Thickness = 1
-
--- 滚动框架
-local ScrollFrame = Instance.new("ScrollingFrame")
-ScrollFrame.Parent = MainFrame
-ScrollFrame.Size = UDim2.new(1, -12, 1, -40)
-ScrollFrame.Position = UDim2.new(0, 6, 0, 32)
-ScrollFrame.BackgroundTransparency = 1
-ScrollFrame.ScrollBarThickness = 4
-ScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(80, 120, 200)
-ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 430)
-
--- 内容容器
-local Content = Instance.new("Frame")
-Content.Parent = ScrollFrame
-Content.Size = UDim2.new(1, 0, 0, 430)
-Content.BackgroundTransparency = 1
-
--- 创建紧凑功能按钮
-local function CreateButton(name, yPosition, hasIndicator)
-    local Button = Instance.new("TextButton")
-    Button.Name = name
-    Button.Size = UDim2.new(1, 0, 0, 30)
-    Button.Position = UDim2.new(0, 0, 0, yPosition)
-    Button.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
-    Button.BackgroundTransparency = 0.2
-    Button.TextColor3 = Color3.fromRGB(220, 220, 255)
-    Button.Text = name
-    Button.TextSize = 11
-    Button.Font = Enum.Font.Gotham
-    Button.Parent = Content
-
-    local ButtonCorner = Instance.new("UICorner")
-    ButtonCorner.Parent = Button
-    ButtonCorner.CornerRadius = UDim.new(0, 6)
-
-    local ButtonStroke = Instance.new("UIStroke")
-    ButtonStroke.Parent = Button
-    ButtonStroke.Color = Color3.fromRGB(80, 120, 200)
-    ButtonStroke.Thickness = 1
-
-    if hasIndicator then
-        local Indicator = Instance.new("Frame")
-        Indicator.Name = "Indicator"
-        Indicator.Size = UDim2.new(0, 6, 0, 6)
-        Indicator.Position = UDim2.new(1, -10, 0.5, -3)
-        Indicator.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-        Indicator.BorderSizePixel = 0
-        Indicator.Parent = Button
-
-        local IndicatorCorner = Instance.new("UICorner")
-        IndicatorCorner.Parent = Indicator
-        IndicatorCorner.CornerRadius = UDim.new(1, 0)
-    end
-
-    return Button
+local v6 = Instance.new("ScreenGui");
+v6.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui");
+v6.Name = "TeleportControlUI";
+v6.ResetOnSpawn = false;
+local v10 = Instance.new("Frame");
+v10.Parent = v6;
+v10.Size = UDim2.new((1994 - (109 + 1885)) - (1469 - (1269 + 200)), (1287 - 615) - (1307 - (98 + 717)), (1200 - (802 + 24)) - (123 + (432 - 181)), (1568 - 326) - (147 + 845));
+v10.Position = UDim2.new(0.5 - (0 + 0), -((130 + 658) - (45 + 163 + (1363 - 873))), 0.5 + (0 - 0), -(45 + 80));
+v10.BackgroundColor3 = Color3.fromRGB(54 - (16 + 23), 13 + 2, 9 + 3 + 7 + 6);
+v10.Active = true;
+v10.Draggable = true;
+local v17 = Instance.new("ImageLabel");
+v17.Parent = v10;
+v17.Size = UDim2.new((2270 - (797 + 636)) - ((3204 - 2544) + (1795 - (1427 + 192))), (21 + 38) - (90 - 51), 1 + 0 + 0, (101 + 121) - ((340 - (192 + 134)) + (1464 - (316 + 960))));
+v17.Position = UDim2.new((376 + 299) - (534 + 109 + 32), -(5 + 5), 0 + 0 + 0, -((30 - 22) + (553 - (83 + 468))));
+v17.BackgroundTransparency = (1807 - (1202 + 604)) + (0 - 0);
+v17.Image = "rbxassetid://8992230673";
+v17.ImageColor3 = Color3.fromRGB((0 - 0) + (0 - 0), 168 - 88, 688 - ((478 - (45 + 280)) + 280));
+v17.ImageTransparency = (0.8 + 0) - (0 + 0);
+v17.ScaleType = Enum.ScaleType.Slice;
+v17.SliceCenter = Rect.new((29 + 48) - 28, (76 + 61) - (16 + 72), 242 + (384 - 176), 450);
+local v28 = Instance.new("UICorner");
+v28.Parent = v10;
+v28.CornerRadius = UDim.new(0, 7 + (1914 - (340 + 1571)));
+local v31 = Instance.new("UIStroke");
+v31.Parent = v10;
+v31.Color = Color3.fromRGB((180 + 276) - ((1887 - (1733 + 39)) + 281), (766 - 487) - (1193 - (125 + 909)), (2160 - (1096 + 852)) + 20 + 23);
+v31.Thickness = 4 - (2 - 0);
+v31.Transparency = 0.3 + 0;
+local v36 = Instance.new("Frame");
+v36.Parent = v10;
+v36.Size = UDim2.new(3 - 2, (1379 - (409 + 103)) - ((786 - (46 + 190)) + (412 - (51 + 44))), (0 + 0) - (1317 - (1114 + 203)), (764 - (228 + 498)) - 10);
+v36.Position = UDim2.new((0 + 0) - 0, (158 + 127) - (134 + 151), (663 - (174 + 489)) - 0, (4337 - 2672) - ((2875 - (830 + 1075)) + 695));
+v36.BackgroundColor3 = Color3.fromRGB((528 - (303 + 221)) + (1290 - (231 + 1038)), 14 + 2 + (1171 - (171 + 991)), 76 - 36);
+v36.BackgroundTransparency = (354.1 - 268) - ((225 - 141) + (4 - 2));
+local v42 = Instance.new("UICorner");
+v42.Parent = v36;
+v42.CornerRadius = UDim.new((0 + 0) - (0 - 0), (5769 - 3769) - ((937 - 355) + (4352 - 2944)));
+local v45 = Instance.new("TextLabel");
+v45.Parent = v36;
+v45.Size = UDim2.new(1 + (1248 - (111 + 1137)), -((1050 - (91 + 67)) - ((1479 - 982) + 345)), 3 - (1 + 1), 0);
+v45.Position = UDim2.new((523 - (423 + 100)) - 0, (1 + 29) - (60 - 38), (951 + 873) - ((1966 - (326 + 445)) + (2744 - 2115)), (0 - 0) + 0);
+v45.BackgroundTransparency = (2 - 1) - (711 - (530 + 181));
+v45.Text = "传送控制";
+v45.TextColor3 = Color3.fromRGB(421 - (187 + (935 - (614 + 267))), 980 - ((194 - (19 + 13)) + (1005 - 387)), (416 - 237) + 76);
+v45.TextSize = (31 - 20) + 1 + 0;
+v45.Font = Enum.Font.GothamBold;
+v45.TextXAlignment = Enum.TextXAlignment.Left;
+local v57 = Instance.new("Frame");
+v57.Parent = v36;
+v57.Size = UDim2.new((0 - 0) - 0, (7 - 3) + (1814 - (1293 + 519)), 489 - ((931 - 474) + (83 - 51)), 12 - (11 - 5));
+v57.Position = UDim2.new((4 - 3) - (0 - 0), -(2 + 1 + 7 + 25), (3800.5 - 2164) - (318 + 1055 + 88 + 175), -(1003 - (451 + 344 + 205)));
+v57.BackgroundColor3 = Color3.fromRGB((1177 - (709 + 387)) + 174, (1935 - (673 + 1185)) - (77 - 50), (80 - 55) + (41 - 16));
+v57.BorderSizePixel = (0 + 0) - (0 + 0);
+local v63 = Instance.new("UICorner");
+v63.Parent = v57;
+v63.CornerRadius = UDim.new(1385 - ((1006 - 260) + 638), 0 + 0 + (0 - 0));
+local v66 = Instance.new("TextButton");
+v66.Parent = v36;
+v66.Size = UDim2.new((0 - 0) - (1880 - (446 + 1434)), 363 - ((1501 - (1040 + 243)) + (367 - 244)), (3428 - (559 + 1288)) - ((3466 - (609 + 1322)) + 46), 22 + (454 - (13 + 441)));
+v66.Position = UDim2.new(1, -(4 + 21), 560.5 - ((1143 - 837) + 254), -((2 - 1) + 10));
+v66.BackgroundColor3 = Color3.fromRGB(249 - 199, 1 + 9 + (145 - 105), (56 + 101) - (34 + 43));
+v66.BackgroundTransparency = (4353.2 - 2886) - (899 + 568);
+v66.Text = "-";
+v66.TextColor3 = Color3.fromRGB((315 + 260) - (652 - 297), 8 + 3 + 209, 94 + 74 + 63 + 24);
+v66.TextSize = (28 + 5) - (19 + 0);
+v66.Font = Enum.Font.GothamBold;
+local v76 = Instance.new("UICorner");
+v76.Parent = v66;
+v76.CornerRadius = UDim.new(603 - (268 + (768 - (153 + 280))), (851 - 556) - (54 + 6 + 91 + 139));
+local v79 = Instance.new("UIStroke");
+v79.Parent = v66;
+v79.Color = Color3.fromRGB(672 - (426 + 146), 18 + 70 + 62, 255);
+v79.Thickness = 1 + 0 + 0;
+local v83 = Instance.new("ScrollingFrame");
+v83.Parent = v10;
+v83.Size = UDim2.new((1056 + 401) - (282 + (1787 - 613)), -(22 - 10), 812 - (352 + 217 + (909 - (89 + 578))), -((83 + 32) - (155 - 80)));
+v83.Position = UDim2.new(0 + (1049 - (572 + 477)), (139 + 891) - (424 + 282 + 38 + 280), 0 + 0, (1369 - (84 + 2)) - ((1187 - 466) + 382 + 148));
+v83.BackgroundTransparency = (845 - (497 + 345)) - (1 + 1);
+v83.ScrollBarThickness = (216 + 1059) - ((2278 - (605 + 728)) + 326);
+v83.ScrollBarImageColor3 = Color3.fromRGB((130 + 52) - (226 - 124), (14 + 285) - 179, (354 - 258) + 104);
+v83.CanvasSize = UDim2.new(0 + 0 + (0 - 0), 0 + 0 + 0, (489 - (457 + 32)) - (0 + 0), 1130 - ((1673 - (832 + 570)) + 429));
+local v91 = Instance.new("Frame");
+v91.Parent = v83;
+v91.Size = UDim2.new(1 + 0, 0 + 0 + 0, (5308 - 3808) - (1408 + 92), (731 + 785) - ((1257 - (588 + 208)) + (1684 - 1059)));
+v91.BackgroundTransparency = (2747 - (884 + 916)) - ((184 - 96) + 858);
+local function v95(v183, v184, v185)
+	local v186 = 0;
+	local v187;
+	local v188;
+	local v189;
+	while true do
+		local v280 = 0 + 0;
+		while true do
+			if (v280 == (653 - (232 + 421))) then
+				if (v186 == 1) then
+					v187.BackgroundColor3 = Color3.fromRGB(40, (1901 - (1569 + 320)) + 7 + 21, 4 + 12 + (147 - 103));
+					v187.BackgroundTransparency = (605.2 - (316 + 289)) - 0;
+					v187.TextColor3 = Color3.fromRGB(575 - 355, 749 - (406 + 6 + 117), 1708 - (666 + 787));
+					v187.Text = v183;
+					v186 = 427 - (360 + 65);
+				end
+				if (v186 == (0 + 0)) then
+					v187 = Instance.new("TextButton");
+					v187.Name = v183;
+					v187.Size = UDim2.new(1 + (254 - (79 + 175)), (2030 - 742) - (775 + 218 + (903 - 608)), (0 - 0) + 0, (2100 - (503 + 396)) - ((599 - (92 + 89)) + (1460 - 707)));
+					v187.Position = UDim2.new(0 + 0 + 0 + 0, (0 - 0) - (0 + 0), 0 + (0 - 0), v184);
+					v186 = 1 + 0;
+				end
+				v280 = 1;
+			end
+			if (v280 == (1 + 1)) then
+				if (v186 == 3) then
+					v188.Parent = v187;
+					v188.CornerRadius = UDim.new((0 - 0) + 0 + 0, (16 - 5) - (1249 - (485 + 759)));
+					v189 = Instance.new("UIStroke");
+					v189.Parent = v187;
+					v186 = 4;
+				end
+				break;
+			end
+			if (v280 == 1) then
+				if (v186 == 4) then
+					v189.Color = Color3.fromRGB((145 - 82) + (1206 - (442 + 747)), (2577 - (832 + 303)) - (1249 + 73), 72 + (1074 - (88 + 858)));
+					v189.Thickness = (350 + 796) - (386 + 80 + 28 + 651);
+					if v185 then
+						local v510 = 789 - (766 + 23);
+						local v511;
+						local v512;
+						while true do
+							if ((19 - 15) == v510) then
+								v512.Parent = v511;
+								v512.CornerRadius = UDim.new((156 - 41) - ((10 - 6) + 110), 584 - ((193 - 136) + 527));
+								break;
+							end
+							if (v510 == 1) then
+								v511.Size = UDim2.new((1073 - (1036 + 37)) - (0 + 0), 15 - 9, (0 - 0) - (0 + 0), (1483 - (641 + 839)) + (916 - (910 + 3)));
+								v511.Position = UDim2.new(1901 - ((270 - 164) + (3478 - (1466 + 218))), -(2 + 2 + 6), (1148.5 - (556 + 592)) + 0 + 0, -((809 - (329 + 479)) + 2));
+								v510 = 856 - (174 + 680);
+							end
+							if (v510 == (10 - 7)) then
+								v511.Parent = v187;
+								v512 = Instance.new("UICorner");
+								v510 = 8 - 4;
+							end
+							if (v510 == (0 + 0)) then
+								local v601 = 739 - (396 + 343);
+								while true do
+									if (v601 == (1 + 0)) then
+										v510 = 1;
+										break;
+									end
+									if (v601 == (1477 - (29 + 1448))) then
+										v511 = Instance.new("Frame");
+										v511.Name = "Indicator";
+										v601 = 1;
+									end
+								end
+							end
+							if (v510 == 2) then
+								v511.BackgroundColor3 = Color3.fromRGB(255, 1439 - (135 + 1254), (553 - 406) - 97);
+								v511.BorderSizePixel = (0 - 0) - (0 + 0);
+								v510 = 3;
+							end
+						end
+					end
+					return v187;
+				end
+				if (v186 == (1529 - (389 + 1138))) then
+					v187.TextSize = (2354 - (102 + 472)) - (1651 + 98 + 12 + 8);
+					v187.Font = Enum.Font.Gotham;
+					v187.Parent = v91;
+					v188 = Instance.new("UICorner");
+					v186 = 3;
+				end
+				v280 = 2 + 0;
+			end
+		end
+	end
 end
-
--- 创建紧凑输入控件
-local function CreateInputControl(label, yPosition, defaultValue, minValue, maxValue)
-    local ControlFrame = Instance.new("Frame")
-    ControlFrame.Size = UDim2.new(1, 0, 0, 25)
-    ControlFrame.Position = UDim2.new(0, 0, 0, yPosition)
-    ControlFrame.BackgroundTransparency = 1
-    ControlFrame.Parent = Content
-
-    local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(0.4, 0, 1, 0)
-    Label.Position = UDim2.new(0, 0, 0, 0)
-    Label.BackgroundTransparency = 1
-    Label.Text = label
-    Label.TextColor3 = Color3.fromRGB(180, 200, 255)
-    Label.TextSize = 10
-    Label.Font = Enum.Font.Gotham
-    Label.TextXAlignment = Enum.TextXAlignment.Left
-    Label.Parent = ControlFrame
-
-    local ValueBox = Instance.new("TextButton")
-    ValueBox.Size = UDim2.new(0.6, 0, 1, 0)
-    ValueBox.Position = UDim2.new(0.4, 0, 0, 0)
-    ValueBox.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
-    ValueBox.Text = tostring(defaultValue)
-    ValueBox.TextColor3 = Color3.fromRGB(0, 200, 255)
-    ValueBox.TextSize = 10
-    ValueBox.Font = Enum.Font.Gotham
-    ValueBox.Parent = ControlFrame
-
-    local ValueCorner = Instance.new("UICorner")
-    ValueCorner.Parent = ValueBox
-    ValueCorner.CornerRadius = UDim.new(0, 4)
-
-    local ValueStroke = Instance.new("UIStroke")
-    ValueStroke.Parent = ValueBox
-    ValueStroke.Color = Color3.fromRGB(80, 120, 200)
-    ValueStroke.Thickness = 1
-
-    return {
-        Frame = ControlFrame,
-        Box = ValueBox,
-        Value = defaultValue,
-        Min = minValue,
-        Max = maxValue
-    }
+local function v96(v190, v191, v192, v193, v194)
+	local v195 = 1545 - (320 + 1225);
+	local v196;
+	local v197;
+	local v198;
+	local v199;
+	local v200;
+	local v201;
+	while true do
+		if ((1 - 0) == v195) then
+			local v311 = 0;
+			while true do
+				if (v311 == 0) then
+					v198 = nil;
+					v199 = nil;
+					v311 = 1;
+				end
+				if (v311 == (1 + 0)) then
+					v195 = 2;
+					break;
+				end
+			end
+		end
+		if (v195 == 0) then
+			v196 = (2891 - (157 + 1307)) - ((1900 - (821 + 1038)) + (3457 - 2071));
+			v197 = nil;
+			v195 = 1 + 0;
+		end
+		if (3 == v195) then
+			while true do
+				if (v196 == (106 - ((30 - 13) + 86))) then
+					local v419 = 0;
+					local v420;
+					while true do
+						if (v419 == (0 + 0)) then
+							v420 = 0 - 0;
+							while true do
+								if (v420 == (1027 - (834 + 192))) then
+									v199.TextColor3 = Color3.fromRGB((0 + 0) - (0 + 0), (35 + 1554) - (135 + (1942 - 688)), (725 - (300 + 4)) - (33 + 89 + 44));
+									v199.TextSize = (44 - 27) - (369 - (112 + 250));
+									v420 = 1 + 1;
+								end
+								if (v420 == 0) then
+									v199.BackgroundColor3 = Color3.fromRGB(28 + (29 - 17), 23 + 17, (69 + 64) - (55 + 18));
+									v199.Text = tostring(v192);
+									v420 = 1;
+								end
+								if (v420 == (2 + 1)) then
+									v196 = 12 - (6 + 2);
+									break;
+								end
+								if (v420 == (1416 - (1001 + 413))) then
+									v199.Font = Enum.Font.Gotham;
+									v199.Parent = v197;
+									v420 = 3;
+								end
+							end
+							break;
+						end
+					end
+				end
+				if (v196 == ((8 - 4) + (882 - (244 + 638)))) then
+					local v421 = 693 - (627 + 66);
+					local v422;
+					while true do
+						if (v421 == (0 - 0)) then
+							v422 = 602 - (512 + 90);
+							while true do
+								if (v422 == (1907 - (1665 + 241))) then
+									v200.CornerRadius = UDim.new((2244 - (373 + 344)) - (176 + 213 + 1138), 1 + 1 + 2);
+									v201 = Instance.new("UIStroke");
+									v422 = 2;
+								end
+								if (v422 == 0) then
+									v200 = Instance.new("UICorner");
+									v200.Parent = v199;
+									v422 = 2 - 1;
+								end
+								if (v422 == (4 - 1)) then
+									v196 = 1262 - ((2142 - (35 + 1064)) + 156 + 58);
+									break;
+								end
+								if (v422 == (4 - 2)) then
+									v201.Parent = v199;
+									v201.Color = Color3.fromRGB(162 - (1 + 81), (1421 - (298 + 938)) - ((1289 - (233 + 1026)) + (1701 - (636 + 1030))), 138 + 62);
+									v422 = 2 + 1;
+								end
+							end
+							break;
+						end
+					end
+				end
+				if (v196 == (3 - 2)) then
+					v198.Size = UDim2.new(1545.4 - (313 + 7 + 1225), (361 + 851) - (22 + 301 + 889), 2 - 1, (801 - (55 + 166)) - (361 + 43 + 176));
+					v198.Position = UDim2.new(0 + 0, (1222 - 902) - (53 + (564 - (36 + 261))), (3250 - 1391) - ((2189 - (34 + 1334)) + 400 + 638), 0 - (0 + 0));
+					v198.BackgroundTransparency = 1 + 0;
+					v198.Text = v190;
+					v198.TextColor3 = Color3.fromRGB(180, (1896 - (1035 + 248)) - ((36 - (20 + 1)) + 208 + 190), 255);
+					v198.TextSize = (1311 - (134 + 185)) - ((1151 - (549 + 584)) + (1649 - (314 + 371)));
+					v196 = (24 - 17) - 5;
+				end
+				if (v196 == ((971 - (478 + 490)) + 2 + 0)) then
+					local v429 = 1172 - (786 + 386);
+					while true do
+						if (v429 == (0 - 0)) then
+							local v530 = 1379 - (1055 + 324);
+							while true do
+								if (v530 == 0) then
+									v201.Thickness = 1 + (1340 - (1093 + 247));
+									return {Frame=v197,Box=v199,Value=v192,Min=v193,Max=v194};
+								end
+							end
+						end
+					end
+				end
+				if (((914 + 114) - (88 + 746 + 192)) == v196) then
+					local v430 = 0 - 0;
+					local v431;
+					while true do
+						if (v430 == (0 - 0)) then
+							v431 = 0 - 0;
+							while true do
+								if (v431 == (2 - 1)) then
+									v198.Parent = v197;
+									v199 = Instance.new("TextButton");
+									v431 = 2;
+								end
+								if (v431 == (2 + 1)) then
+									v196 = (7 - 5) + 1;
+									break;
+								end
+								if (v431 == 2) then
+									v199.Size = UDim2.new((2929.6 - 2079) - (16 + 4 + 830), (0 - 0) + (688 - (364 + 324)), 127 - (116 + (27 - 17)), (0 - 0) + 0 + 0);
+									v199.Position = UDim2.new((1271.4 - 967) - ((480 - 180) + (11 - 7)), (2006 - (1249 + 19)) - (490 + 52 + (762 - 566)), (1086 - (686 + 400)) - (0 + 0), (229 - (73 + 156)) + 0 + 0);
+									v431 = 3;
+								end
+								if (v431 == (811 - (721 + 90))) then
+									v198.Font = Enum.Font.Gotham;
+									v198.TextXAlignment = Enum.TextXAlignment.Left;
+									v431 = 1;
+								end
+							end
+							break;
+						end
+					end
+				end
+				if (v196 == (0 + 0)) then
+					local v432 = 0 - 0;
+					while true do
+						if (v432 == (473 - (224 + 246))) then
+							v196 = 1 - 0;
+							break;
+						end
+						if (v432 == (3 - 1)) then
+							v197.Parent = v91;
+							v198 = Instance.new("TextLabel");
+							v432 = 3;
+						end
+						if (v432 == (1 + 0)) then
+							v197.Position = UDim2.new(0 - 0, 0 + 0, 1551 - (828 + 298 + (844 - 419)), v191);
+							v197.BackgroundTransparency = 3 - 2;
+							v432 = 515 - (203 + 310);
+						end
+						if (v432 == 0) then
+							v197 = Instance.new("Frame");
+							v197.Size = UDim2.new(1 + 0, 1993 - (1238 + 755), (0 + 0) - 0, (1921 - (709 + 825)) - ((205 - 93) + 250));
+							v432 = 1 - 0;
+						end
+					end
+				end
+			end
+			break;
+		end
+		if (v195 == 2) then
+			v200 = nil;
+			v201 = nil;
+			v195 = 867 - (196 + 668);
+		end
+	end
 end
-
--- 创建所有按钮和控件
-local StartButton = CreateButton("开始传送", 0, false)
-local PlayerSelectButton = CreateButton("选择玩家", 35, false)
-local StopButton = CreateButton("停止传送", 70, false)
-local AntiThrowButton = CreateButton("防甩飞: 开启", 105, true)
-local WallVisionButton = CreateButton("穿墙视野", 140, true)
-
--- 分隔线1
-local Separator1 = Instance.new("Frame")
-Separator1.Parent = Content
-Separator1.Size = UDim2.new(1, 0, 0, 1)
-Separator1.Position = UDim2.new(0, 0, 0, 175)
-Separator1.BackgroundColor3 = Color3.fromRGB(60, 120, 255)
-Separator1.BackgroundTransparency = 0.5
-
-local SeparatorLabel1 = Instance.new("TextLabel")
-SeparatorLabel1.Parent = Content
-SeparatorLabel1.Size = UDim2.new(1, 0, 0, 18)
-SeparatorLabel1.Position = UDim2.new(0, 0, 0, 180)
-SeparatorLabel1.BackgroundTransparency = 1
-SeparatorLabel1.Text = "环绕设置"
-SeparatorLabel1.TextColor3 = Color3.fromRGB(120, 160, 255)
-SeparatorLabel1.TextSize = 10
-SeparatorLabel1.Font = Enum.Font.GothamBold
-
--- 环绕控制
-local ParallelOrbitButton = CreateButton("平行环绕", 203, true)
-local RadiusControl = CreateInputControl("环绕半径:", 238, 10, 1, 999999)
-local OrbitSpeedControl = CreateInputControl("环绕速度:", 268, 2, 0.1, 999999)
-
--- 分隔线2
-local Separator2 = Instance.new("Frame")
-Separator2.Parent = Content
-Separator2.Size = UDim2.new(1, 0, 0, 1)
-Separator2.Position = UDim2.new(0, 0, 0, 303)
-Separator2.BackgroundColor3 = Color3.fromRGB(60, 120, 255)
-Separator2.BackgroundTransparency = 0.5
-
-local SeparatorLabel2 = Instance.new("TextLabel")
-SeparatorLabel2.Parent = Content
-SeparatorLabel2.Size = UDim2.new(1, 0, 0, 18)
-SeparatorLabel2.Position = UDim2.new(0, 0, 0, 308)
-SeparatorLabel2.BackgroundTransparency = 1
-SeparatorLabel2.Text = "高级设置"
-SeparatorLabel2.TextColor3 = Color3.fromRGB(120, 160, 255)
-SeparatorLabel2.TextSize = 10
-SeparatorLabel2.Font = Enum.Font.GothamBold
-
--- 高级设置
-local AntiThrowSpeedControl = CreateInputControl("防甩阈值:", 331, 50, 1, 999999)
-local DeleteUIButton = CreateButton("删除UI", 361, false)
-
--- 更新按钮状态
-local function UpdateButtonState(buttonName, isActive)
-    local button = Content:FindFirstChild(buttonName)
-    if button then
-        local indicator = button:FindFirstChild("Indicator")
-        if indicator then
-            if isActive then
-                indicator.BackgroundColor3 = Color3.fromRGB(50, 255, 50)
-                button.BackgroundColor3 = Color3.fromRGB(40, 80, 40)
-            else
-                indicator.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-                button.BackgroundColor3 = Color3.fromRGB(60, 40, 40)
-            end
-        end
-    end
+local v97 = v95("开始传送", (1599 - 1194) - (118 + (594 - 307)), false);
+local v98 = v95("选择玩家", 137 - (935 - (171 + 662)), false);
+local v99 = v95("停止传送", (1284 - (4 + 89)) - (118 + (3515 - 2512)), false);
+local v100 = v95("防甩飞: 开启", (112 + 195) - (887 - 685), true);
+local v101 = v95("穿墙视野", (203 + 314) - (142 + (1721 - (35 + 1451))), true);
+local v102 = Instance.new("Frame");
+v102.Parent = v91;
+v102.Size = UDim2.new(1 + 0, 0 - (1453 - (28 + 1425)), (1993 - (941 + 1052)) + 0 + 0, 978 - ((2067 - (822 + 692)) + (605 - 181)));
+v102.Position = UDim2.new(1414 - (472 + 529 + (710 - (45 + 252))), (0 + 0) - (0 + 0), (2146 - 1264) - ((677 - (114 + 319)) + 638), (222 - 67) + 20);
+v102.BackgroundColor3 = Color3.fromRGB(60 + 0, 70 + 50, (138 - 29) + 94 + 52);
+v102.BackgroundTransparency = 1906.5 - ((2480 - 815) + 241);
+local v108 = Instance.new("TextLabel");
+v108.Parent = v91;
+v108.Size = UDim2.new((1 - 0) + (1963 - (556 + 1407)), 0 - 0, 0 - (1206 - (741 + 465)), 40 - (487 - (170 + 295)));
+v108.Position = UDim2.new(0 + 0, (0 + 0) - (0 + 0), 0, (2296 - 1363) - (239 + 514));
+v108.BackgroundTransparency = 1 + 0 + 0;
+v108.Text = "环绕设置";
+v108.TextColor3 = Color3.fromRGB((131 + 72) - 83, 1259 - (20 + 15 + 1064), 255);
+v108.TextSize = (2569 - (957 + 273)) - (797 + 532);
+v108.Font = Enum.Font.GothamBold;
+local v117 = v95("平行环绕", 148 + 55, true);
+local v118 = v96("环绕半径:", 22 + 59 + 63 + 94, 21 - (41 - 30), 1 + (0 - 0), 3054502 - 2054503);
+local v119 = v96("环绕速度:", (3114 - 2485) - (2141 - (389 + 1391)), (756 + 448) - (373 + 829), (77.10000000000002 + 654) - ((1083 - 607) + 255), (1002080 - (783 + 168)) - ((1238 - 869) + 749 + 12));
+local v120 = Instance.new("Frame");
+v120.Parent = v91;
+v120.Size = UDim2.new(312 - (309 + 2), (0 - 0) + (1212 - (1090 + 122)), (0 + 0) - (0 - 0), 1);
+v120.Position = UDim2.new((0 + 0) - (1118 - (628 + 490)), (43 + 195) - (64 + (430 - 256)), 0 - 0, 524 - (55 + (940 - (431 + 343))));
+v120.BackgroundColor3 = Color3.fromRGB((17 - 8) + 51, (511 - 334) - 57, (467 + 124) - (19 + 125 + (1887 - (556 + 1139))));
+v120.BackgroundTransparency = 15.5 - (6 + 9);
+local v126 = Instance.new("TextLabel");
+v126.Parent = v91;
+v126.Size = UDim2.new((40 + 177) - (42 + 90 + 84), (466 - (28 + 141)) - (14 + 22 + (321 - 60)), 0 + 0, 31 - (1330 - (486 + 831)));
+v126.Position = UDim2.new((3559 - 2191) - ((119 - 85) + 1334), 0 + 0 + 0, 0 + (0 - 0), (1503 - (668 + 595)) + 62 + 6);
+v126.BackgroundTransparency = 1 + 0 + (0 - 0);
+v126.Text = "高级设置";
+v126.TextColor3 = Color3.fromRGB(410 - (23 + 267), (3608 - (1129 + 815)) - (363 + (1528 - (371 + 16))), 1835 - ((2933 - (1326 + 424)) + (751 - 354)));
+v126.TextSize = (109 - 79) - (138 - (88 + 30));
+v126.Font = Enum.Font.GothamBold;
+local v135 = v96("防甩阈值:", 243 + 88, (809 - (720 + 51)) + (26 - 14), (3752 - (421 + 1355)) - ((3155 - 1242) + 31 + 31), (630861 - (286 + 797)) + 370221);
+local v136 = v95("删除UI", 1239 - 878, false);
+local function v137(v202, v203)
+	local v204 = 0 - 0;
+	local v205;
+	while true do
+		if (v204 == (0 - 0)) then
+			v205 = v91:FindFirstChild(v202);
+			if v205 then
+				local v383 = 439 - (397 + 42);
+				local v384;
+				local v385;
+				while true do
+					if (v383 == (1 + 0)) then
+						while true do
+							if (v384 == ((1768 - (24 + 776)) - ((736 - 258) + 490))) then
+								v385 = v205:FindFirstChild("Indicator");
+								if v385 then
+									if v203 then
+										local v672 = 0;
+										while true do
+											if (v672 == 0) then
+												v385.BackgroundColor3 = Color3.fromRGB((917 - (222 + 563)) - 82, (3143 - 1716) - (566 + 220 + (576 - (23 + 167))), (1959 - (690 + 1108)) - 111);
+												v205.BackgroundColor3 = Color3.fromRGB((712 + 1261) - (467 + 98 + (2216 - (40 + 808))), (50 + 250) - 220, (5277 - 3897) - (1045 + 48 + 131 + 116));
+												break;
+											end
+										end
+									else
+										local v673 = 0;
+										while true do
+											if (0 == v673) then
+												v385.BackgroundColor3 = Color3.fromRGB(1916 - (810 + 667 + (755 - (47 + 524))), (45 + 23) - 18, (128 - 81) + 3);
+												v205.BackgroundColor3 = Color3.fromRGB(203 - 143, (1339 - 443) - ((1285 - 721) + (2018 - (1165 + 561))), (3 + 97) - 60);
+												break;
+											end
+										end
+									end
+								end
+								break;
+							end
+						end
+						break;
+					end
+					if (v383 == (0 - 0)) then
+						local v513 = 0 + 0;
+						while true do
+							if (v513 == 0) then
+								v384 = 0;
+								v385 = nil;
+								v513 = 1;
+							end
+							if (v513 == (480 - (341 + 138))) then
+								v383 = 1;
+								break;
+							end
+						end
+					end
+				end
+			end
+			break;
+		end
+	end
 end
-
--- 数字输入弹窗
-local function CreateNumberInputPopup(currentValue, minValue, maxValue, callback)
-    local PopupGui = Instance.new("ScreenGui")
-    PopupGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-
-    local PopupFrame = Instance.new("Frame")
-    PopupFrame.Parent = PopupGui
-    PopupFrame.Size = UDim2.new(0, 220, 0, 130)
-    PopupFrame.Position = UDim2.new(0.5, -110, 0.5, -65)
-    PopupFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 35)
-    PopupFrame.Active = true
-    PopupFrame.Draggable = true
-
-    local PopupCorner = Instance.new("UICorner")
-    PopupCorner.Parent = PopupFrame
-    PopupCorner.CornerRadius = UDim.new(0, 10)
-
-    local PopupStroke = Instance.new("UIStroke")
-    PopupStroke.Parent = PopupFrame
-    PopupStroke.Color = Color3.fromRGB(80, 120, 200)
-    PopupStroke.Thickness = 2
-
-    local Title = Instance.new("TextLabel")
-    Title.Parent = PopupFrame
-    Title.Size = UDim2.new(1, -20, 0, 25)
-    Title.Position = UDim2.new(0, 10, 0, 8)
-    Title.BackgroundTransparency = 1
-    Title.Text = "输入数值 ("..minValue.."-"..maxValue..")"
-    Title.TextColor3 = Color3.fromRGB(220, 220, 255)
-    Title.TextSize = 12
-    Title.Font = Enum.Font.GothamBold
-
-    local InputBox = Instance.new("TextBox")
-    InputBox.Parent = PopupFrame
-    InputBox.Size = UDim2.new(1, -40, 0, 30)
-    InputBox.Position = UDim2.new(0, 20, 0, 40)
-    InputBox.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
-    InputBox.Text = tostring(currentValue)
-    InputBox.TextColor3 = Color3.fromRGB(220, 220, 255)
-    InputBox.TextSize = 14
-    InputBox.Font = Enum.Font.Gotham
-    InputBox.ClearTextOnFocus = false
-
-    local InputCorner = Instance.new("UICorner")
-    InputCorner.Parent = InputBox
-    InputCorner.CornerRadius = UDim.new(0, 6)
-
-    local InputStroke = Instance.new("UIStroke")
-    InputStroke.Parent = InputBox
-    InputStroke.Color = Color3.fromRGB(80, 120, 200)
-    InputStroke.Thickness = 1
-
-    local ConfirmButton = Instance.new("TextButton")
-    ConfirmButton.Parent = PopupFrame
-    ConfirmButton.Size = UDim2.new(0, 70, 0, 25)
-    ConfirmButton.Position = UDim2.new(0.5, -80, 1, -40)
-    ConfirmButton.BackgroundColor3 = Color3.fromRGB(40, 120, 80)
-    ConfirmButton.Text = "确认"
-    ConfirmButton.TextColor3 = Color3.fromRGB(220, 220, 255)
-    ConfirmButton.TextSize = 12
-    ConfirmButton.Font = Enum.Font.Gotham
-
-    local ConfirmCorner = Instance.new("UICorner")
-    ConfirmCorner.Parent = ConfirmButton
-    ConfirmCorner.CornerRadius = UDim.new(0, 5)
-
-    local CancelButton = Instance.new("TextButton")
-    CancelButton.Parent = PopupFrame
-    CancelButton.Size = UDim2.new(0, 70, 0, 25)
-    CancelButton.Position = UDim2.new(0.5, 10, 1, -40)
-    CancelButton.BackgroundColor3 = Color3.fromRGB(120, 40, 40)
-    CancelButton.Text = "取消"
-    CancelButton.TextColor3 = Color3.fromRGB(220, 220, 255)
-    CancelButton.TextSize = 12
-    CancelButton.Font = Enum.Font.Gotham
-
-    local CancelCorner = Instance.new("UICorner")
-    CancelCorner.Parent = CancelButton
-    CancelCorner.CornerRadius = UDim.new(0, 5)
-
-    ConfirmButton.MouseButton1Click:Connect(function()
-        local inputText = InputBox.Text
-        local numberValue = tonumber(inputText)
-
-        if numberValue then
-            if numberValue < minValue then
-                numberValue = minValue
-            elseif numberValue > maxValue then
-                numberValue = maxValue
-            end
-            callback(numberValue)
-        end
-        PopupGui:Destroy()
-    end)
-
-    CancelButton.MouseButton1Click:Connect(function()
-        PopupGui:Destroy()
-    end)
-
-    InputBox.FocusLost:Connect(function(enterPressed)
-        if enterPressed then
-            local inputText = InputBox.Text
-            local numberValue = tonumber(inputText)
-
-            if numberValue then
-                if numberValue < minValue then
-                    numberValue = minValue
-                elseif numberValue > maxValue then
-                    numberValue = maxValue
-                end
-                callback(numberValue)
-            end
-            PopupGui:Destroy()
-        end
-    end)
+local function v138(v206, v207, v208, v209)
+	local v210 = (0 + 0) - (0 - 0);
+	local v211;
+	local v212;
+	local v213;
+	local v214;
+	local v215;
+	local v216;
+	local v217;
+	local v218;
+	local v219;
+	local v220;
+	local v221;
+	local v222;
+	while true do
+		if (v210 == (2 - 1)) then
+			local v312 = 0;
+			while true do
+				if (v312 == 3) then
+					v214.Color = Color3.fromRGB(406 - (89 + 237), (292 - 201) + 29, 504 - ((513 - 269) + 60));
+					v214.Thickness = (883 - (581 + 300)) + (1220 - (855 + 365));
+					v312 = 9 - 5;
+				end
+				if (v312 == (0 + 0)) then
+					v212.Draggable = true;
+					v213 = Instance.new("UICorner");
+					v312 = 1236 - (1030 + 205);
+				end
+				if (4 == v312) then
+					v210 = 2 + 0;
+					break;
+				end
+				if (v312 == (1 + 0)) then
+					v213.Parent = v212;
+					v213.CornerRadius = UDim.new((286 - (156 + 130)) - (0 - 0), 34 - (39 - 15));
+					v312 = 3 - 1;
+				end
+				if ((1 + 1) == v312) then
+					v214 = Instance.new("UIStroke");
+					v214.Parent = v212;
+					v312 = 2 + 1;
+				end
+			end
+		end
+		if (v210 == ((86 - (10 + 59)) - 10)) then
+			local v313 = 0 + 0;
+			local v314;
+			while true do
+				if (v313 == (0 - 0)) then
+					v314 = 0;
+					while true do
+						if (v314 == (1163 - (671 + 492))) then
+							v221.Size = UDim2.new(688 - (364 + 324), 546 - (33 + 8 + (1650 - (369 + 846))), 0, (272 + 754) - (801 + 137 + 63));
+							v221.Position = UDim2.new((1945.5 - (1036 + 909)) + 0 + 0, (13 - 5) + (205 - (11 + 192)), (570 + 556) - ((1111 - (135 + 40)) + (457 - 268)), -(14 + 26));
+							v314 = 1 + 0;
+						end
+						if (v314 == (4 - 2)) then
+							v221.TextColor3 = Color3.fromRGB((1001 - 333) - (624 - (50 + 126)), 1488 - ((3477 - 2228) + 5 + 14), (2806 - (1233 + 180)) - ((1751 - (522 + 447)) + (1777 - (107 + 1314))));
+							v221.TextSize = (130 + 149) - (176 + (277 - 186));
+							v314 = 2 + 1;
+						end
+						if (v314 == 4) then
+							v210 = (39 - 19) - (47 - 35);
+							break;
+						end
+						if (v314 == (1911 - (716 + 1194))) then
+							v221.BackgroundColor3 = Color3.fromRGB(1733 - (27 + 1538 + 6 + 42), 543 - (74 + 429), (48 - 23) + 8 + 7);
+							v221.Text = "取消";
+							v314 = 4 - 2;
+						end
+						if (3 == v314) then
+							v221.Font = Enum.Font.Gotham;
+							v222 = Instance.new("UICorner");
+							v314 = 3 + 1;
+						end
+					end
+					break;
+				end
+			end
+		end
+		if (v210 == ((21 - 14) - (4 - 2))) then
+			local v315 = 433 - (279 + 154);
+			local v316;
+			while true do
+				if (v315 == (778 - (454 + 324))) then
+					v316 = 0 + 0;
+					while true do
+						if (v316 == 3) then
+							v219.BackgroundColor3 = Color3.fromRGB((153 - (12 + 5)) - (52 + 44), (2899 - 1761) - (258 + 439 + (1414 - (277 + 816))), (927 - 710) - (1320 - (1058 + 125)));
+							v219.Text = "确认";
+							v316 = 1 + 3;
+						end
+						if (v316 == 0) then
+							v218.Color = Color3.fromRGB(309 - ((1048 - (815 + 160)) + (669 - 513)), (2 - 1) + 119, 48 + 152);
+							v218.Thickness = (2373 - 1561) - (721 + (1988 - (41 + 1857)));
+							v316 = 1894 - (1222 + 671);
+						end
+						if (v316 == (2 - 1)) then
+							v219 = Instance.new("TextButton");
+							v219.Parent = v212;
+							v316 = 2 - 0;
+						end
+						if (v316 == (1186 - (229 + 953))) then
+							v210 = 12 - (1780 - (1111 + 663));
+							break;
+						end
+						if (v316 == 2) then
+							v219.Size = UDim2.new((2671 - (874 + 705)) - (975 + 117), (32 + 195) - 157, 470 - (224 + 246), (1297 + 603) - ((325 - 168) + 49 + 1669));
+							v219.Position = UDim2.new((679.5 - (642 + 37)) + 0 + 0, -((46 + 237) - (509 - 306)), (455 - (233 + 221)) - (0 - 0), -40);
+							v316 = 3 + 0;
+						end
+					end
+					break;
+				end
+			end
+		end
+		if (((1549 - (718 + 823)) - (3 + 1)) == v210) then
+			local v317 = 805 - (266 + 539);
+			local v318;
+			while true do
+				if (0 == v317) then
+					v318 = 0 - 0;
+					while true do
+						if (v318 == (1229 - (636 + 589))) then
+							v210 = (2924 - 1692) - ((663 - 341) + 718 + 187);
+							break;
+						end
+						if (v318 == 1) then
+							v216.ClearTextOnFocus = false;
+							v217 = Instance.new("UICorner");
+							v318 = 1 + 1;
+						end
+						if (v318 == 0) then
+							v216.TextSize = (1021 - (657 + 358)) + 8;
+							v216.Font = Enum.Font.Gotham;
+							v318 = 1;
+						end
+						if ((4 - 2) == v318) then
+							v217.Parent = v216;
+							v217.CornerRadius = UDim.new((0 - 0) - 0, 15 - 9);
+							v318 = 1190 - (1151 + 36);
+						end
+						if (v318 == (3 + 0)) then
+							v218 = Instance.new("UIStroke");
+							v218.Parent = v216;
+							v318 = 4;
+						end
+					end
+					break;
+				end
+			end
+		end
+		if (v210 == ((163 + 454) - ((1797 - 1195) + (1841 - (1552 + 280))))) then
+			local v319 = 834 - (64 + 770);
+			while true do
+				if (v319 == (3 + 0)) then
+					v221 = Instance.new("TextButton");
+					v221.Parent = v212;
+					v319 = 8 - 4;
+				end
+				if ((0 + 0) == v319) then
+					v219.TextColor3 = Color3.fromRGB((2652 - (157 + 1086)) - ((898 - 449) + (3241 - 2501)), 733 - (203 + (475 - 165)), (1538 - 411) - (826 + (865 - (599 + 220))));
+					v219.TextSize = (1909 - 950) - ((2176 - (1813 + 118)) + 514 + 188);
+					v319 = 1218 - (841 + 376);
+				end
+				if (v319 == 1) then
+					v219.Font = Enum.Font.Gotham;
+					v220 = Instance.new("UICorner");
+					v319 = 2 - 0;
+				end
+				if (v319 == (1 + 1)) then
+					v220.Parent = v219;
+					v220.CornerRadius = UDim.new((0 - 0) - (859 - (464 + 395)), (5 - 3) + 2 + 1);
+					v319 = 840 - (467 + 370);
+				end
+				if (v319 == (8 - 4)) then
+					v210 = 10 - 3;
+					break;
+				end
+			end
+		end
+		if ((6 + 2) == v210) then
+			v222.Parent = v221;
+			v222.CornerRadius = UDim.new(1898 - ((891 - 631) + 256 + 1382), 445 - ((888 - 506) + 58));
+			v219.MouseButton1Click:Connect(function()
+				local v358 = (520 - (150 + 370)) - 0;
+				local v359;
+				local v360;
+				while true do
+					if (v358 == ((1282 - (74 + 1208)) + (0 - 0))) then
+						local v494 = 0;
+						while true do
+							if (v494 == (0 - 0)) then
+								v359 = v216.Text;
+								v360 = tonumber(v359);
+								v494 = 1 + 0;
+							end
+							if (v494 == (391 - (14 + 376))) then
+								v358 = (1 - 0) - (0 + 0);
+								break;
+							end
+						end
+					end
+					if (v358 == ((2 + 0) - (1 + 0))) then
+						if v360 then
+							local v557 = 0 - 0;
+							while true do
+								if (v557 == (0 + 0)) then
+									if (v360 < v207) then
+										v360 = v207;
+									elseif (v360 > v208) then
+										v360 = v208;
+									end
+									v209(v360);
+									break;
+								end
+							end
+						end
+						v211:Destroy();
+						break;
+					end
+				end
+			end);
+			v221.MouseButton1Click:Connect(function()
+				v211:Destroy();
+			end);
+			v216.FocusLost:Connect(function(v361)
+				if v361 then
+					local v446 = 78 - (23 + 55);
+					local v447;
+					local v448;
+					while true do
+						if (v446 == (2 - 1)) then
+							if v448 then
+								local v604 = 0 + 0;
+								local v605;
+								while true do
+									if (v604 == (0 + 0)) then
+										v605 = 0 - 0;
+										while true do
+											if (v605 == 0) then
+												if (v448 < v207) then
+													v448 = v207;
+												elseif (v448 > v208) then
+													v448 = v208;
+												end
+												v209(v448);
+												break;
+											end
+										end
+										break;
+									end
+								end
+							end
+							v211:Destroy();
+							break;
+						end
+						if ((0 + 0) == v446) then
+							v447 = v216.Text;
+							v448 = tonumber(v447);
+							v446 = 902 - (652 + 249);
+						end
+					end
+				end
+			end);
+			break;
+		end
+		if ((1208 - ((2413 - 1511) + 303)) == v210) then
+			local v322 = 1868 - (708 + 1160);
+			local v323;
+			while true do
+				if ((0 - 0) == v322) then
+					v323 = 0;
+					while true do
+						if ((1 - 0) == v323) then
+							v216.Parent = v212;
+							v216.Size = UDim2.new((28 - (10 + 17)) - 0, -40, (0 + 0) - (1732 - (1400 + 332)), 3 + (51 - 24));
+							v323 = 1910 - (242 + 1666);
+						end
+						if ((2 + 1) == v323) then
+							v216.Text = tostring(v206);
+							v216.TextColor3 = Color3.fromRGB((331 + 572) - (412 + 71 + (1140 - (850 + 90))), 220, (3008 - 1290) - (1404 + (1449 - (360 + 1030))));
+							v323 = 4;
+						end
+						if (v323 == 4) then
+							v210 = (9 + 1) - (16 - 10);
+							break;
+						end
+						if ((0 - 0) == v323) then
+							v215.Font = Enum.Font.GothamBold;
+							v216 = Instance.new("TextBox");
+							v323 = 1662 - (909 + 752);
+						end
+						if (v323 == (1225 - (109 + 1114))) then
+							v216.Position = UDim2.new((2720 - 1234) - (14 + 21 + (1693 - (6 + 236))), 1710 - (707 + 414 + 569), 1993 - (758 + 183 + 1052), 254 - ((51 - 29) + 192));
+							v216.BackgroundColor3 = Color3.fromRGB((67 - 28) + (1134 - (1076 + 57)), (256 + 1298) - (822 + 692), 60);
+							v323 = 3;
+						end
+					end
+					break;
+				end
+			end
+		end
+		if (v210 == (2 - (689 - (579 + 110)))) then
+			local v324 = 0;
+			while true do
+				if (v324 == (1 + 1)) then
+					v215.BackgroundTransparency = (210 + 27) - (141 + 51 + 44);
+					v215.Text = "输入数值 (" .. v207 .. "-" .. v208 .. ")";
+					v324 = 3;
+				end
+				if (v324 == 1) then
+					v215.Size = UDim2.new((1173 - (174 + 233)) - ((1307 - 839) + (521 - 224)), -((141 + 176) - ((1219 - (663 + 511)) + 225 + 27)), (123 + 439) - (334 + (702 - 474)), (51 + 33) - (138 - 79));
+					v215.Position = UDim2.new((0 - 0) - 0, 24 - (7 + 7), (0 - 0) - 0, 3 + 0 + 1 + 4);
+					v324 = 2;
+				end
+				if (v324 == 0) then
+					v215 = Instance.new("TextLabel");
+					v215.Parent = v212;
+					v324 = 1;
+				end
+				if (v324 == (726 - (478 + 244))) then
+					v210 = 3;
+					break;
+				end
+				if (v324 == 3) then
+					v215.TextColor3 = Color3.fromRGB((734 - (440 + 77)) + 2 + 1, (515 - 374) + (1635 - (655 + 901)), (122 + 534) - 401);
+					v215.TextSize = 10 + 2;
+					v324 = 3 + 1;
+				end
+			end
+		end
+		if (v210 == (0 - 0)) then
+			local v325 = 0 - 0;
+			local v326;
+			while true do
+				if ((1445 - (695 + 750)) == v325) then
+					v326 = 0;
+					while true do
+						if (v326 == 2) then
+							v212.Size = UDim2.new((6702 - 4739) - (556 + (2171 - 764)), (2123 - 1595) - (659 - (285 + 66)), (0 - 0) + 0, (1379 - (682 + 628)) + 61);
+							v212.Position = UDim2.new(0.5 - 0, -(18 + 92), 0.5 - (299 - (176 + 123)), -(20 + 26 + 14 + 5));
+							v326 = 272 - (239 + 30);
+						end
+						if (v326 == (2 + 2)) then
+							v210 = 1 + 0 + 0;
+							break;
+						end
+						if (v326 == 1) then
+							v212 = Instance.new("Frame");
+							v212.Parent = v211;
+							v326 = 3 - 1;
+						end
+						if ((8 - 5) == v326) then
+							v212.BackgroundColor3 = Color3.fromRGB(11 + 9, 28 - (323 - (306 + 9)), (4414 - 3149) - (167 + 790 + 168 + 105));
+							v212.Active = true;
+							v326 = 4;
+						end
+						if (v326 == (0 + 0)) then
+							v211 = Instance.new("ScreenGui");
+							v211.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui");
+							v326 = 2 - 1;
+						end
+					end
+					break;
+				end
+			end
+		end
+	end
 end
-
--- 最小化功能
-local minimized = false
-MinimizeButton.MouseButton1Click:Connect(function()
-    minimized = not minimized
-    if minimized then
-        MainFrame:TweenSize(UDim2.new(0, 180, 0, 28), "Out", "Quad", 0.3, true)
-        MinimizeButton.Text = "+"
-        ScrollFrame.Visible = false
-        Glow.Visible = false
-    else
-        MainFrame:TweenSize(UDim2.new(0, 180, 0, 250), "Out", "Quad", 0.3, true)
-        MinimizeButton.Text = "-"
-        ScrollFrame.Visible = true
-        Glow.Visible = true
-    end
-end)
-
--- 获取所有玩家
-local function GetAllPlayers()
-    local players = {}
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= Players.LocalPlayer then
-            table.insert(players, player)
-        end
-    end
-    return players
+local v139 = false;
+v66.MouseButton1Click:Connect(function()
+	local v223 = 1375 - (1140 + 235);
+	local v224;
+	while true do
+		if (v223 == 0) then
+			v224 = 0 + 0;
+			while true do
+				if (v224 == (0 + 0)) then
+					v139 = not v139;
+					if v139 then
+						local v514 = 0 + 0;
+						while true do
+							if (0 == v514) then
+								v10:TweenSize(UDim2.new((52 - (33 + 19)) + 0 + 0, 343 - ((275 - 183) + 71), 0 + 0 + (0 - 0), 27 + 1), "Out", "Quad", 0.3 - 0, true);
+								v66.Text = "+";
+								v514 = 690 - (586 + 103);
+							end
+							if ((1 + 0) == v514) then
+								v83.Visible = false;
+								v17.Visible = false;
+								break;
+							end
+						end
+					else
+						local v515 = 0 - 0;
+						local v516;
+						while true do
+							if (v515 == (1488 - (1309 + 179))) then
+								v516 = 765 - ((1035 - 461) + 84 + 107);
+								while true do
+									if (v516 == (1 + (0 - 0))) then
+										v83.Visible = true;
+										v17.Visible = true;
+										break;
+									end
+									if (v516 == ((0 + 0) - (0 - 0))) then
+										local v663 = 0;
+										while true do
+											if (v663 == (0 - 0)) then
+												v10:TweenSize(UDim2.new(0 - 0, (701 - (295 + 314)) + (215 - 127), (1962 - (1300 + 662)) - (0 - 0), (2854 - (1178 + 577)) - (132 + 122 + (1758 - 1163))), "Out", "Quad", (3185.3 - (851 + 554)) - (344 + 45 + (3857 - 2466)), true);
+												v66.Text = "-";
+												v663 = 1;
+											end
+											if (1 == v663) then
+												v516 = (275 - 148) - (55 + (373 - (115 + 187)));
+												break;
+											end
+										end
+									end
+								end
+								break;
+							end
+						end
+					end
+					break;
+				end
+			end
+			break;
+		end
+	end
+end);
+local function v140()
+	local v225 = 0;
+	local v226;
+	local v227;
+	while true do
+		if (v225 == (0 + 0)) then
+			v226 = (0 + 0) - (0 - 0);
+			v227 = nil;
+			v225 = 1162 - (160 + 1001);
+		end
+		if (v225 == (1 + 0)) then
+			while true do
+				local v362 = 0;
+				while true do
+					if (v362 == 0) then
+						if (v226 == ((2 + 0) - (1 - 0))) then
+							return v227;
+						end
+						if (v226 == ((2148 - (237 + 121)) - ((1470 - (525 + 372)) + (2307 - 1090)))) then
+							local v573 = 0 - 0;
+							local v574;
+							while true do
+								if (v573 == (142 - (96 + 46))) then
+									v574 = 0;
+									while true do
+										if ((778 - (643 + 134)) == v574) then
+											v226 = 1 + 0;
+											break;
+										end
+										if (v574 == 0) then
+											v227 = {};
+											for v675, v676 in ipairs(v0:GetPlayers()) do
+												if (v676 ~= v0.LocalPlayer) then
+													table.insert(v227, v676);
+												end
+											end
+											v574 = 2 - 1;
+										end
+									end
+									break;
+								end
+							end
+						end
+						break;
+					end
+				end
+			end
+			break;
+		end
+	end
 end
-
--- 寻找最近玩家
-local function FindNearestPlayer()
-    local nearest, minDist = nil, math.huge
-    local myChar = Players.LocalPlayer.Character
-    if not myChar then return end
-
-    local myRoot = myChar:FindFirstChild("HumanoidRootPart")
-    if not myRoot then return end
-
-    for _, player in ipairs(Teleport.PlayerList) do
-        local char = player.Character
-        if char and char:FindFirstChild("HumanoidRootPart") then
-            local dist = (myRoot.Position - char.HumanoidRootPart.Position).Magnitude
-            if dist < minDist then
-                minDist = dist
-                nearest = player
-            end
-        end
-    end
-    return nearest
+local function v141()
+	local v228, v229 = nil, math.huge;
+	local v230 = v0.LocalPlayer.Character;
+	if not v230 then
+		return;
+	end
+	local v231 = v230:FindFirstChild("HumanoidRootPart");
+	if not v231 then
+		return;
+	end
+	for v281, v282 in ipairs(v4.PlayerList) do
+		local v283 = 0 - 0;
+		local v284;
+		local v285;
+		while true do
+			if (v283 == 0) then
+				local v363 = 0 + 0;
+				while true do
+					if (v363 == 1) then
+						v283 = 1 - 0;
+						break;
+					end
+					if (v363 == (0 - 0)) then
+						v284 = 0 - 0;
+						v285 = nil;
+						v363 = 720 - (316 + 403);
+					end
+				end
+			end
+			if ((1 + 0) == v283) then
+				while true do
+					if (v284 == 0) then
+						v285 = v282.Character;
+						if (v285 and v285:FindFirstChild("HumanoidRootPart")) then
+							local v575 = 0 - 0;
+							local v576;
+							local v577;
+							while true do
+								if (v575 == 1) then
+									while true do
+										if (v576 == (0 - (0 + 0))) then
+											v577 = (v231.Position - v285.HumanoidRootPart.Position).Magnitude;
+											if (v577 < v229) then
+												local v682 = 0 - 0;
+												while true do
+													if (v682 == (0 + 0)) then
+														v229 = v577;
+														v228 = v282;
+														break;
+													end
+												end
+											end
+											break;
+										end
+									end
+									break;
+								end
+								if (v575 == (0 + 0)) then
+									local v644 = 0 - 0;
+									while true do
+										if (0 == v644) then
+											v576 = (0 - 0) + (0 - 0);
+											v577 = nil;
+											v644 = 1 + 0;
+										end
+										if (v644 == (1 - 0)) then
+											v575 = 1;
+											break;
+										end
+									end
+								end
+							end
+						end
+						break;
+					end
+				end
+				break;
+			end
+		end
+	end
+	return v228;
 end
-
--- 创建玩家选择UI
-local function CreatePlayerSelectionUI()
-    local PlayerSelectGui = Instance.new("ScreenGui")
-    PlayerSelectGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-    PlayerSelectGui.Name = "PlayerSelectionUI"
-    PlayerSelectGui.ResetOnSpawn = false
-
-    local PlayerSelectFrame = Instance.new("Frame")
-    PlayerSelectFrame.Parent = PlayerSelectGui
-    PlayerSelectFrame.Size = UDim2.new(0, 200, 0, 300)
-    PlayerSelectFrame.Position = UDim2.new(0.5, -100, 0.5, -150)
-    PlayerSelectFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 35)
-    PlayerSelectFrame.Active = true
-    PlayerSelectFrame.Draggable = true
-
-    local PlayerSelectCorner = Instance.new("UICorner")
-    PlayerSelectCorner.Parent = PlayerSelectFrame
-    PlayerSelectCorner.CornerRadius = UDim.new(0, 10)
-
-    local PlayerSelectStroke = Instance.new("UIStroke")
-    PlayerSelectStroke.Parent = PlayerSelectFrame
-    PlayerSelectStroke.Color = Color3.fromRGB(80, 120, 200)
-    PlayerSelectStroke.Thickness = 2
-
-    local Title = Instance.new("TextLabel")
-    Title.Parent = PlayerSelectFrame
-    Title.Size = UDim2.new(1, -20, 0, 30)
-    Title.Position = UDim2.new(0, 10, 0, 10)
-    Title.BackgroundTransparency = 1
-    Title.Text = "选择玩家"
-    Title.TextColor3 = Color3.fromRGB(220, 220, 255)
-    Title.TextSize = 14
-    Title.Font = Enum.Font.GothamBold
-
-    local PlayerScroll = Instance.new("ScrollingFrame")
-    PlayerScroll.Parent = PlayerSelectFrame
-    PlayerScroll.Size = UDim2.new(1, -20, 1, -80)
-    PlayerScroll.Position = UDim2.new(0, 10, 0, 50)
-    PlayerScroll.BackgroundTransparency = 1
-    PlayerScroll.ScrollBarThickness = 4
-
-    local PlayerListLayout = Instance.new("UIListLayout")
-    PlayerListLayout.Parent = PlayerScroll
-    PlayerListLayout.SortOrder = Enum.SortOrder.Name
-
-    local CloseButton = Instance.new("TextButton")
-    CloseButton.Parent = PlayerSelectFrame
-    CloseButton.Size = UDim2.new(0, 80, 0, 25)
-    CloseButton.Position = UDim2.new(0.5, -40, 1, -35)
-    CloseButton.BackgroundColor3 = Color3.fromRGB(120, 40, 40)
-    CloseButton.Text = "关闭"
-    CloseButton.TextColor3 = Color3.fromRGB(220, 220, 255)
-    CloseButton.TextSize = 12
-    CloseButton.Font = Enum.Font.Gotham
-
-    local CloseCorner = Instance.new("UICorner")
-    CloseCorner.Parent = CloseButton
-    CloseCorner.CornerRadius = UDim.new(0, 5)
-
-    -- 填充玩家列表
-    Teleport.PlayerList = GetAllPlayers()
-    PlayerScroll.CanvasSize = UDim2.new(0, 0, 0, #Teleport.PlayerList * 35)
-
-    for _, player in ipairs(Teleport.PlayerList) do
-        local PlayerButton = Instance.new("TextButton")
-        PlayerButton.Size = UDim2.new(1, 0, 0, 30)
-        PlayerButton.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
-        PlayerButton.Text = player.Name
-        PlayerButton.TextColor3 = Color3.fromRGB(220, 220, 255)
-        PlayerButton.TextSize = 11
-        PlayerButton.Font = Enum.Font.Gotham
-        PlayerButton.Parent = PlayerScroll
-
-        local PlayerButtonCorner = Instance.new("UICorner")
-        PlayerButtonCorner.Parent = PlayerButton
-        PlayerButtonCorner.CornerRadius = UDim.new(0, 6)
-
-        local PlayerButtonStroke = Instance.new("UIStroke")
-        PlayerButtonStroke.Parent = PlayerButton
-        PlayerButtonStroke.Color = Color3.fromRGB(80, 120, 200)
-        PlayerButtonStroke.Thickness = 1
-
-        PlayerButton.MouseButton1Click:Connect(function()
-            Teleport.Target = player
-            ShowNotification("已选择: "..player.Name, Color3.fromRGB(0, 200, 255))
-            PlayerSelectGui:Destroy()
-        end)
-    end
-
-    CloseButton.MouseButton1Click:Connect(function()
-        PlayerSelectGui:Destroy()
-    end)
+local function v142()
+	local v232 = 0 - (0 + 0);
+	local v233;
+	local v234;
+	local v235;
+	local v236;
+	local v237;
+	local v238;
+	local v239;
+	local v240;
+	local v241;
+	while true do
+		if (((2762 - 1823) - ((731 - (12 + 5)) + (873 - 648))) == v232) then
+			local v327 = 0;
+			while true do
+				if ((1 - 0) == v327) then
+					v233.Name = "PlayerSelectionUI";
+					v233.ResetOnSpawn = false;
+					v327 = 2;
+				end
+				if (v327 == (3 - 1)) then
+					v232 = (4 - 2) - 1;
+					break;
+				end
+				if (0 == v327) then
+					v233 = Instance.new("ScreenGui");
+					v233.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui");
+					v327 = 1;
+				end
+			end
+		end
+		if (v232 == ((2 + 4) - (1974 - (1656 + 317)))) then
+			local v328 = 0 + 0;
+			while true do
+				if (v328 == (0 + 0)) then
+					v237.Size = UDim2.new((2 - 1) + 0, -(7 + (63 - 50)), (354 - (5 + 349)) - (0 - 0), (2107 - (266 + 1005)) - (78 + 40 + 688));
+					v237.Position = UDim2.new(48 - ((85 - 60) + (29 - 6)), (2824 - (561 + 1135)) - ((817 - 189) + (1610 - 1120)), (1066 - (507 + 559)) + (0 - 0), (5863 - 3967) - ((1315 - (212 + 176)) + (1864 - (250 + 655))));
+					v328 = 2 - 1;
+				end
+				if (v328 == (2 - 0)) then
+					v232 = 738 - (16 + 716);
+					break;
+				end
+				if (v328 == 1) then
+					v237.BackgroundTransparency = (4 - 1) - 2;
+					v237.Text = "选择玩家";
+					v328 = 1958 - (1869 + 87);
+				end
+			end
+		end
+		if (v232 == ((17 - 12) - 2)) then
+			local v329 = 1901 - (484 + 1417);
+			local v330;
+			while true do
+				if (v329 == (0 - 0)) then
+					v330 = 0 - 0;
+					while true do
+						if (v330 == (775 - (48 + 725))) then
+							v232 = 5 - 1;
+							break;
+						end
+						if (v330 == 1) then
+							v236 = Instance.new("UIStroke");
+							v236.Parent = v234;
+							v330 = 5 - 3;
+						end
+						if (v330 == 0) then
+							v235.Parent = v234;
+							v235.CornerRadius = UDim.new((0 + 0) - (0 - 0), (30 + 77) - (11 + 26 + 60));
+							v330 = 1;
+						end
+					end
+					break;
+				end
+			end
+		end
+		if (v232 == ((855 - (152 + 701)) - (1312 - (430 + 881)))) then
+			local v331 = 0 + 0;
+			while true do
+				if ((895 - (557 + 338)) == v331) then
+					v234 = Instance.new("Frame");
+					v234.Parent = v233;
+					v331 = 1 + 0;
+				end
+				if (v331 == (2 - 1)) then
+					v234.Size = UDim2.new(285 - (175 + (385 - 275)), (68 - 42) + (374 - 200), 801 - (499 + 302), (1623 - (39 + 827)) - (1261 - 804));
+					v234.Position = UDim2.new((3785.5 - 2090) - ((2208 - 1652) + (1748 - 609)), -((43 + 450) - 393), (5256.5 - 3460) - (503 + 1293), -((67 + 351) - (423 - 155)));
+					v331 = 106 - (103 + 1);
+				end
+				if (v331 == (556 - (475 + 79))) then
+					v232 = 2 + 0;
+					break;
+				end
+			end
+		end
+		if (v232 == ((8 - 4) + 2)) then
+			local v332 = 0;
+			while true do
+				if (v332 == (0 - 0)) then
+					v237.TextColor3 = Color3.fromRGB((166 + 1115) - (810 + 221 + 30), 153 + (1570 - (1395 + 108)), (229 - 150) + (1380 - (7 + 1197)));
+					v237.TextSize = 6 + 7 + 1;
+					v332 = 1;
+				end
+				if (v332 == 1) then
+					v237.Font = Enum.Font.GothamBold;
+					v238 = Instance.new("ScrollingFrame");
+					v332 = 2;
+				end
+				if (v332 == 2) then
+					v232 = 540 - (16 + 27 + (809 - (27 + 292)));
+					break;
+				end
+			end
+		end
+		if (((2180 - 1436) - ((906 - 195) + 22)) == v232) then
+			v240.Font = Enum.Font.Gotham;
+			v241 = Instance.new("UICorner");
+			v241.Parent = v240;
+			v241.CornerRadius = UDim.new((0 - 0) - (0 - 0), 864 - ((457 - 217) + 619));
+			v232 = 3 + 9;
+		end
+		if (v232 == ((170 - (43 + 96)) - (89 - 67))) then
+			v240 = Instance.new("TextButton");
+			v240.Parent = v234;
+			v240.Size = UDim2.new((0 - 0) + 0, 252 - 172, (0 + 0) - (0 + 0), (3 - 1) + 23);
+			v240.Position = UDim2.new(1744.5 - (516 + 828 + 400), -(445 - ((477 - 222) + 150)), 1 + 0 + 0 + 0, -(19 + (1767 - (1414 + 337))));
+			v232 = 42 - (1972 - (1642 + 298));
+		end
+		if (v232 == (1946 - ((2942 - 1813) + (2344 - 1529)))) then
+			local v340 = 0 - 0;
+			local v341;
+			while true do
+				if (v340 == (0 + 0)) then
+					v341 = 0 + 0;
+					while true do
+						if (v341 == (974 - (357 + 615))) then
+							v232 = (288 + 121) - ((448 - 265) + 223);
+							break;
+						end
+						if (v341 == (1 + 0)) then
+							v234.Draggable = true;
+							v235 = Instance.new("UICorner");
+							v341 = 2;
+						end
+						if (v341 == (0 - 0)) then
+							v234.BackgroundColor3 = Color3.fromRGB(64 - (36 + 8), 2 + 18, (1116 + 658) - (404 + (2636 - (384 + 917))));
+							v234.Active = true;
+							v341 = 698 - (128 + 569);
+						end
+					end
+					break;
+				end
+			end
+		end
+		if (v232 == ((1547 - (1407 + 136)) - (1887 - (687 + 1200)))) then
+			local v342 = 0;
+			while true do
+				if (v342 == (1711 - (556 + 1154))) then
+					v237 = Instance.new("TextLabel");
+					v237.Parent = v234;
+					v342 = 6 - 4;
+				end
+				if (v342 == 0) then
+					v236.Color = Color3.fromRGB(54 + (121 - (9 + 86)), 44 + (497 - (275 + 146)), 537 - (10 + 54 + 273));
+					v236.Thickness = 2 + 0;
+					v342 = 1;
+				end
+				if ((66 - (29 + 35)) == v342) then
+					v232 = 11 - (26 - 20);
+					break;
+				end
+			end
+		end
+		if (v232 == ((1033 - 687) - ((520 - 402) + 144 + 76))) then
+			local v343 = 0;
+			local v344;
+			while true do
+				if (v343 == 0) then
+					v344 = 1012 - (53 + 959);
+					while true do
+						if ((410 - (312 + 96)) == v344) then
+							v232 = (4 - 1) + 6;
+							break;
+						end
+						if (v344 == (285 - (147 + 138))) then
+							v238.ScrollBarThickness = (905 - (813 + 86)) - 2;
+							v239 = Instance.new("UIListLayout");
+							v344 = 1 + 0;
+						end
+						if (1 == v344) then
+							v239.Parent = v238;
+							v239.SortOrder = Enum.SortOrder.Name;
+							v344 = 3 - 1;
+						end
+					end
+					break;
+				end
+			end
+		end
+		if (((953 - (18 + 474)) - (37 + 71 + 341)) == v232) then
+			v4.PlayerList = v140();
+			v238.CanvasSize = UDim2.new((0 - 0) + (1086 - (860 + 226)), 303 - (121 + 182), (0 + 0) - 0, #v4.PlayerList * ((2768 - (988 + 252)) - (81 + 630 + 245 + 537)));
+			for v364, v365 in ipairs(v4.PlayerList) do
+				local v366 = Instance.new("TextButton");
+				v366.Size = UDim2.new(1971 - (49 + 1921), (890 - (223 + 667)) - (52 - (51 + 1)), (806 - 337) - (270 + 199), (21 - 11) + 20);
+				v366.BackgroundColor3 = Color3.fromRGB((2984 - (146 + 979)) - (164 + 416 + (1844 - (311 + 294))), (329 - 211) - 78, 92 - (14 + 18));
+				v366.Text = v365.Name;
+				v366.TextColor3 = Color3.fromRGB((1654 - (496 + 947)) + (1367 - (1233 + 125)), 4 + 4 + 191 + 21, 184 + 14 + 57);
+				v366.TextSize = (1846 - (963 + 682)) - (20 + 3 + (1671 - (504 + 1000)));
+				v366.Font = Enum.Font.Gotham;
+				v366.Parent = v238;
+				local v376 = Instance.new("UICorner");
+				v376.Parent = v366;
+				v376.CornerRadius = UDim.new(0 + 0 + 0 + 0, (2 + 13) - (12 - 3));
+				local v379 = Instance.new("UIStroke");
+				v379.Parent = v366;
+				v379.Color = Color3.fromRGB(29 + 44 + 7, 75 + 45, (795 + 572) - (645 + (704 - (156 + 26))));
+				v379.Thickness = (1032 + 759) - ((1580 - 570) + 780);
+				v366.MouseButton1Click:Connect(function()
+					local v386 = 164 - (149 + 15);
+					local v387;
+					while true do
+						if ((960 - (890 + 70)) == v386) then
+							v387 = (117 - (39 + 78)) + (482 - (14 + 468));
+							while true do
+								if ((849 - (40 + 808)) == v387) then
+									v233:Destroy();
+									break;
+								end
+								if (v387 == ((0 - 0) - (0 - 0))) then
+									v4.Target = v365;
+									v5("已选择: " .. v365.Name, Color3.fromRGB((0 + 0) - (0 + 0), (433 + 1603) - (1045 + 358 + 433), 67 + 188));
+									v387 = 2 - 1;
+								end
+							end
+							break;
+						end
+					end
+				end);
+			end
+			v240.MouseButton1Click:Connect(function()
+				v233:Destroy();
+			end);
+			break;
+		end
+		if (v232 == ((11 - 5) + 4 + 0)) then
+			local v347 = 0 - 0;
+			while true do
+				if (v347 == (0 + 0)) then
+					v240.BackgroundColor3 = Color3.fromRGB((234 - (12 + 39)) - (59 + 4), (80 - 54) + 14, (387 - 278) - 69);
+					v240.Text = "关闭";
+					v347 = 1 + 0;
+				end
+				if (v347 == (1 + 0)) then
+					v240.TextColor3 = Color3.fromRGB((1838 - 1113) - (234 + 117 + 154), (8669 - 6875) - ((2991 - (1596 + 114)) + (764 - 471)), 521 - ((741 - (164 + 549)) + (1676 - (1059 + 379))));
+					v240.TextSize = 26 - 14;
+					v347 = 2 - 0;
+				end
+				if (v347 == (2 + 0)) then
+					v232 = (6 + 28) - (415 - (145 + 247));
+					break;
+				end
+			end
+		end
+		if (v232 == (6 + 1)) then
+			v238.Parent = v234;
+			v238.Size = UDim2.new(1 + 0 + (0 - 0), -((303 + 1276) - (1190 + 191 + (288 - 110))), (721 - (254 + 466)) + 0, -80);
+			v238.Position = UDim2.new((560 - (544 + 16)) + (0 - 0), (633 - (294 + 334)) + (258 - (236 + 17)), (0 + 0) - (0 + 0), (97 - 71) + (113 - 89));
+			v238.BackgroundTransparency = (243 + 228) - (381 + 74 + 15);
+			v232 = 802 - (413 + 381);
+		end
+	end
 end
-
--- 改进防甩飞检测 - 基于速度和位置历史
-local function CheckAntiThrow()
-    if not Teleport.AntiThrow or not Teleport.Active then return end
-
-    local myChar = Players.LocalPlayer.Character
-    if not myChar then return end
-
-    local myRoot = myChar:FindFirstChild("HumanoidRootPart")
-    if not myRoot then return end
-
-    local targetChar = Teleport.Target and Teleport.Target.Character
-    if not targetChar then return end
-
-    local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
-    if not targetRoot then return end
-
-    -- 获取当前位置
-    local currentPosition = myRoot.Position
-
-    -- 更新位置历史
-    table.insert(Teleport.PositionHistory, 1, currentPosition)
-    if #Teleport.PositionHistory > Teleport.HistorySize then
-        table.remove(Teleport.PositionHistory)
-    end
-
-    -- 计算速度（如果历史记录足够）
-    if #Teleport.PositionHistory >= 2 then
-        local oldestPos = Teleport.PositionHistory[#Teleport.PositionHistory]
-        local distance = (currentPosition - oldestPos).Magnitude
-        local timeElapsed = #Teleport.PositionHistory * 0.1 -- 假设每帧0.1秒
-        local speed = distance / timeElapsed
-
-        -- 如果速度超过阈值，认为是异常移动
-        if speed > Teleport.MaxAllowedSpeed then
-            -- 重置到目标位置
-            local newPos = Vector3.new(
-                targetRoot.Position.X,
-                targetRoot.Position.Y - 5.5,
-                targetRoot.Position.Z
-            )
-            myRoot.CFrame = CFrame.new(newPos, targetRoot.Position)
-
-            -- 重置速度
-            myRoot.Velocity = Vector3.new(0, 0, 0)
-            myRoot.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-
-            -- 清除位置历史
-            Teleport.PositionHistory = {}
-
-            ShowNotification("检测到异常移动，已重置位置", Color3.fromRGB(255, 100, 0))
-            return
-        end
-    end
-
-    -- 基础距离检查
-    local expectedDistance = 5.5
-    local currentDistance = (myRoot.Position - targetRoot.Position).Magnitude
-
-    if currentDistance > expectedDistance + 3 then
-        local newPos = Vector3.new(
-            targetRoot.Position.X,
-            targetRoot.Position.Y - expectedDistance,
-            targetRoot.Position.Z
-        )
-        myRoot.CFrame = CFrame.new(newPos, targetRoot.Position)
-
-        -- 重置物理属性
-        myRoot.Velocity = Vector3.new(0, 0, 0)
-        myRoot.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-
-        -- 清除位置历史
-        Teleport.PositionHistory = {}
-    end
+local function v143()
+	if (not v4.AntiThrow or not v4.Active) then
+		return;
+	end
+	local v242 = v0.LocalPlayer.Character;
+	if not v242 then
+		return;
+	end
+	local v243 = v242:FindFirstChild("HumanoidRootPart");
+	if not v243 then
+		return;
+	end
+	local v244 = v4.Target and v4.Target.Character;
+	if not v244 then
+		return;
+	end
+	local v245 = v244:FindFirstChild("HumanoidRootPart");
+	if not v245 then
+		return;
+	end
+	local v246 = v243.Position;
+	table.insert(v4.PositionHistory, 882 - (25 + 556 + (638 - 338)), v246);
+	if (#v4.PositionHistory > v4.HistorySize) then
+		table.remove(v4.PositionHistory);
+	end
+	if (#v4.PositionHistory >= (2 + 0)) then
+		local v299 = 0;
+		local v300;
+		local v301;
+		local v302;
+		local v303;
+		while true do
+			if (v299 == (2 - 1)) then
+				v302 = #v4.PositionHistory * ((1970.1 - (582 + 1388)) + (0 - 0));
+				v303 = v301 / v302;
+				v299 = 2;
+			end
+			if (v299 == (2 + 0)) then
+				if (v303 > v4.MaxAllowedSpeed) then
+					local v496 = 364 - (326 + 38);
+					local v497;
+					local v498;
+					while true do
+						if (v496 == (2 - 1)) then
+							while true do
+								if (v497 == (1156 - ((1532 - 458) + (702 - (47 + 573))))) then
+									local v654 = 0 + 0;
+									while true do
+										if (v654 == 1) then
+											v497 = (7580 - 5795) - ((346 - 132) + 1570);
+											break;
+										end
+										if (v654 == (1664 - (1269 + 395))) then
+											v498 = Vector3.new(v245.Position.X, v245.Position.Y - (10.5 - (497 - (76 + 416))), v245.Position.Z);
+											v243.CFrame = CFrame.new(v498, v245.Position);
+											v654 = 444 - (319 + 124);
+										end
+									end
+								end
+								if ((4 - 2) == v497) then
+									local v655 = 1007 - (564 + 443);
+									while true do
+										if (v655 == 0) then
+											v4.PositionHistory = {};
+											v5("检测到异常移动，已重置位置", Color3.fromRGB((664 - 424) + (473 - (337 + 121)), 1555 - (990 + 465), (837 - 551) - ((519 - 363) + 130)));
+											v655 = 1912 - (1261 + 650);
+										end
+										if (v655 == (1 + 0)) then
+											v497 = (8 - 2) - 3;
+											break;
+										end
+									end
+								end
+								if (v497 == ((1818 - (772 + 1045)) + 0)) then
+									v243.Velocity = Vector3.new(0 + 0, (144 - (102 + 42)) + (1844 - (1524 + 320)), (1270 - (1049 + 221)) + (156 - (18 + 138)));
+									v243.AssemblyLinearVelocity = Vector3.new(0 + (0 - 0), (1102 - (67 + 1035)) - (348 - (136 + 212)), 0 - 0);
+									v497 = 2 + 0;
+								end
+								if ((3 + 0) == v497) then
+									return;
+								end
+							end
+							break;
+						end
+						if (v496 == (1604 - (240 + 1364))) then
+							v497 = 0 - 0;
+							v498 = nil;
+							v496 = 1;
+						end
+					end
+				end
+				break;
+			end
+			if (v299 == 0) then
+				local v388 = 1082 - (1050 + 32);
+				while true do
+					if (v388 == (0 - 0)) then
+						v300 = v4.PositionHistory[#v4.PositionHistory];
+						v301 = (v246 - v300).Magnitude;
+						v388 = 1 + 0;
+					end
+					if (v388 == 1) then
+						v299 = 1056 - (331 + 724);
+						break;
+					end
+				end
+			end
+		end
+	end
+	local v247 = (140.5 + 1591) - ((2312 - (269 + 375)) + (783 - (267 + 458)));
+	local v248 = (v243.Position - v245.Position).Magnitude;
+	if (v248 > (v247 + ((5 + 9) - 11))) then
+		local v304 = 0 - 0;
+		local v305;
+		local v306;
+		local v307;
+		while true do
+			if (v304 == (818 - (667 + 151))) then
+				v305 = 1497 - (1410 + 87);
+				v306 = nil;
+				v304 = 1898 - (1504 + 393);
+			end
+			if (v304 == 1) then
+				v307 = nil;
+				while true do
+					if (v305 == 0) then
+						local v519 = 0;
+						while true do
+							if (v519 == (2 - 1)) then
+								v305 = 1;
+								break;
+							end
+							if ((0 - 0) == v519) then
+								v306 = 1163 - ((1467 - (461 + 335)) + 63 + 429);
+								v307 = nil;
+								v519 = 1762 - (1730 + 31);
+							end
+						end
+					end
+					if (v305 == 1) then
+						while true do
+							if (((2293 - (728 + 939)) - (512 + (403 - 289))) == v306) then
+								v307 = Vector3.new(v245.Position.X, v245.Position.Y - v247, v245.Position.Z);
+								v243.CFrame = CFrame.new(v307, v245.Position);
+								v306 = (1 - 0) + (0 - 0);
+							end
+							if (v306 == (5 - (1071 - (138 + 930)))) then
+								v4.PositionHistory = {};
+								break;
+							end
+							if (v306 == (1 - 0)) then
+								local v612 = 0 + 0;
+								while true do
+									if ((0 + 0) == v612) then
+										v243.Velocity = Vector3.new((0 + 0) - (0 - 0), (1766 - (459 + 1307)) + (1870 - (474 + 1396)), 0 + 0);
+										v243.AssemblyLinearVelocity = Vector3.new(0 + 0, (0 - 0) - 0, (1869 + 125) - (1 + 108 + (5399 - 3514)));
+										v612 = 1 + 0;
+									end
+									if (v612 == (3 - 2)) then
+										v306 = (8 - 6) + (591 - (562 + 29));
+										break;
+									end
+								end
+							end
+						end
+						break;
+					end
+				end
+				break;
+			end
+		end
+	end
 end
-
--- 传送逻辑
-local function TeleportRoutine()
-    if not Teleport.Active then return end
-
-    local myChar = Players.LocalPlayer.Character
-    local targetChar = Teleport.Target and Teleport.Target.Character
-
-    if not myChar or not targetChar then
-        StopTeleport()
-        return
-    end
-
-    local myRoot = myChar:FindFirstChild("HumanoidRootPart")
-    local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
-
-    if myRoot and targetRoot then
-        local newPos = Vector3.new(
-            targetRoot.Position.X,
-            targetRoot.Position.Y - 5.5,
-            targetRoot.Position.Z
-        )
-        myRoot.CFrame = CFrame.new(newPos, targetRoot.Position)
-        CheckAntiThrow()
-    end
+local function v144()
+	local v249 = 0;
+	local v250;
+	local v251;
+	local v252;
+	local v253;
+	local v254;
+	while true do
+		if (1 == v249) then
+			v252 = nil;
+			v253 = nil;
+			v249 = 2 + 0;
+		end
+		if (v249 == (1419 - (374 + 1045))) then
+			local v352 = 0;
+			while true do
+				if (v352 == (1 + 0)) then
+					v249 = 1;
+					break;
+				end
+				if (v352 == (0 - 0)) then
+					v250 = 1469 - (1269 + 200);
+					v251 = nil;
+					v352 = 639 - (448 + 190);
+				end
+			end
+		end
+		if (v249 == (1 + 1)) then
+			v254 = nil;
+			while true do
+				if (v250 == (203 - (5 + 6 + 126 + 66))) then
+					local v477 = 0 - 0;
+					while true do
+						if (v477 == (0 - 0)) then
+							if not v4.Active then
+								return;
+							end
+							v251 = v0.LocalPlayer.Character;
+							v477 = 1495 - (1307 + 187);
+						end
+						if (v477 == (3 - 2)) then
+							v250 = (2 - 1) - 0;
+							break;
+						end
+					end
+				end
+				if (v250 == (816 - (98 + (2198 - 1481)))) then
+					local v478 = 683 - (232 + 451);
+					while true do
+						if (v478 == (0 + 0)) then
+							v252 = v4.Target and v4.Target.Character;
+							if (not v251 or not v252) then
+								local v613 = 0 + 0;
+								local v614;
+								while true do
+									if (v613 == 0) then
+										v614 = (564 - (510 + 54)) + (0 - 0);
+										while true do
+											if (v614 == ((211 - (13 + 23)) - (135 + (77 - 37)))) then
+												local v683 = 0 - 0;
+												local v684;
+												while true do
+													if (v683 == (0 - 0)) then
+														v684 = 1088 - (830 + 258);
+														while true do
+															if ((0 - 0) == v684) then
+																local v692 = 0 + 0;
+																while true do
+																	if (0 == v692) then
+																		StopTeleport();
+																		return;
+																	end
+																end
+															end
+														end
+														break;
+													end
+												end
+											end
+										end
+										break;
+									end
+								end
+							end
+							v478 = 1 + 0;
+						end
+						if ((1442 - (860 + 581)) == v478) then
+							v250 = (3054 - 2226) - (637 + 165 + 24);
+							break;
+						end
+					end
+				end
+				if (v250 == ((243 - (237 + 4)) + 1)) then
+					if (v253 and v254) then
+						local v520 = 0;
+						local v521;
+						local v522;
+						while true do
+							if (v520 == (0 - 0)) then
+								local v615 = 0;
+								while true do
+									if (v615 == (0 - 0)) then
+										v521 = (0 - 0) - (0 + 0);
+										v522 = nil;
+										v615 = 1;
+									end
+									if (v615 == (1 + 0)) then
+										v520 = 3 - 2;
+										break;
+									end
+								end
+							end
+							if (v520 == (1 + 0)) then
+								while true do
+									if (v521 == ((0 + 0) - 0)) then
+										v522 = Vector3.new(v254.Position.X, v254.Position.Y - (1.5 + 4), v254.Position.Z);
+										v253.CFrame = CFrame.new(v522, v254.Position);
+										v521 = 1 - 0;
+									end
+									if (v521 == ((1427 - (85 + 1341)) + 0)) then
+										v143();
+										break;
+									end
+								end
+								break;
+							end
+						end
+					end
+					break;
+				end
+				if (v250 == ((1 - 0) + (2 - 1))) then
+					local v479 = 372 - (45 + 327);
+					local v480;
+					while true do
+						if ((0 - 0) == v479) then
+							v480 = 502 - (444 + 58);
+							while true do
+								if (v480 == (1 + 0)) then
+									v250 = 1 + 0 + 2;
+									break;
+								end
+								if (v480 == 0) then
+									v253 = v251:FindFirstChild("HumanoidRootPart");
+									v254 = v252:FindFirstChild("HumanoidRootPart");
+									v480 = 1 + 0;
+								end
+							end
+							break;
+						end
+					end
+				end
+			end
+			break;
+		end
+	end
 end
-
--- 改进平行环绕逻辑 - 圆形轨迹且始终面向目标
-local function ParallelOrbitRoutine()
-    if not Teleport.HorizontalOrbitActive then return end
-
-    local myChar = Players.LocalPlayer.Character
-    local targetChar = Teleport.Target and Teleport.Target.Character
-
-    if not myChar or not targetChar then
-        StopParallelOrbit()
-        return
-    end
-
-    local myRoot = myChar:FindFirstChild("HumanoidRootPart")
-    local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
-
-    if myRoot and targetRoot then
-        Teleport.HorizontalAngle = Teleport.HorizontalAngle + Teleport.HorizontalSpeed * 0.05
-
-        -- 圆形轨迹计算
-        local radius = Teleport.OrbitRadius
-        local x = targetRoot.Position.X + math.cos(Teleport.HorizontalAngle) * radius
-        local z = targetRoot.Position.Z + math.sin(Teleport.HorizontalAngle) * radius
-
-        -- 获取地面高度
-        local rayOrigin = Vector3.new(x, targetRoot.Position.Y + 10, z)
-        local rayDirection = Vector3.new(0, -50, 0)
-        local raycastParams = RaycastParams.new()
-        raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
-        raycastParams.FilterDescendantsInstances = {myChar}
-
-        local raycastResult = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
-        local y = raycastResult and raycastResult.Position.Y or targetRoot.Position.Y
-
-        local newPos = Vector3.new(x, y + 3, z) -- 保持在地面上方3个单位
-        myRoot.CFrame = CFrame.new(newPos, targetRoot.Position) -- 始终面向目标
-
-        -- 在环绕模式下也检查防甩飞
-        if Teleport.AntiThrow then
-            CheckAntiThrow()
-        end
-    end
+local function v145()
+	local v255 = 0 - 0;
+	local v256;
+	local v257;
+	local v258;
+	local v259;
+	while true do
+		if ((1735 - (64 + 1668)) == v255) then
+			if (v258 and v259) then
+				local v389 = 0 + (1973 - (1227 + 746));
+				local v390;
+				local v391;
+				local v392;
+				local v393;
+				local v394;
+				local v395;
+				local v396;
+				local v397;
+				local v398;
+				while true do
+					if (v389 == ((5 - 3) - 1)) then
+						local v523 = 0 - 0;
+						while true do
+							if (0 == v523) then
+								v393 = Vector3.new(v391, v259.Position.Y + ((1473 - (415 + 79)) - (14 + 508 + (938 - (142 + 349)))), v392);
+								v394 = Vector3.new(0 - (0 + 0), -((32 - 8) + 13 + 13), 0 - (0 + 0));
+								v523 = 2 - 1;
+							end
+							if (v523 == (1865 - (1710 + 154))) then
+								v395 = RaycastParams.new();
+								v395.FilterType = Enum.RaycastFilterType.Blacklist;
+								v523 = 2;
+							end
+							if (v523 == 2) then
+								v389 = 1 + (319 - (200 + 118));
+								break;
+							end
+						end
+					end
+					if (v389 == ((2 + 1) - 1)) then
+						local v524 = 0 - 0;
+						while true do
+							if (v524 == 1) then
+								v397 = (v396 and v396.Position.Y) or v259.Position.Y;
+								v398 = Vector3.new(v391, v397 + (2 - 0) + 1 + 0, v392);
+								v524 = 2 + 0;
+							end
+							if (v524 == (2 + 0)) then
+								v389 = 1 + 1 + 1;
+								break;
+							end
+							if ((0 - 0) == v524) then
+								v395.FilterDescendantsInstances = {v256};
+								v396 = workspace:Raycast(v393, v394, v395);
+								v524 = 1;
+							end
+						end
+					end
+					if (v389 == ((0 - 0) + (0 - 0))) then
+						local v525 = 0;
+						while true do
+							if ((0 + 0) == v525) then
+								v4.HorizontalAngle = v4.HorizontalAngle + (v4.HorizontalSpeed * ((0.05 - 0) + 0));
+								v390 = v4.OrbitRadius;
+								v525 = 1 + 0;
+							end
+							if (v525 == (1665 - (674 + 990))) then
+								v391 = v259.Position.X + (math.cos(v4.HorizontalAngle) * v390);
+								v392 = v259.Position.Z + (math.sin(v4.HorizontalAngle) * v390);
+								v525 = 1 + 1;
+							end
+							if (v525 == (1 + 1)) then
+								v389 = (798 - 294) - ((1129 - (507 + 548)) + 429);
+								break;
+							end
+						end
+					end
+					if (v389 == (3 + (837 - (289 + 548)))) then
+						v258.CFrame = CFrame.new(v398, v259.Position);
+						if v4.AntiThrow then
+							v143();
+						end
+						break;
+					end
+				end
+			end
+			break;
+		end
+		if (v255 == (1819 - (821 + 997))) then
+			local v353 = 0;
+			while true do
+				if (0 == v353) then
+					v257 = v4.Target and v4.Target.Character;
+					if (not v256 or not v257) then
+						local v527 = 255 - (195 + 60);
+						while true do
+							if (v527 == (0 + 0)) then
+								StopParallelOrbit();
+								return;
+							end
+						end
+					end
+					v353 = 1502 - (251 + 1250);
+				end
+				if (v353 == (2 - 1)) then
+					v255 = 2 + 0;
+					break;
+				end
+			end
+		end
+		if (v255 == (1034 - (809 + 223))) then
+			v258 = v256:FindFirstChild("HumanoidRootPart");
+			v259 = v257:FindFirstChild("HumanoidRootPart");
+			v255 = 3 - 0;
+		end
+		if (v255 == 0) then
+			if not v4.HorizontalOrbitActive then
+				return;
+			end
+			v256 = v0.LocalPlayer.Character;
+			v255 = 2 - 1;
+		end
+	end
 end
-
--- 删除UI
-local function DeleteUI()
-    ScreenGui:Destroy()
-    ShowNotification("UI界面已删除", Color3.fromRGB(255, 100, 0))
+local function v146()
+	local v260 = 0 - 0;
+	local v261;
+	while true do
+		if (v260 == (0 + 0)) then
+			v261 = 0 + 0 + 0;
+			while true do
+				if (v261 == ((617 - (14 + 603)) + (129 - (118 + 11)))) then
+					v6:Destroy();
+					v5("UI界面已删除", Color3.fromRGB((274 + 1414) - (664 + 133 + (1853 - 1217)), (1434 - (551 + 398)) - 385, (1024 + 595) - (508 + 919 + 157 + 35)));
+					break;
+				end
+			end
+			break;
+		end
+	end
 end
-
--- 穿墙视野
-local function ToggleWallVision()
-    Teleport.WallVision = not Teleport.WallVision
-    UpdateButtonState("穿墙视野", Teleport.WallVision)
-
-    if Teleport.WallVision then
-        Teleport.OriginalTransparency = {}
-        for _, part in ipairs(workspace:GetDescendants()) do
-            if part:IsA("BasePart") and part.Transparency < 0.5 then
-                Teleport.OriginalTransparency[part] = part.Transparency
-                part.Transparency = 0.7
-            end
-        end
-        ShowNotification("穿墙视野已启用", Color3.fromRGB(0, 200, 255))
-    else
-        for part, transparency in pairs(Teleport.OriginalTransparency) do
-            if part:IsA("BasePart") then
-                part.Transparency = transparency
-            end
-        end
-        Teleport.OriginalTransparency = {}
-        ShowNotification("穿墙视野已禁用", Color3.fromRGB(255, 100, 0))
-    end
+local function v147()
+	local v262 = 0 - 0;
+	while true do
+		if (v262 == 0) then
+			v4.WallVision = not v4.WallVision;
+			v137("穿墙视野", v4.WallVision);
+			v262 = 2 - 1;
+		end
+		if (v262 == (1 + 0)) then
+			if v4.WallVision then
+				local v399 = (0 - 0) + 0 + 0;
+				while true do
+					if (v399 == (90 - (40 + 49))) then
+						v5("穿墙视野已启用", Color3.fromRGB((1648 - 1215) - ((769 - (99 + 391)) + 128 + 26), 200, (2602 - 2010) - (834 - 497)));
+						break;
+					end
+					if (v399 == (0 + 0)) then
+						local v528 = 0;
+						while true do
+							if ((2 - 1) == v528) then
+								v399 = 1605 - (1032 + 572);
+								break;
+							end
+							if (v528 == (417 - (203 + 214))) then
+								v4.OriginalTransparency = {};
+								for v645, v646 in ipairs(workspace:GetDescendants()) do
+									if (v646:IsA("BasePart") and (v646.Transparency < ((1817.5 - (568 + 1249)) + 0))) then
+										local v667 = 0;
+										local v668;
+										while true do
+											if (v667 == (0 + 0)) then
+												v668 = (0 - 0) + (0 - 0);
+												while true do
+													if (v668 == (326 - ((1498 - (913 + 393)) + (378 - 244)))) then
+														v4.OriginalTransparency[v646] = v646.Transparency;
+														v646.Transparency = (1802.7 - 526) - ((726 - (269 + 141)) + (2135 - 1175));
+														break;
+													end
+												end
+												break;
+											end
+										end
+									end
+								end
+								v528 = 1982 - (362 + 1619);
+							end
+						end
+					end
+				end
+			else
+				local v400 = (1625 - (950 + 675)) + 0 + 0;
+				while true do
+					if (v400 == ((1180 - (216 + 963)) + (1287 - (485 + 802)))) then
+						v5("穿墙视野已禁用", Color3.fromRGB((1208 - (432 + 127)) - 394, 93 + (1080 - (1065 + 8)), 0 + 0 + (1601 - (635 + 966))));
+						break;
+					end
+					if (v400 == ((786 + 307) - (277 + (858 - (5 + 37))))) then
+						local v529 = 0 - 0;
+						while true do
+							if (v529 == 1) then
+								v400 = (2 + 1) - 2;
+								break;
+							end
+							if ((0 - 0) == v529) then
+								for v647, v648 in pairs(v4.OriginalTransparency) do
+									if v647:IsA("BasePart") then
+										v647.Transparency = v648;
+									end
+								end
+								v4.OriginalTransparency = {};
+								v529 = 1;
+							end
+						end
+					end
+				end
+			end
+			break;
+		end
+	end
 end
-
--- 防甩飞切换
-local function ToggleAntiThrow()
-    Teleport.AntiThrow = not Teleport.AntiThrow
-    AntiThrowButton.Text = Teleport.AntiThrow and "防甩飞: 开启" or "防甩飞: 关闭"
-    UpdateButtonState("防甩飞: 开启", Teleport.AntiThrow)
-
-    if Teleport.AntiThrow then
-        ShowNotification("防甩飞模式已启用", Color3.fromRGB(0, 255, 100))
-    else
-        ShowNotification("防甩飞模式已禁用", Color3.fromRGB(255, 100, 0))
-    end
+local function v148()
+	local v263 = (258 + 293) - ((171 - 88) + (1774 - 1306));
+	while true do
+		if (v263 == ((0 - 0) - 0)) then
+			local v356 = 0;
+			while true do
+				if (v356 == (0 - 0)) then
+					v4.AntiThrow = not v4.AntiThrow;
+					v100.Text = (v4.AntiThrow and "防甩飞: 开启") or "防甩飞: 关闭";
+					v356 = 1 + 0;
+				end
+				if (v356 == (530 - (318 + 211))) then
+					v263 = (5825 - 4641) - ((2645 - (963 + 624)) + 54 + 71);
+					break;
+				end
+			end
+		end
+		if ((1807 - ((2048 - (518 + 328)) + (1407 - 803))) == v263) then
+			v137("防甩飞: 开启", v4.AntiThrow);
+			if v4.AntiThrow then
+				v5("防甩飞模式已启用", Color3.fromRGB((0 - 0) - 0, 255, 1075 - ((1132 - (301 + 16)) + (468 - 308))));
+			else
+				v5("防甩飞模式已禁用", Color3.fromRGB((1190 - 766) - (440 - 271), (250 + 26) - (100 + 76), (0 - 0) + 0 + 0));
+			end
+			break;
+		end
+	end
 end
-
--- 开始传送
-local function StartTeleport()
-    if Teleport.Active then return end
-
-    if not Teleport.Target then
-        ShowNotification("请先选择目标玩家", Color3.fromRGB(255, 50, 50))
-        return
-    end
-
-    Teleport.Active = true
-    Teleport.Connection = RunService.Heartbeat:Connect(function()
-        TeleportRoutine()
-        task.wait(0.001)
-    end)
-
-    -- 初始化位置历史
-    Teleport.PositionHistory = {}
-    local myChar = Players.LocalPlayer.Character
-    if myChar and myChar:FindFirstChild("HumanoidRootPart") then
-        table.insert(Teleport.PositionHistory, myChar.HumanoidRootPart.Position)
-    end
-
-    ShowNotification("传送已启动 - 目标: "..Teleport.Target.Name, Color3.fromRGB(0, 255, 100))
-    Status.BackgroundColor3 = Color3.fromRGB(0, 255, 100)
+local function v149()
+	local v264 = 0 + 0;
+	local v265;
+	local v266;
+	while true do
+		if (v264 == 0) then
+			v265 = 325 - ((143 - 98) + 91 + 189);
+			v266 = nil;
+			v264 = 1020 - (829 + 190);
+		end
+		if (v264 == (3 - 2)) then
+			while true do
+				if (v265 == ((3 - 0) + 0)) then
+					if (v266 and v266:FindFirstChild("HumanoidRootPart")) then
+						table.insert(v4.PositionHistory, v266.HumanoidRootPart.Position);
+					end
+					v5("传送已启动 - 目标: " .. v4.Target.Name, Color3.fromRGB((2616 - 723) - ((3035 - 1813) + 671), (156 + 502) - (132 + 271), 88 + (36 - 24)));
+					v265 = 2 + 0 + (615 - (520 + 93));
+				end
+				if ((278 - (259 + 17)) == v265) then
+					v4.PositionHistory = {};
+					v266 = v0.LocalPlayer.Character;
+					v265 = 2 + 1;
+				end
+				if (v265 == (1183 - (14 + 215 + 343 + 610))) then
+					v4.Active = true;
+					v4.Connection = v1.Heartbeat:Connect(function()
+						local v499 = 0 - 0;
+						local v500;
+						while true do
+							if (v499 == (591 - (396 + 195))) then
+								v500 = 0 - 0;
+								while true do
+									if (0 == v500) then
+										v144();
+										task.wait((1761.001 - (440 + 1321)) + 0);
+										break;
+									end
+								end
+								break;
+							end
+						end
+					end);
+					v265 = 3 - (1830 - (1059 + 770));
+				end
+				if (((8836 - 6925) - (340 + (2116 - (424 + 121)))) == v265) then
+					local v487 = 0;
+					while true do
+						if (v487 == (0 + 0)) then
+							if v4.Active then
+								return;
+							end
+							if not v4.Target then
+								local v623 = 1347 - (641 + 706);
+								local v624;
+								while true do
+									if (v623 == 0) then
+										v624 = 0 + 0;
+										while true do
+											if (v624 == 0) then
+												v5("请先选择目标玩家", Color3.fromRGB(695 - (249 + 191), 20 + (130 - 100), 50));
+												return;
+											end
+										end
+										break;
+									end
+								end
+							end
+							v487 = 1 + 0;
+						end
+						if (v487 == (3 - 2)) then
+							v265 = (2200 - (183 + 244)) - (86 + 1647 + (769 - (434 + 296)));
+							break;
+						end
+					end
+				end
+				if (v265 == ((9 - 6) + (513 - (169 + 343)))) then
+					v57.BackgroundColor3 = Color3.fromRGB((0 + 0) - (0 - 0), (1555 - 1025) - (226 + 49), (3216 - 2082) - (125 + 909));
+					break;
+				end
+			end
+			break;
+		end
+	end
 end
-
--- 停止传送
-local function StopTeleport()
-    if not Teleport.Active then
-        ShowNotification("传送未启动", Color3.fromRGB(255, 150, 0))
-        return
-    end
-
-    Teleport.Active = false
-    if Teleport.Connection then
-        Teleport.Connection:Disconnect()
-    end
-
-    -- 清除位置历史
-    Teleport.PositionHistory = {}
-
-    ShowNotification("传送已停止", Color3.fromRGB(255, 100, 0))
-    Status.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+local function v150()
+	if not v4.Active then
+		local v308 = (1123 - (651 + 472)) + 0 + 0;
+		while true do
+			if (v308 == (1948 - (473 + 623 + 852))) then
+				local v401 = 0 - 0;
+				local v402;
+				while true do
+					if (v401 == 0) then
+						v402 = 0;
+						while true do
+							if (v402 == 0) then
+								v5("传送未启动", Color3.fromRGB((542 - (397 + 86)) + (1072 - (423 + 453)), 68 + 9 + 73, 0 - (0 + 0)));
+								return;
+							end
+						end
+						break;
+					end
+				end
+			end
+		end
+	end
+	v4.Active = false;
+	if v4.Connection then
+		v4.Connection:Disconnect();
+	end
+	v4.PositionHistory = {};
+	v5("传送已停止", Color3.fromRGB(217 + 31 + 6 + 1, 612 - (409 + 93 + 10), 0));
+	v57.BackgroundColor3 = Color3.fromRGB((1681 - (50 + 1140)) - (40 + 6 + 113 + 77), 145 - (51 + 3 + 41), (21 - 6) + 35);
 end
-
--- 平行环绕控制
-local function StartParallelOrbit()
-    if Teleport.HorizontalOrbitActive then return end
-
-    if not Teleport.Target then
-        ShowNotification("请先选择目标玩家", Color3.fromRGB(255, 50, 50))
-        return
-    end
-
-    Teleport.HorizontalOrbitActive = true
-    Teleport.HorizontalAngle = 0
-    Teleport.HorizontalOrbitConnection = RunService.Heartbeat:Connect(function()
-        ParallelOrbitRoutine()
-        task.wait(0.001)
-    end)
-
-    -- 初始化位置历史
-    Teleport.PositionHistory = {}
-    local myChar = Players.LocalPlayer.Character
-    if myChar and myChar:FindFirstChild("HumanoidRootPart") then
-        table.insert(Teleport.PositionHistory, myChar.HumanoidRootPart.Position)
-    end
-
-    UpdateButtonState("平行环绕", true)
-    ShowNotification("平行环绕已启动", Color3.fromRGB(0, 200, 255))
-    Status.BackgroundColor3 = Color3.fromRGB(0, 200, 255)
+local function v151()
+	local v270 = 0 + 0;
+	local v271;
+	local v272;
+	while true do
+		if (v270 == (597 - (157 + 439))) then
+			while true do
+				if (v271 == ((1264 - 537) - ((757 - 529) + 498))) then
+					local v489 = 0 - 0;
+					local v490;
+					while true do
+						if (v489 == 0) then
+							v490 = 918 - (782 + 136);
+							while true do
+								if (v490 == 2) then
+									v271 = 857 - (112 + 743);
+									break;
+								end
+								if (v490 == (1171 - (1026 + 145))) then
+									v4.HorizontalOrbitConnection = v1.Heartbeat:Connect(function()
+										v145();
+										task.wait(0.001 + 0 + 0);
+									end);
+									v4.PositionHistory = {};
+									v490 = 719 - (493 + 225);
+								end
+								if (v490 == (3 - 2)) then
+									v272 = v0.LocalPlayer.Character;
+									if (v272 and v272:FindFirstChild("HumanoidRootPart")) then
+										table.insert(v4.PositionHistory, v272.HumanoidRootPart.Position);
+									end
+									v490 = 2;
+								end
+							end
+							break;
+						end
+					end
+				end
+				if (v271 == (2 + 0 + (0 - 0))) then
+					v137("平行环绕", true);
+					v5("平行环绕已启动", Color3.fromRGB(663 - (174 + 489), (10 + 511) - 321, 2160 - ((2372 - 1542) + 313 + 762)));
+					v57.BackgroundColor3 = Color3.fromRGB(524 - ((505 - 202) + 221), (3064 - (210 + 1385)) - (231 + 1038), 213 + (1731 - (1201 + 488)));
+					break;
+				end
+				if ((1162 - (171 + 615 + 376)) == v271) then
+					local v492 = 0 - 0;
+					local v493;
+					while true do
+						if (v492 == 0) then
+							v493 = 0 - 0;
+							while true do
+								if ((586 - (352 + 233)) == v493) then
+									v4.HorizontalOrbitActive = true;
+									v4.HorizontalAngle = (0 - 0) - 0;
+									v493 = 2 + 0;
+								end
+								if (v493 == (5 - 3)) then
+									v271 = 2 - (575 - (489 + 85));
+									break;
+								end
+								if (v493 == 0) then
+									if v4.HorizontalOrbitActive then
+										return;
+									end
+									if not v4.Target then
+										local v670 = 0;
+										local v671;
+										while true do
+											if (v670 == (1501 - (277 + 1224))) then
+												v671 = 1493 - (663 + 830);
+												while true do
+													if (v671 == (0 + 0)) then
+														local v691 = 0 - 0;
+														while true do
+															if (v691 == (875 - (461 + 414))) then
+																v5("请先选择目标玩家", Color3.fromRGB((114 + 561) - (169 + 251), (11 + 102) - (63 + 0), (1487 - (172 + 78)) - ((1855 - 704) + 14 + 22)));
+																return;
+															end
+														end
+													end
+												end
+												break;
+											end
+										end
+									end
+									v493 = 1;
+								end
+							end
+							break;
+						end
+					end
+				end
+			end
+			break;
+		end
+		if (v270 == (0 - 0)) then
+			local v357 = 0 + 0;
+			while true do
+				if (v357 == (0 + 0)) then
+					v271 = 1317 - (1114 + (339 - 136));
+					v272 = nil;
+					v357 = 1;
+				end
+				if (v357 == (1 - 0)) then
+					v270 = 1 + 0;
+					break;
+				end
+			end
+		end
+	end
 end
-
-local function StopParallelOrbit()
-    if not Teleport.HorizontalOrbitActive then
-        ShowNotification("平行环绕未启动", Color3.fromRGB(255, 150, 0))
-        return
-    end
-
-    Teleport.HorizontalOrbitActive = false
-    if Teleport.HorizontalOrbitConnection then
-        Teleport.HorizontalOrbitConnection:Disconnect()
-    end
-
-    -- 清除位置历史
-    Teleport.PositionHistory = {}
-
-    UpdateButtonState("平行环绕", false)
-    ShowNotification("平行环绕已停止", Color3.fromRGB(255, 100, 0))
-    if not Teleport.Active then
-        Status.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-    end
+local function v152()
+	if not v4.HorizontalOrbitActive then
+		local v309 = 0 + 0;
+		while true do
+			if (v309 == (0 + 0)) then
+				v5("平行环绕未启动", Color3.fromRGB((2531 - 1895) - (887 - 506), 150, 0 + 0));
+				return;
+			end
+		end
+	end
+	v4.HorizontalOrbitActive = false;
+	if v4.HorizontalOrbitConnection then
+		v4.HorizontalOrbitConnection:Disconnect();
+	end
+	v4.PositionHistory = {};
+	v137("平行环绕", false);
+	v5("平行环绕已停止", Color3.fromRGB((274 + 619) - (365 + 273), 288 - (635 - (133 + 314)), (0 + 0) - 0));
+	if not v4.Active then
+		v57.BackgroundColor3 = Color3.fromRGB(788 - (746 - (199 + 14)), (4646 - 3348) - (111 + (2686 - (647 + 902))), 884 - ((192 - 128) + (1003 - (85 + 148))));
+	end
 end
-
--- 切换平行环绕
-local function ToggleParallelOrbit()
-    if Teleport.HorizontalOrbitActive then
-        StopParallelOrbit()
-    else
-        StartParallelOrbit()
-    end
+local function v153()
+	if v4.HorizontalOrbitActive then
+		v152();
+	else
+		v151();
+	end
 end
-
--- 按钮点击事件
-StartButton.MouseButton1Click:Connect(StartTeleport)
-PlayerSelectButton.MouseButton1Click:Connect(CreatePlayerSelectionUI)
-StopButton.MouseButton1Click:Connect(StopTeleport)
-AntiThrowButton.MouseButton1Click:Connect(ToggleAntiThrow)
-WallVisionButton.MouseButton1Click:Connect(ToggleWallVision)
-ParallelOrbitButton.MouseButton1Click:Connect(ToggleParallelOrbit)
-DeleteUIButton.MouseButton1Click:Connect(DeleteUI)
-
--- 控制项事件
-RadiusControl.Box.MouseButton1Click:Connect(function()
-    CreateNumberInputPopup(RadiusControl.Value, RadiusControl.Min, RadiusControl.Max, function(newValue)
-        RadiusControl.Value = newValue
-        RadiusControl.Box.Text = tostring(newValue)
-        Teleport.OrbitRadius = newValue
-    end)
-end)
-
-OrbitSpeedControl.Box.MouseButton1Click:Connect(function()
-    CreateNumberInputPopup(OrbitSpeedControl.Value, OrbitSpeedControl.Min, OrbitSpeedControl.Max, function(newValue)
-        OrbitSpeedControl.Value = newValue
-        OrbitSpeedControl.Box.Text = tostring(newValue)
-        Teleport.HorizontalSpeed = newValue
-    end)
-end)
-
-AntiThrowSpeedControl.Box.MouseButton1Click:Connect(function()
-    CreateNumberInputPopup(AntiThrowSpeedControl.Value, AntiThrowSpeedControl.Min, AntiThrowSpeedControl.Max, function(newValue)
-        AntiThrowSpeedControl.Value = newValue
-        AntiThrowSpeedControl.Box.Text = tostring(newValue)
-        Teleport.MaxAllowedSpeed = newValue
-        ShowNotification("防甩飞阈值已设置为: "..newValue, Color3.fromRGB(0, 200, 255))
-    end)
-end)
-
--- 玩家管理
-Players.PlayerAdded:Connect(function(player)
-    if player ~= Players.LocalPlayer then
-        table.insert(Teleport.PlayerList, player)
-    end
-end)
-
-Players.PlayerRemoving:Connect(function(player)
-    for i, p in ipairs(Teleport.PlayerList) do
-        if p == player then
-            table.remove(Teleport.PlayerList, i)
-            break
-        end
-    end
-end)
-
--- 角色重生处理
-Players.LocalPlayer.CharacterAdded:Connect(function(char)
-    char:WaitForChild("Humanoid").Died:Connect(function()
-        if Teleport.Active then
-            StopTeleport()
-        end
-        if Teleport.HorizontalOrbitActive then
-            StopParallelOrbit()
-        end
-    end)
-end)
-
--- 初始化按钮状态
-UpdateButtonState("防甩飞: 开启", Teleport.AntiThrow)
-UpdateButtonState("穿墙视野", Teleport.WallVision)
-UpdateButtonState("平行环绕", false)
-
--- 显示启动通知
-ShowNotification("传送控制面板已加载", Color3.fromRGB(0, 150, 255))
-
-print("紧凑传送UI已加载完成")
-print("功能: 开始传送 | 选择玩家 | 停止传送 | 防甩飞 | 穿墙视野 | 平行环绕 | 删除UI")
-print("特性: 移除甩飞功能 | 优化防甩飞检测 | 速度阈值控制 | 位置历史追踪")
+v97.MouseButton1Click:Connect(v149);
+v98.MouseButton1Click:Connect(v142);
+v99.MouseButton1Click:Connect(v150);
+v100.MouseButton1Click:Connect(v148);
+v101.MouseButton1Click:Connect(v147);
+v117.MouseButton1Click:Connect(v153);
+v136.MouseButton1Click:Connect(v146);
+v118.Box.MouseButton1Click:Connect(function()
+	v138(v118.Value, v118.Min, v118.Max, function(v286)
+		local v287 = 1289 - (426 + 863);
+		local v288;
+		while true do
+			if (v287 == 0) then
+				v288 = (0 - 0) + (1654 - (873 + 781));
+				while true do
+					if (((2 - 0) - 1) == v288) then
+						v4.OrbitRadius = v286;
+						break;
+					end
+					if (v288 == ((426 - 268) - (38 + 53 + (247 - 180)))) then
+						local v502 = 0 - 0;
+						while true do
+							if ((0 - 0) == v502) then
+								v118.Value = v286;
+								v118.Box.Text = tostring(v286);
+								v502 = 1948 - (414 + 1533);
+							end
+							if (v502 == 1) then
+								v288 = 2 - (1 + 0);
+								break;
+							end
+						end
+					end
+				end
+				break;
+			end
+		end
+	end);
+end);
+v119.Box.MouseButton1Click:Connect(function()
+	v138(v119.Value, v119.Min, v119.Max, function(v289)
+		local v290 = 555 - (443 + 112);
+		local v291;
+		while true do
+			if (v290 == (1479 - (888 + 591))) then
+				v291 = (0 - 0) - (0 + 0);
+				while true do
+					if (v291 == ((0 - 0) + 0)) then
+						local v503 = 0 + 0;
+						while true do
+							if (v503 == 0) then
+								v119.Value = v289;
+								v119.Box.Text = tostring(v289);
+								v503 = 1 + 0;
+							end
+							if (v503 == 1) then
+								v291 = 524 - (46 + 377 + (190 - 90));
+								break;
+							end
+						end
+					end
+					if (v291 == ((1 - 0) + 0)) then
+						v4.HorizontalSpeed = v289;
+						break;
+					end
+				end
+				break;
+			end
+		end
+	end);
+end);
+v135.Box.MouseButton1Click:Connect(function()
+	v138(v135.Value, v135.Min, v135.Max, function(v292)
+		local v293 = 0;
+		local v294;
+		while true do
+			if (v293 == (1678 - (136 + 1542))) then
+				v294 = (0 - 0) - 0;
+				while true do
+					if (v294 == ((0 + 0) - 0)) then
+						local v505 = 0;
+						local v506;
+						while true do
+							if (v505 == 0) then
+								v506 = 0 - 0;
+								while true do
+									if (v506 == (0 + 0)) then
+										v135.Value = v292;
+										v135.Box.Text = tostring(v292);
+										v506 = 487 - (68 + 418);
+									end
+									if (v506 == 1) then
+										v294 = 1 + (0 - 0);
+										break;
+									end
+								end
+								break;
+							end
+						end
+					end
+					if (((1400 - 628) - (282 + 44 + (1537 - (770 + 322)))) == v294) then
+						v4.MaxAllowedSpeed = v292;
+						v5("防甩飞阈值已设置为: " .. v292, Color3.fromRGB(0 + 0 + 0, (253 + 619) - (92 + 580), (810 - 243) - (604 - 292)));
+						break;
+					end
+				end
+				break;
+			end
+		end
+	end);
+end);
+v0.PlayerAdded:Connect(function(v275)
+	if (v275 ~= v0.LocalPlayer) then
+		table.insert(v4.PlayerList, v275);
+	end
+end);
+v0.PlayerRemoving:Connect(function(v276)
+	for v295, v296 in ipairs(v4.PlayerList) do
+		if (v296 == v276) then
+			table.remove(v4.PlayerList, v295);
+			break;
+		end
+	end
+end);
+v0.LocalPlayer.CharacterAdded:Connect(function(v277)
+	v277:WaitForChild("Humanoid").Died:Connect(function()
+		local v297 = 0 - 0;
+		local v298;
+		while true do
+			if (v297 == 0) then
+				v298 = 0 - 0;
+				while true do
+					if (v298 == ((2615 - 1904) - (530 + 101 + 80))) then
+						if v4.Active then
+							v150();
+						end
+						if v4.HorizontalOrbitActive then
+							v152();
+						end
+						break;
+					end
+				end
+				break;
+			end
+		end
+	end);
+end);
+v137("防甩飞: 开启", v4.AntiThrow);
+v137("穿墙视野", v4.WallVision);
+v137("平行环绕", false);
+v5("传送控制面板已加载", Color3.fromRGB((0 - 0) + 0, 1031 - (295 + 319 + 267), (176 + 111) - (15 + 4 + 13)));
+print("紧凑传送UI已加载完成");
+print("功能: 开始传送 | 选择玩家 | 停止传送 | 防甩飞 | 穿墙视野 | 平行环绕 | 删除UI");
+print("特性: 移除甩飞功能 | 优化防甩飞检测 | 速度阈值控制 | 位置历史追踪");
