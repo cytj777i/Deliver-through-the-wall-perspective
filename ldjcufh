@@ -384,462 +384,478 @@ local targetButtons = {}
 
 -- 创建UI元素的函数
 local function createToggle(name, initialState, callback)
-	local toggle = ToggleTemplate:Clone()
-	toggle.ToggleStatus.Text = name
-	toggle.ToggleButton.Text = initialState and "开启" or "关闭"
-	toggle.ToggleButton.BackgroundColor3 = initialState and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
-	
-	toggle.ToggleButton.MouseButton1Click:Connect(function()
-		local newState = not (toggle.ToggleButton.Text == "开启")
-		toggle.ToggleButton.Text = newState and "开启" or "关闭"
-		toggle.ToggleButton.BackgroundColor3 = newState and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
-		callback(newState)
-	end)
-	
-	toggle.Parent = Menu
-	return toggle
+        local toggle = ToggleTemplate:Clone()
+        toggle.ToggleStatus.Text = name
+        toggle.ToggleButton.Text = initialState and "开启" or "关闭"
+        toggle.ToggleButton.BackgroundColor3 = initialState and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
+
+        toggle.ToggleButton.MouseButton1Click:Connect(function()
+                local newState = not (toggle.ToggleButton.Text == "开启")
+                toggle.ToggleButton.Text = newState and "开启" or "关闭"
+                toggle.ToggleButton.BackgroundColor3 = newState and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
+                callback(newState)
+        end)
+
+        toggle.Parent = Menu
+        return toggle
 end
 
 local function createButton(name, callback)
-	local button = ButtonTemplate:Clone()
-	button.Text = name
-	
-	button.MouseButton1Click:Connect(callback)
-	
-	button.Parent = Menu
-	return button
+        local button = ButtonTemplate:Clone()
+        button.Text = name
+
+        button.MouseButton1Click:Connect(callback)
+
+        button.Parent = Menu
+        return button
 end
 
 local function createComboBox(name, options, defaultIndex, callback)
-	local combo = ComboTemplate:Clone()
-	combo.ComboText.Text = name .. ": " .. options[defaultIndex]
-	local currentIndex = defaultIndex
-	
-	local dropdownOpen = false
-	local dropdownFrame = nil
-	
-	local function closeDropdown()
-		if dropdownFrame then
-			dropdownFrame:Destroy()
-			dropdownFrame = nil
-		end
-		dropdownOpen = false
-	end
-	
-	combo.ComboButton.MouseButton1Click:Connect(function()
-		if dropdownOpen then
-			closeDropdown()
-			return
-		end
-		
-		dropdownOpen = true
-		
-		-- 创建下拉菜单容器（放在Main外面避免被裁剪）
-		dropdownFrame = Instance.new("Frame")
-		dropdownFrame.Name = "DropdownFrame"
-		dropdownFrame.Parent = Arceus
-		dropdownFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-		dropdownFrame.BorderSizePixel = 0
-		dropdownFrame.Size = UDim2.new(0, combo.AbsoluteSize.X, 0, #options * 45 + 10)
-		dropdownFrame.Position = UDim2.new(0, combo.AbsolutePosition.X, 0, combo.AbsolutePosition.Y + combo.AbsoluteSize.Y)
-		dropdownFrame.ZIndex = 10
-		
-		local dropdownUICorner = Instance.new("UICorner")
-		dropdownUICorner.CornerRadius = UDim.new(0.1, 0)
-		dropdownUICorner.Parent = dropdownFrame
-		
-		local dropdownLayout = Instance.new("UIListLayout")
-		dropdownLayout.Parent = dropdownFrame
-		dropdownLayout.SortOrder = Enum.SortOrder.LayoutOrder
-		dropdownLayout.Padding = UDim.new(0, 5)
-		
-		for i, option in ipairs(options) do
-			local optionButton = ButtonTemplate:Clone()
-			optionButton.Text = option
-			optionButton.Size = UDim2.new(0.9, 0, 0, 40)
-			optionButton.Position = UDim2.new(0.05, 0, 0, (i-1)*45 + 5)
-			optionButton.ZIndex = 11
-			optionButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-			optionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-			
-			optionButton.MouseButton1Click:Connect(function()
-				currentIndex = i
-				combo.ComboText.Text = name .. ": " .. option
-				callback(option, i)
-				closeDropdown()
-			end)
-			
-			optionButton.Parent = dropdownFrame
-		end
-	end)
-	
-	-- 点击其他地方关闭下拉菜单
-	userInputService.InputBegan:Connect(function(input, gameProcessed)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 and dropdownOpen then
-			local mousePos = userInputService:GetMouseLocation()
-			local comboPos = combo.AbsolutePosition
-			local comboSize = combo.AbsoluteSize
-			local dropdownPos = dropdownFrame and dropdownFrame.AbsolutePosition or Vector2.new(0,0)
-			local dropdownSize = dropdownFrame and dropdownFrame.AbsoluteSize or Vector2.new(0,0)
-			
-			-- 检查是否点击在组合框或下拉菜单之外
-			if not (mousePos.X >= comboPos.X and mousePos.X <= comboPos.X + comboSize.X and
-				   mousePos.Y >= comboPos.Y and mousePos.Y <= comboPos.Y + comboSize.Y) and
-			   not (mousePos.X >= dropdownPos.X and mousePos.X <= dropdownPos.X + dropdownSize.X and
-				   mousePos.Y >= dropdownPos.Y and mousePos.Y <= dropdownPos.Y + dropdownSize.Y) then
-				closeDropdown()
-			end
-		end
-	end)
-	
-	combo.Parent = Menu
-	return combo
+        local combo = ComboTemplate:Clone()
+        combo.ComboText.Text = name .. ": " .. options[defaultIndex]
+        local currentIndex = defaultIndex
+
+        local dropdownOpen = false
+        local dropdownFrame = nil
+
+        local function closeDropdown()
+                if dropdownFrame then
+                        dropdownFrame:Destroy()
+                        dropdownFrame = nil
+                end
+                dropdownOpen = false
+        end
+
+        combo.ComboButton.MouseButton1Click:Connect(function()
+                if dropdownOpen then
+                        closeDropdown()
+                        return
+                end
+
+                dropdownOpen = true
+
+                -- 创建下拉菜单容器（放在Main外面避免被裁剪）
+                dropdownFrame = Instance.new("Frame")
+                dropdownFrame.Name = "DropdownFrame"
+                dropdownFrame.Parent = Arceus
+                dropdownFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+                dropdownFrame.BorderSizePixel = 0
+                dropdownFrame.Size = UDim2.new(0, combo.AbsoluteSize.X, 0, #options * 45 + 10)
+                dropdownFrame.Position = UDim2.new(0, combo.AbsolutePosition.X, 0, combo.AbsolutePosition.Y + combo.AbsoluteSize.Y)
+                dropdownFrame.ZIndex = 10
+
+                local dropdownUICorner = Instance.new("UICorner")
+                dropdownUICorner.CornerRadius = UDim.new(0.1, 0)
+                dropdownUICorner.Parent = dropdownFrame
+
+                local dropdownLayout = Instance.new("UIListLayout")
+                dropdownLayout.Parent = dropdownFrame
+                dropdownLayout.SortOrder = Enum.SortOrder.LayoutOrder
+                dropdownLayout.Padding = UDim.new(0, 5)
+
+                for i, option in ipairs(options) do
+                        local optionButton = ButtonTemplate:Clone()
+                        optionButton.Text = option
+                        optionButton.Size = UDim2.new(0.9, 0, 0, 40)
+                        optionButton.Position = UDim2.new(0.05, 0, 0, (i-1)*45 + 5)
+                        optionButton.ZIndex = 11
+                        optionButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+                        optionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+                        optionButton.MouseButton1Click:Connect(function()
+                                currentIndex = i
+                                combo.ComboText.Text = name .. ": " .. option
+                                callback(option, i)
+                                closeDropdown()
+                        end)
+
+                        optionButton.Parent = dropdownFrame
+                end
+        end)
+
+        -- 点击其他地方关闭下拉菜单
+        userInputService.InputBegan:Connect(function(input, gameProcessed)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 and dropdownOpen then
+                        local mousePos = userInputService:GetMouseLocation()
+                        local comboPos = combo.AbsolutePosition
+                        local comboSize = combo.AbsoluteSize
+                        local dropdownPos = dropdownFrame and dropdownFrame.AbsolutePosition or Vector2.new(0,0)
+                        local dropdownSize = dropdownFrame and dropdownFrame.AbsoluteSize or Vector2.new(0,0)
+
+                        -- 检查是否点击在组合框或下拉菜单之外
+                        if not (mousePos.X >= comboPos.X and mousePos.X <= comboPos.X + comboSize.X and
+                                   mousePos.Y >= comboPos.Y and mousePos.Y <= comboPos.Y + comboSize.Y) and
+                           not (mousePos.X >= dropdownPos.X and mousePos.X <= dropdownPos.X + dropdownSize.X and
+                                   mousePos.Y >= dropdownPos.Y and mousePos.Y <= dropdownPos.Y + dropdownSize.Y) then
+                                closeDropdown()
+                        end
+                end
+        end)
+
+        combo.Parent = Menu
+        return combo
 end
 
--- 创建输入框函数
+-- 创建输入框函数 - 修改为无上限显示
 local function createInputField(name, defaultValue, placeholder, callback)
-	local input = InputTemplate:Clone()
-	input.InputText.Text = name
-	input.InputBox.PlaceholderText = placeholder
-	input.InputBox.Text = tostring(defaultValue)
-	
-	input.InputButton.MouseButton1Click:Connect(function()
-		local text = input.InputBox.Text
-		local value = tonumber(text)
-		
-		if value then
-			-- 验证数值范围
-			if value >= 0.001 and value <= 10 then
-				callback(value)
-				input.InputBox.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-				print(name .. " 设置为: " .. value)
-			else
-				input.InputBox.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-				print("错误: " .. name .. " 必须在 0.001 到 10 之间")
-			end
-		else
-			input.InputBox.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-			print("错误: 请输入有效数字")
-		end
-	end)
-	
-	-- 按回车键也可以确认
-	input.InputBox.FocusLost:Connect(function(enterPressed)
-		if enterPressed then
-			input.InputButton:Activate()
-		end
-	end)
-	
-	input.Parent = Menu
-	return input
+        local input = InputTemplate:Clone()
+        input.InputText.Text = name
+        input.InputBox.PlaceholderText = placeholder
+        input.InputBox.Text = tostring(defaultValue)
+
+        input.InputButton.MouseButton1Click:Connect(function()
+                local text = input.InputBox.Text
+                local value = tonumber(text)
+
+                if value then
+                        -- 验证数值范围 - 现在允许任何大于0的值
+                        if value > 0 then
+                                callback(value)
+                                input.InputBox.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+                                
+                                -- 根据输入值给出不同的提示
+                                if value < 0.1 then
+                                        print(name .. " 设置为: " .. value .. " (非常平滑)")
+                                elseif value >= 0.1 and value <= 0.5 then
+                                        print(name .. " 设置为: " .. value .. " (推荐范围)")
+                                elseif value > 0.5 and value <= 2 then
+                                        print(name .. " 设置为: " .. value .. " (较强)")
+                                elseif value > 2 and value <= 10 then
+                                        print(name .. " 设置为: " .. value .. " (非常强)")
+                                else
+                                        print(name .. " 设置为: " .. value .. " (显示值超过10，实际强度限制为10)")
+                                end
+                        else
+                                input.InputBox.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+                                print("错误: " .. name .. " 必须大于0")
+                        end
+                else
+                        input.InputBox.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+                        print("错误: 请输入有效数字")
+                end
+        end)
+
+        -- 按回车键也可以确认
+        input.InputBox.FocusLost:Connect(function(enterPressed)
+                if enterPressed then
+                        input.InputButton:Activate()
+                end
+        end)
+
+        input.Parent = Menu
+        return input
 end
 
 -- 透视功能
 local function createESPBox(character, isNPC)
-	if not character or not character:FindFirstChild("HumanoidRootPart") then return end
-	
-	-- 移除旧的ESP框和标签
-	if espBoxes[character] then
-		espBoxes[character]:Destroy()
-		espBoxes[character] = nil
-	end
-	
-	if espLabels[character] then
-		espLabels[character]:Destroy()
-		espLabels[character] = nil
-	end
-	
-	-- 创建新的ESP框
-	local box = Instance.new("BoxHandleAdornment")
-	box.Name = "ESPBox"
-	box.Adornee = character.HumanoidRootPart
-	box.AlwaysOnTop = true
-	box.ZIndex = 1
-	box.Size = character.HumanoidRootPart.Size + Vector3.new(0.1, 0.1, 0.1)
-	box.Color3 = isNPC and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 255, 0) -- NPC红色，玩家绿色
-	box.Transparency = 0.7
-	box.Parent = character.HumanoidRootPart
-	
-	espBoxes[character] = box
-	
-	-- 创建名字标签
-	local billboard = Instance.new("BillboardGui")
-	billboard.Name = "ESPLabel"
-	billboard.Adornee = character.HumanoidRootPart
-	billboard.Size = UDim2.new(0, 200, 0, 50)
-	billboard.StudsOffset = Vector3.new(0, 3, 0) -- 在角色上方显示
-	billboard.AlwaysOnTop = true
-	billboard.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-	billboard.Parent = character.HumanoidRootPart
-	
-	local label = Instance.new("TextLabel")
-	label.Name = "Label"
-	label.BackgroundTransparency = 1
-	label.Size = UDim2.new(1, 0, 1, 0)
-	label.TextColor3 = isNPC and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(100, 255, 100)
-	label.TextStrokeTransparency = 0.5
-	label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-	label.TextSize = 18
-	label.Font = Enum.Font.GothamBold
-	label.Text = character.Name
-	if not isNPC then
-		local player = players:GetPlayerFromCharacter(character)
-		if player then
-			label.Text = player.Name .. " (" .. character.Name .. ")"
-		end
-	end
-	label.Parent = billboard
-	
-	espLabels[character] = billboard
-	
-	-- 监听角色删除
-	local connection
-	connection = character.AncestryChanged:Connect(function()
-		if not character:IsDescendantOf(workspace) then
-			if espBoxes[character] then
-				espBoxes[character]:Destroy()
-				espBoxes[character] = nil
-			end
-			if espLabels[character] then
-				espLabels[character]:Destroy()
-				espLabels[character] = nil
-			end
-			connection:Disconnect()
-		end
-	end)
-	
-	table.insert(espConnections, connection)
+        if not character or not character:FindFirstChild("HumanoidRootPart") then return end
+
+        -- 移除旧的ESP框和标签
+        if espBoxes[character] then
+                espBoxes[character]:Destroy()
+                espBoxes[character] = nil
+        end
+
+        if espLabels[character] then
+                espLabels[character]:Destroy()
+                espLabels[character] = nil
+        end
+
+        -- 创建新的ESP框
+        local box = Instance.new("BoxHandleAdornment")
+        box.Name = "ESPBox"
+        box.Adornee = character.HumanoidRootPart
+        box.AlwaysOnTop = true
+        box.ZIndex = 1
+        box.Size = character.HumanoidRootPart.Size + Vector3.new(0.1, 0.1, 0.1)
+        box.Color3 = isNPC and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 255, 0) -- NPC红色，玩家绿色
+        box.Transparency = 0.7
+        box.Parent = character.HumanoidRootPart
+
+        espBoxes[character] = box
+
+        -- 创建名字标签
+        local billboard = Instance.new("BillboardGui")
+        billboard.Name = "ESPLabel"
+        billboard.Adornee = character.HumanoidRootPart
+        billboard.Size = UDim2.new(0, 200, 0, 50)
+        billboard.StudsOffset = Vector3.new(0, 3, 0) -- 在角色上方显示
+        billboard.AlwaysOnTop = true
+        billboard.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+        billboard.Parent = character.HumanoidRootPart
+
+        local label = Instance.new("TextLabel")
+        label.Name = "Label"
+        label.BackgroundTransparency = 1
+        label.Size = UDim2.new(1, 0, 1, 0)
+        label.TextColor3 = isNPC and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(100, 255, 100)
+        label.TextStrokeTransparency = 0.5
+        label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+        label.TextSize = 18
+        label.Font = Enum.Font.GothamBold
+        label.Text = character.Name
+        if not isNPC then
+                local player = players:GetPlayerFromCharacter(character)
+                if player then
+                        label.Text = player.Name .. " (" .. character.Name .. ")"
+                end
+        end
+        label.Parent = billboard
+
+        espLabels[character] = billboard
+
+        -- 监听角色删除
+        local connection
+        connection = character.AncestryChanged:Connect(function()
+                if not character:IsDescendantOf(workspace) then
+                        if espBoxes[character] then
+                                espBoxes[character]:Destroy()
+                                espBoxes[character] = nil
+                        end
+                        if espLabels[character] then
+                                espLabels[character]:Destroy()
+                                espLabels[character] = nil
+                        end
+                        connection:Disconnect()
+                end
+        end)
+
+        table.insert(espConnections, connection)
 end
 
 local function updateESP()
-	-- 清除所有ESP框和标签
-	for character, box in pairs(espBoxes) do
-		if box then
-			box:Destroy()
-		end
-	end
-	espBoxes = {}
-	
-	for character, label in pairs(espLabels) do
-		if label then
-			label:Destroy()
-		end
-	end
-	espLabels = {}
-	
-	-- 断开所有连接
-	for _, connection in ipairs(espConnections) do
-		connection:Disconnect()
-	end
-	espConnections = {}
-	
-	-- 为玩家创建ESP
-	if espPlayers then
-		for _, player in pairs(players:GetPlayers()) do
-			if player ~= localPlayer and player.Character then
-				createESPBox(player.Character, false)
-			end
-		end
-	end
-	
-	-- 为NPC创建ESP
-	if espNPCs then
-		for _, obj in pairs(workspace:GetDescendants()) do
-			if obj:IsA("Model") then
-				local humanoid = obj:FindFirstChildOfClass("Humanoid")
-				if humanoid and humanoid.Health > 0 then
-					-- 检查是否不是玩家
-					if not players:GetPlayerFromCharacter(obj) then
-						createESPBox(obj, true)
-					end
-				end
-			end
-		end
-	end
+        -- 清除所有ESP框和标签
+        for character, box in pairs(espBoxes) do
+                if box then
+                        box:Destroy()
+                end
+        end
+        espBoxes = {}
+
+        for character, label in pairs(espLabels) do
+                if label then
+                        label:Destroy()
+                end
+        end
+        espLabels = {}
+
+        -- 断开所有连接
+        for _, connection in ipairs(espConnections) do
+                connection:Disconnect()
+        end
+        espConnections = {}
+
+        -- 为玩家创建ESP
+        if espPlayers then
+                for _, player in pairs(players:GetPlayers()) do
+                        if player ~= localPlayer and player.Character then
+                                createESPBox(player.Character, false)
+                        end
+                end
+        end
+
+        -- 为NPC创建ESP
+        if espNPCs then
+                for _, obj in pairs(workspace:GetDescendants()) do
+                        if obj:IsA("Model") then
+                                local humanoid = obj:FindFirstChildOfClass("Humanoid")
+                                if humanoid and humanoid.Health > 0 then
+                                        -- 检查是否不是玩家
+                                        if not players:GetPlayerFromCharacter(obj) then
+                                                createESPBox(obj, true)
+                                        end
+                                end
+                        end
+                end
+        end
 end
 
 -- 获取所有可瞄准目标
 local function getAllTargets()
-	local targets = {}
-	
-	-- 获取玩家
-	if targetType == "玩家" or targetType == "全部" then
-		for _, player in pairs(players:GetPlayers()) do
-			if player ~= localPlayer and player.Character then
-				local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
-				if humanoid and humanoid.Health > 0 then
-					-- 团队检查
-					if teamCheck and player.Team == localPlayer.Team then
-						continue
-					end
-					
-					local aimObject
-					if aimPart == "头部" then
-						aimObject = player.Character:FindFirstChild("Head") or player.Character:FindFirstChild("HumanoidRootPart")
-					else
-						aimObject = player.Character:FindFirstChild("HumanoidRootPart")
-					end
-					
-					if aimObject then
-						table.insert(targets, {
-							object = aimObject,
-							player = player,
-							isNPC = false,
-							character = player.Character,
-							name = player.Name
-						})
-					end
-				end
-			end
-		end
-	end
-	
-	-- 获取NPC
-	if targetType == "NPC" or targetType == "全部" then
-		for _, obj in pairs(workspace:GetDescendants()) do
-			if obj:IsA("Model") then
-				local humanoid = obj:FindFirstChildOfClass("Humanoid")
-				if humanoid and humanoid.Health > 0 then
-					-- 检查是否不是玩家
-					if not players:GetPlayerFromCharacter(obj) then
-						local aimObject
-						if aimPart == "头部" then
-							aimObject = obj:FindFirstChild("Head") or obj:FindFirstChild("HumanoidRootPart")
-						else
-							aimObject = obj:FindFirstChild("HumanoidRootPart")
-						end
-						
-						if aimObject then
-							table.insert(targets, {
-								object = aimObject,
-								player = nil,
-								isNPC = true,
-								character = obj,
-								name = obj.Name
-							})
-						end
-					end
-				end
-			end
-		end
-	end
-	
-	return targets
+        local targets = {}
+
+        -- 获取玩家
+        if targetType == "玩家" or targetType == "全部" then
+                for _, player in pairs(players:GetPlayers()) do
+                        if player ~= localPlayer and player.Character then
+                                local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+                                if humanoid and humanoid.Health > 0 then
+                                        -- 团队检查
+                                        if teamCheck and player.Team == localPlayer.Team then
+                                                continue
+                                        end
+
+                                        local aimObject
+                                        if aimPart == "头部" then
+                                                aimObject = player.Character:FindFirstChild("Head") or player.Character:FindFirstChild("HumanoidRootPart")
+                                        else
+                                                aimObject = player.Character:FindFirstChild("HumanoidRootPart")
+                                        end
+
+                                        if aimObject then
+                                                table.insert(targets, {
+                                                        object = aimObject,
+                                                        player = player,
+                                                        isNPC = false,
+                                                        character = player.Character,
+                                                        name = player.Name
+                                                })
+                                        end
+                                end
+                        end
+                end
+        end
+
+        -- 获取NPC
+        if targetType == "NPC" or targetType == "全部" then
+                for _, obj in pairs(workspace:GetDescendants()) do
+                        if obj:IsA("Model") then
+                                local humanoid = obj:FindFirstChildOfClass("Humanoid")
+                                if humanoid and humanoid.Health > 0 then
+                                        -- 检查是否不是玩家
+                                        if not players:GetPlayerFromCharacter(obj) then
+                                                local aimObject
+                                                if aimPart == "头部" then
+                                                        aimObject = obj:FindFirstChild("Head") or obj:FindFirstChild("HumanoidRootPart")
+                                                else
+                                                        aimObject = obj:FindFirstChild("HumanoidRootPart")
+                                                end
+
+                                                if aimObject then
+                                                        table.insert(targets, {
+                                                                object = aimObject,
+                                                                player = nil,
+                                                                isNPC = true,
+                                                                character = obj,
+                                                                name = obj.Name
+                                                        })
+                                                end
+                                        end
+                                end
+                        end
+                end
+        end
+
+        return targets
 end
 
 -- 获取距离最近的目标
 local function getNearestTarget()
-	local nearest = nil
-	local nearestDistance = math.huge
-	
-	if not localPlayer.Character then return nil end
-	
-	local localRoot = localPlayer.Character:FindFirstChild("HumanoidRootPart")
-	if not localRoot then return nil end
-	
-	for _, target in pairs(getAllTargets()) do
-		if target.object and target.object.Parent then
-			local distance = (localRoot.Position - target.object.Position).Magnitude
-			
-			if distance < nearestDistance then
-				nearestDistance = distance
-				nearest = target
-			end
-		end
-	end
-	
-	return nearest
+        local nearest = nil
+        local nearestDistance = math.huge
+
+        if not localPlayer.Character then return nil end
+
+        local localRoot = localPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if not localRoot then return nil end
+
+        for _, target in pairs(getAllTargets()) do
+                if target.object and target.object.Parent then
+                        local distance = (localRoot.Position - target.object.Position).Magnitude
+
+                        if distance < nearestDistance then
+                                nearestDistance = distance
+                                nearest = target
+                        end
+                end
+        end
+
+        return nearest
 end
 
 -- 获取距离光标最近的目标
 local function getClosestTarget()
-	local closest = nil
-	local closestDistance = math.huge
-	
-	if not localPlayer.Character then return nil end
-	
-	local camera = workspace.CurrentCamera
-	local mousePos = userInputService:GetMouseLocation()
-	
-	for _, target in pairs(getAllTargets()) do
-		if target.object and target.object.Parent then
-			local screenPoint, onScreen = camera:WorldToViewportPoint(target.object.Position)
-			
-			if onScreen then
-				local distance = (Vector2.new(screenPoint.X, screenPoint.Y) - mousePos).Magnitude
-				
-				if distance < closestDistance and distance < 500 then
-					closestDistance = distance
-					closest = target
-				end
-			end
-		end
-	end
-	
-	return closest
+        local closest = nil
+        local closestDistance = math.huge
+
+        if not localPlayer.Character then return nil end
+
+        local camera = workspace.CurrentCamera
+        local mousePos = userInputService:GetMouseLocation()
+
+        for _, target in pairs(getAllTargets()) do
+                if target.object and target.object.Parent then
+                        local screenPoint, onScreen = camera:WorldToViewportPoint(target.object.Position)
+
+                        if onScreen then
+                                local distance = (Vector2.new(screenPoint.X, screenPoint.Y) - mousePos).Magnitude
+
+                                if distance < closestDistance and distance < 500 then
+                                        closestDistance = distance
+                                        closest = target
+                                end
+                        end
+                end
+        end
+
+        return closest
 end
 
 -- 选择鼠标指向的目标
 local function selectTargetUnderMouse()
-	local mouse = localPlayer:GetMouse()
-	local target = mouse.Target
-	
-	if target then
-		local character = target:FindFirstAncestorOfClass("Model")
-		if character then
-			local humanoid = character:FindFirstChildOfClass("Humanoid")
-			if humanoid and humanoid.Health > 0 then
-				-- 团队检查
-				local player = players:GetPlayerFromCharacter(character)
-				if teamCheck and player and player.Team == localPlayer.Team then
-					return nil
-				end
-				
-				local aimObject
-				if aimPart == "头部" then
-					aimObject = character:FindFirstChild("Head") or character:FindFirstChild("HumanoidRootPart")
-				else
-					aimObject = character:FindFirstChild("HumanoidRootPart")
-				end
-				
-				if aimObject then
-					return {
-						object = aimObject,
-						player = player,
-						isNPC = not player,
-						character = character,
-						name = player and player.Name or character.Name
-					}
-				end
-			end
-		end
-	end
-	
-	return nil
+        local mouse = localPlayer:GetMouse()
+        local target = mouse.Target
+
+        if target then
+                local character = target:FindFirstAncestorOfClass("Model")
+                if character then
+                        local humanoid = character:FindFirstChildOfClass("Humanoid")
+                        if humanoid and humanoid.Health > 0 then
+                                -- 团队检查
+                                local player = players:GetPlayerFromCharacter(character)
+                                if teamCheck and player and player.Team == localPlayer.Team then
+                                        return nil
+                                end
+
+                                local aimObject
+                                if aimPart == "头部" then
+                                        aimObject = character:FindFirstChild("Head") or character:FindFirstChild("HumanoidRootPart")
+                                else
+                                        aimObject = character:FindFirstChild("HumanoidRootPart")
+                                end
+
+                                if aimObject then
+                                        return {
+                                                object = aimObject,
+                                                player = player,
+                                                isNPC = not player,
+                                                character = character,
+                                                name = player and player.Name or character.Name
+                                        }
+                                end
+                        end
+                end
+        end
+
+        return nil
 end
 
--- 修复后的瞄准函数 - 使用智能强度映射
+-- 修复后的瞄准函数 - 使用智能强度映射，实际强度限制在10以内
 local function aimAt(target)
     if target and target.object and target.object.Parent then
         local camera = workspace.CurrentCamera
-        
+
         -- 智能映射函数：将0.001-10映射到0.001-0.3
         -- 使用对数函数实现更平滑的强度控制
+        -- 实际强度限制在10以内
         local function mapStrength(strength)
+            -- 将输入强度限制在10以内
+            local clampedStrength = math.min(strength, 10)
+            
             -- 基础映射：0.001->0.001, 0.5->0.1, 1->0.15, 2->0.2, 5->0.25, 10->0.3
-            if strength <= 1 then
-                return strength * 0.15  -- 低强度线性映射
+            if clampedStrength <= 1 then
+                return clampedStrength * 0.15  -- 低强度线性映射
             else
-                return 0.15 + (math.log(strength) / math.log(10)) * 0.15  -- 高强度对数映射
+                return 0.15 + (math.log(clampedStrength) / math.log(10)) * 0.15  -- 高强度对数映射
             end
         end
-        
+
         local lerpAlpha = mapStrength(aimStrength)
-        
+
         -- 使用插值实现平滑瞄准
         local currentCF = camera.CFrame
         local targetCF = CFrame.new(camera.CFrame.Position, target.object.Position)
-        
+
         -- 应用强度控制的插值
         camera.CFrame = currentCF:Lerp(targetCF, lerpAlpha)
     end
@@ -847,271 +863,273 @@ end
 
 -- 检查目标是否有效
 local function isTargetValid(target)
-	if not target or not target.object or not target.character then
-		return false
-	end
-	
-	if not target.object:IsDescendantOf(workspace) then
-		return false
-	end
-	
-	local humanoid = target.character:FindFirstChildOfClass("Humanoid")
-	if not humanoid or humanoid.Health <= 0 then
-		return false
-	end
-	
-	return true
+        if not target or not target.object or not target.character then
+                return false
+        end
+
+        if not target.object:IsDescendantOf(workspace) then
+                return false
+        end
+
+        local humanoid = target.character:FindFirstChildOfClass("Humanoid")
+        if not humanoid or humanoid.Health <= 0 then
+                return false
+        end
+
+        return true
 end
 
 -- 更新目标选择窗口
 local function updateTargetSelector()
-	-- 清除现有按钮
-	for _, button in pairs(targetButtons) do
-		button:Destroy()
-	end
-	targetButtons = {}
-	
-	-- 更新NPC列表
-	local npcTargets = {}
-	for _, obj in pairs(workspace:GetDescendants()) do
-		if obj:IsA("Model") then
-			local humanoid = obj:FindFirstChildOfClass("Humanoid")
-			if humanoid and humanoid.Health > 0 then
-				if not players:GetPlayerFromCharacter(obj) then
-					table.insert(npcTargets, {
-						name = obj.Name,
-						character = obj,
-						isNPC = true
-					})
-				end
-			end
-		end
-	end
-	
-	for i, npc in ipairs(npcTargets) do
-		local npcButton = ButtonTemplate:Clone()
-		npcButton.Text = npc.name
-		npcButton.Size = UDim2.new(0.9, 0, 0, 40)
-		npcButton.Position = UDim2.new(0.05, 0, 0, (i-1)*45)
-		npcButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-		npcButton.TextColor3 = Color3.fromRGB(255, 100, 100)
-		
-		npcButton.MouseButton1Click:Connect(function()
-			-- 重置所有按钮颜色
-			for _, btn in pairs(targetButtons) do
-				btn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-			end
-			
-			-- 设置选中按钮颜色
-			npcButton.BackgroundColor3 = Color3.fromRGB(100, 50, 50)
-			
-			-- 设置选中目标
-			local aimObject
-			if aimPart == "头部" then
-				aimObject = npc.character:FindFirstChild("Head") or npc.character:FindFirstChild("HumanoidRootPart")
-			else
-				aimObject = npc.character:FindFirstChild("HumanoidRootPart")
-			end
-			
-			if aimObject then
-				selectedTarget = {
-					object = aimObject,
-					player = nil,
-					isNPC = true,
-					character = npc.character,
-					name = npc.name
-				}
-				aimEnabled = true
-				print("已选择目标: " .. npc.name)
-			end
-		end)
-		
-		npcButton.Parent = NPCList
-		table.insert(targetButtons, npcButton)
-	end
-	
-	-- 更新玩家列表
-	local playerTargets = {}
-	for _, player in pairs(players:GetPlayers()) do
-		if player ~= localPlayer and player.Character then
-			local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
-			if humanoid and humanoid.Health > 0 then
-				if not teamCheck or player.Team ~= localPlayer.Team then
-					table.insert(playerTargets, {
-						name = player.Name,
-						character = player.Character,
-						player = player,
-						isNPC = false
-					})
-				end
-			end
-		end
-	end
-	
-	for i, player in ipairs(playerTargets) do
-		local playerButton = ButtonTemplate:Clone()
-		playerButton.Text = player.name
-		playerButton.Size = UDim2.new(0.9, 0, 0, 40)
-		playerButton.Position = UDim2.new(0.05, 0, 0, (i-1)*45)
-		playerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-		playerButton.TextColor3 = Color3.fromRGB(100, 255, 100)
-		
-		playerButton.MouseButton1Click:Connect(function()
-			-- 重置所有按钮颜色
-			for _, btn in pairs(targetButtons) do
-				btn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-			end
-			
-			-- 设置选中按钮颜色
-			playerButton.BackgroundColor3 = Color3.fromRGB(50, 100, 50)
-			
-			-- 设置选中目标
-			local aimObject
-			if aimPart == "头部" then
-				aimObject = player.character:FindFirstChild("Head") or player.character:FindFirstChild("HumanoidRootPart")
-			else
-				aimObject = player.character:FindFirstChild("HumanoidRootPart")
-			end
-			
-			if aimObject then
-				selectedTarget = {
-					object = aimObject,
-					player = player.player,
-					isNPC = false,
-					character = player.character,
-					name = player.name
-				}
-				aimEnabled = true
-				print("已选择目标: " .. player.name)
-			end
-		end)
-		
-		playerButton.Parent = PlayerList
-		table.insert(targetButtons, playerButton)
-	end
-	
-	-- 更新滚动区域大小
-	NPCList.CanvasSize = UDim2.new(0, 0, 0, #npcTargets * 45)
-	PlayerList.CanvasSize = UDim2.new(0, 0, 0, #playerTargets * 45)
+        -- 清除现有按钮
+        for _, button in pairs(targetButtons) do
+                button:Destroy()
+        end
+        targetButtons = {}
+
+        -- 更新NPC列表
+        local npcTargets = {}
+        for _, obj in pairs(workspace:GetDescendants()) do
+                if obj:IsA("Model") then
+                        local humanoid = obj:FindFirstChildOfClass("Humanoid")
+                        if humanoid and humanoid.Health > 0 then
+                                if not players:GetPlayerFromCharacter(obj) then
+                                        table.insert(npcTargets, {
+                                                name = obj.Name,
+                                                character = obj,
+                                                isNPC = true
+                                        })
+                                end
+                        end
+                end
+        end
+
+        for i, npc in ipairs(npcTargets) do
+                local npcButton = ButtonTemplate:Clone()
+                npcButton.Text = npc.name
+                npcButton.Size = UDim2.new(0.9, 0, 0, 40)
+                npcButton.Position = UDim2.new(0.05, 0, 0, (i-1)*45)
+                npcButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+                npcButton.TextColor3 = Color3.fromRGB(255, 100, 100)
+
+                npcButton.MouseButton1Click:Connect(function()
+                        -- 重置所有按钮颜色
+                        for _, btn in pairs(targetButtons) do
+                                btn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+                        end
+
+                        -- 设置选中按钮颜色
+                        npcButton.BackgroundColor3 = Color3.fromRGB(100, 50, 50)
+
+                        -- 设置选中目标
+                        local aimObject
+                        if aimPart == "头部" then
+                                aimObject = npc.character:FindFirstChild("Head") or npc.character:FindFirstChild("HumanoidRootPart")
+                        else
+                                aimObject = npc.character:FindFirstChild("HumanoidRootPart")
+                        end
+
+                        if aimObject then
+                                selectedTarget = {
+                                        object = aimObject,
+                                        player = nil,
+                                        isNPC = true,
+                                        character = npc.character,
+                                        name = npc.name
+                                }
+                                aimEnabled = true
+                                print("已选择目标: " .. npc.name)
+                        end
+                end)
+
+                npcButton.Parent = NPCList
+                table.insert(targetButtons, npcButton)
+        end
+
+        -- 更新玩家列表
+        local playerTargets = {}
+        for _, player in pairs(players:GetPlayers()) do
+                if player ~= localPlayer and player.Character then
+                        local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+                        if humanoid and humanoid.Health > 0 then
+                                if not teamCheck or player.Team ~= localPlayer.Team then
+                                        table.insert(playerTargets, {
+                                                name = player.Name,
+                                                character = player.Character,
+                                                player = player,
+                                                isNPC = false
+                                        })
+                                end
+                        end
+                end
+        end
+
+        for i, player in ipairs(playerTargets) do
+                local playerButton = ButtonTemplate:Clone()
+                playerButton.Text = player.name
+                playerButton.Size = UDim2.new(0.9, 0, 0, 40)
+                playerButton.Position = UDim2.new(0.05, 0, 0, (i-1)*45)
+                playerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+                playerButton.TextColor3 = Color3.fromRGB(100, 255, 100)
+
+                playerButton.MouseButton1Click:Connect(function()
+                        -- 重置所有按钮颜色
+                        for _, btn in pairs(targetButtons) do
+                                btn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+                        end
+
+                        -- 设置选中按钮颜色
+                        playerButton.BackgroundColor3 = Color3.fromRGB(50, 100, 50)
+
+                        -- 设置选中目标
+                        local aimObject
+                        if aimPart == "头部" then
+                                aimObject = player.character:FindFirstChild("Head") or player.character:FindFirstChild("HumanoidRootPart")
+                        else
+                                aimObject = player.character:FindFirstChild("HumanoidRootPart")
+                        end
+
+                        if aimObject then
+                                selectedTarget = {
+                                        object = aimObject,
+                                        player = player.player,
+                                        isNPC = false,
+                                        character = player.character,
+                                        name = player.name
+                                }
+                                aimEnabled = true
+                                print("已选择目标: " .. player.name)
+                        end
+                end)
+
+                playerButton.Parent = PlayerList
+                table.insert(targetButtons, playerButton)
+        end
+
+        -- 更新滚动区域大小
+        NPCList.CanvasSize = UDim2.new(0, 0, 0, #npcTargets * 45)
+        PlayerList.CanvasSize = UDim2.new(0, 0, 0, #playerTargets * 45)
 end
 
 -- 创建所有UI元素
 local toggleTeamCheck = createToggle("团队检查", false, function(state)
-	teamCheck = state
-	updateTargetSelector()
+        teamCheck = state
+        updateTargetSelector()
 end)
 
 -- 透视功能切换按钮
 local toggleESPPlayers = createToggle("透视玩家", false, function(state)
-	espPlayers = state
-	updateESP()
+        espPlayers = state
+        updateESP()
 end)
 
 local toggleESPNPCs = createToggle("透视NPC", false, function(state)
-	espNPCs = state
-	updateESP()
+        espNPCs = state
+        updateESP()
 end)
 
 local comboAimPart = createComboBox("瞄准部位", {"头部", "身体"}, 1, function(option)
-	if option == "头部" then
-		aimPart = "头部"
-	else
-		aimPart = "身体"
-	end
+        if option == "头部" then
+                aimPart = "头部"
+        else
+                aimPart = "身体"
+        end
 end)
 
 local comboTargetType = createComboBox("目标类型", {"玩家", "NPC", "全部"}, 1, function(option)
-	targetType = option
+        targetType = option
 end)
 
--- 添加瞄准强度输入框 - 修复后的版本
-local inputAimStrength = createInputField("瞄准强度", 0.5, "0.001-10 (镜头转向目标对象速度)", function(value)
-	aimStrength = value
-	
-	-- 根据输入值给出建议
-	if value < 0.1 then
-		print("瞄准强度设置为: " .. value .. " (非常平滑)")
-	elseif value >= 0.1 and value <= 0.5 then
-		print("瞄准强度设置为: " .. value .. " (推荐范围)")
-	elseif value > 0.5 and value <= 2 then
-		print("瞄准强度设置为: " .. value .. " (较强)")
-	else
-		print("瞄准强度设置为: " .. value .. " (非常强)")
-	end
+-- 修改后的瞄准强度输入框 - 无上限显示
+local inputAimStrength = createInputField("瞄准强度", 5, "大于0的数字", function(value)
+        aimStrength = value
+
+        -- 根据输入值给出建议
+        if value < 0.1 then
+                print("瞄准强度设置为: " .. value .. " (非常平滑)")
+        elseif value >= 0.1 and value <= 0.5 then
+                print("瞄准强度设置为: " .. value .. " (推荐范围)")
+        elseif value > 0.5 and value <= 2 then
+                print("瞄准强度设置为: " .. value .. " (较强)")
+        elseif value > 2 and value <= 10 then
+                print("瞄准强度设置为: " .. value .. " (非常强)")
+        else
+                print("瞄准强度设置为: " .. value .. " (显示值超过10，实际强度限制为10)")
+        end
 end)
 
 local buttonSelectAll = createButton("选择全部目标", function()
-	aimEnabled = true
-	print("已开启自动选择最近目标")
+        aimEnabled = true
+        print("已开启自动选择最近目标")
 end)
 
 local buttonSelectTarget = createButton("选择目标", function()
-	TargetSelector.Visible = true
-	updateTargetSelector()
+        TargetSelector.Visible = true
+        updateTargetSelector()
 end)
 
 local buttonStopAiming = createButton("停止瞄准", function()
-	aimEnabled = false
-	selectedTarget = nil
-	print("已停止瞄准")
+        aimEnabled = false
+        selectedTarget = nil
+        print("已停止瞄准")
 end)
 
 -- 关闭按钮功能 - 改为最小化
 Close.MouseButton1Click:Connect(function()
-	Main.Visible = false
-	MinimizeFrame.Visible = true
+        Main.Visible = false
+        MinimizeFrame.Visible = true
 end)
 
 -- 最小化按钮功能
 MinimizeButton.MouseButton1Click:Connect(function()
-	MinimizeFrame.Visible = false
-	Main.Visible = true
+        MinimizeFrame.Visible = false
+        Main.Visible = true
 end)
 
 -- 目标选择窗口关闭按钮
 TargetSelectorClose.MouseButton1Click:Connect(function()
-	TargetSelector.Visible = false
+        TargetSelector.Visible = false
 end)
 
 -- 鼠标点击选择目标
 userInputService.InputBegan:Connect(function(input, gameProcessed)
-	if gameProcessed then return end
-	
-	if isSelectingTarget and input.UserInputType == Enum.UserInputType.MouseButton1 then
-		local target = selectTargetUnderMouse()
-		if target then
-			selectedTarget = target
-			aimEnabled = true
-			print("已选择目标: " .. target.name)
-		else
-			print("未找到有效目标")
-		end
-		isSelectingTarget = false
-	end
+        if gameProcessed then return end
+
+        if isSelectingTarget and input.UserInputType == Enum.UserInputType.MouseButton1 then
+                local target = selectTargetUnderMouse()
+                if target then
+                        selectedTarget = target
+                        aimEnabled = true
+                        print("已选择目标: " .. target.name)
+                else
+                        print("未找到有效目标")
+                end
+                isSelectingTarget = false
+        end
 end)
 
 -- 监听新玩家加入
 players.PlayerAdded:Connect(function(player)
-	player.CharacterAdded:Connect(function(character)
-		if espPlayers then
-			wait(1) -- 等待角色完全加载
-			createESPBox(character, false)
-		end
-	end)
+        player.CharacterAdded:Connect(function(character)
+                if espPlayers then
+                        wait(1) -- 等待角色完全加载
+                        createESPBox(character, false)
+                end
+        end)
 end)
 
 -- 监听NPC生成
 workspace.DescendantAdded:Connect(function(descendant)
-	if descendant:IsA("Model") and espNPCs then
-		wait(0.5) -- 等待模型完全加载
-		local humanoid = descendant:FindFirstChildOfClass("Humanoid")
-		if humanoid and humanoid.Health > 0 then
-			-- 检查是否不是玩家
-			if not players:GetPlayerFromCharacter(descendant) then
-				createESPBox(descendant, true)
-			end
-		end
-	end
+        if descendant:IsA("Model") and espNPCs then
+                wait(0.5) -- 等待模型完全加载
+                local humanoid = descendant:FindFirstChildOfClass("Humanoid")
+                if humanoid and humanoid.Health > 0 then
+                        -- 检查是否不是玩家
+                        if not players:GetPlayerFromCharacter(descendant) then
+                                createESPBox(descendant, true)
+                        end
+                end
+        end
 end)
 
 -- 增强版拖动功能
@@ -1120,7 +1138,7 @@ local function setupEnhancedDrag(dragArea, guiObject)
     local dragInput
     local dragStart
     local startPos
-    
+
     -- 获取拖动区域的绝对位置和大小
     local function getDragAreaAbsolute()
         local absolutePosition = dragArea.AbsolutePosition
@@ -1132,7 +1150,7 @@ local function setupEnhancedDrag(dragArea, guiObject)
             Height = absoluteSize.Y
         }
     end
-    
+
     -- 鼠标是否在拖动区域内
     local function isMouseInDragArea(mousePos)
         local area = getDragAreaAbsolute()
@@ -1145,7 +1163,7 @@ local function setupEnhancedDrag(dragArea, guiObject)
             dragging = true
             dragStart = input.Position
             startPos = guiObject.Position
-            
+
             -- 捕获输入
             local connection
             connection = input.Changed:Connect(function()
@@ -1166,7 +1184,7 @@ local function setupEnhancedDrag(dragArea, guiObject)
     userInputService.InputChanged:Connect(function(input)
         if dragging and input == dragInput then
             local mousePos = userInputService:GetMouseLocation()
-            
+
             -- 检查鼠标是否仍在拖动区域内
             if isMouseInDragArea(mousePos) then
                 local delta = input.Position - dragStart
@@ -1214,36 +1232,22 @@ print("拖动系统已增强 - 现在可以正常拖动所有窗口了！")
 
 -- 主循环
 runService.RenderStepped:Connect(function()
-	-- 检查当前目标是否仍然有效
-	if selectedTarget and not isTargetValid(selectedTarget) then
-		selectedTarget = nil
-	end
-	
-	-- 执行瞄准
-	if aimEnabled then
-		if selectedTarget then
-			-- 瞄准选定的目标
-			aimAt(selectedTarget)
-		else
-			-- 自动寻找最近的目标
-			local nearest = getNearestTarget()
-			if nearest then
-				aimAt(nearest)
-			end
-		end
-	end
-end)
+        -- 检查当前目标是否仍然有效
+        if selectedTarget and not isTargetValid(selectedTarget) then
+                selectedTarget = nil
+        end
 
-print("自瞄系统 V5.0 已加载!")
-print("功能列表:")
-print("- 团队检查: 是否瞄准队友")
-print("- 透视玩家: 独立透视玩家功能（显示名字和方框）")
-print("- 透视NPC: 独立透视NPC功能（显示名字和方框）")
-print("- 瞄准部位: 选择瞄准的身体部位")
-print("- 目标类型: 选择瞄准玩家/NPC/全部")
-print("- 瞄准强度: 可输入0.001到10之间的精确数值，已修复镜头晃动问题")
-print("- 选择全部目标: 自动瞄准最近的目标")
-print("- 选择目标: 打开目标选择窗口")
-print("- 停止瞄准: 完全停止瞄准")
-print("- 点击右上角X可最小化界面")
-print("- 所有窗口都可以拖动")
+        -- 执行瞄准
+        if aimEnabled then
+                if selectedTarget then
+                        -- 瞄准选定的目标
+                        aimAt(selectedTarget)
+                else
+                        -- 自动寻找最近的目标
+                        local nearest = getNearestTarget()
+                        if nearest then
+                                aimAt(nearest)
+                        end
+                end
+        end
+end)
