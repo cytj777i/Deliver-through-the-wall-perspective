@@ -1,6 +1,3 @@
--- 完整自瞄脚本 - 增强版（修复瞄准强度问题）
--- 修复下拉菜单遮挡问题，添加独立透视功能，显示名字
-
 -- 创建UI
 local Arceus = Instance.new("ScreenGui")
 local Main = Instance.new("Frame")
@@ -97,8 +94,8 @@ Menu.BackgroundTransparency = 1.000
 Menu.BorderSizePixel = 0
 Menu.Position = UDim2.new(0.05, 0, 0.12, 0)
 Menu.Size = UDim2.new(0.9, 0, 0.85, 0)
-Menu.CanvasSize = UDim2.new(0, 0, 2.5, 0)
-Menu.ScrollBarThickness = 6
+Menu.CanvasSize = UDim2.new(0, 0, 4, 0) -- 增加滚动区域高度
+Menu.ScrollBarThickness = 8 -- 增加滚动条厚度
 Menu.ZIndex = 1
 
 UIListLayout.Parent = Menu
@@ -372,6 +369,11 @@ local aimPart = "头部"
 local targetType = "玩家"
 local aimStrength = 0.5 -- 默认中等强度，现在是精确数值
 
+-- 预判变量
+local predictEnabled = false
+local predictStrength = 0.1 -- 默认预判强度
+local targetHistory = {} -- 存储目标历史位置用于计算速度
+
 -- 透视变量
 local espPlayers = false
 local espNPCs = false
@@ -512,7 +514,7 @@ local function createInputField(name, defaultValue, placeholder, callback)
                         if value > 0 then
                                 callback(value)
                                 input.InputBox.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-                                
+
                                 -- 根据输入值给出不同的提示
                                 if value < 0.1 then
                                         print(name .. " 设置为: " .. value .. " (非常平滑)")
@@ -830,10 +832,69 @@ local function selectTargetUnderMouse()
         return nil
 end
 
+-- 预判功能：计算目标移动预测位置
+local function calculatePredictedPosition(target)
+    if not target or not target.object or not targetHistory[target] then
+        return target and target.object and target.object.Position
+    end
+    
+    local history = targetHistory[target]
+    if #history < 2 then
+        return target.object.Position
+    end
+    
+    -- 获取最近两个位置
+    local currentPos = history[#history]
+    local previousPos = history[#history - 1]
+    
+    -- 计算速度向量
+    local velocity = (currentPos - previousPos) / (1/60) -- 假设60FPS
+    
+    -- 如果速度很小，不进行预判
+    if velocity.Magnitude < 0.1 then
+        return target.object.Position
+    end
+    
+    -- 应用预判强度计算预测位置
+    local predictedPos = currentPos + velocity * predictStrength
+    
+    return predictedPos
+end
+
+-- 更新目标历史位置
+local function updateTargetHistory()
+    if selectedTarget and selectedTarget.object and selectedTarget.object.Parent then
+        if not targetHistory[selectedTarget] then
+            targetHistory[selectedTarget] = {}
+        end
+        
+        local history = targetHistory[selectedTarget]
+        table.insert(history, selectedTarget.object.Position)
+        
+        -- 只保留最近10个位置
+        if #history > 10 then
+            table.remove(history, 1)
+        end
+    else
+        -- 清除无效目标的历史
+        for target, _ in pairs(targetHistory) do
+            if not target or not target.object or not target.object.Parent then
+                targetHistory[target] = nil
+            end
+        end
+    end
+end
+
 -- 修复后的瞄准函数 - 使用智能强度映射，实际强度限制在10以内
 local function aimAt(target)
     if target and target.object and target.object.Parent then
         local camera = workspace.CurrentCamera
+
+        -- 计算目标位置（考虑预判）
+        local targetPosition = target.object.Position
+        if predictEnabled and aimEnabled and selectedTarget == target then
+            targetPosition = calculatePredictedPosition(target)
+        end
 
         -- 智能映射函数：将0.001-10映射到0.001-0.3
         -- 使用对数函数实现更平滑的强度控制
@@ -841,7 +902,7 @@ local function aimAt(target)
         local function mapStrength(strength)
             -- 将输入强度限制在10以内
             local clampedStrength = math.min(strength, 10)
-            
+
             -- 基础映射：0.001->0.001, 0.5->0.1, 1->0.15, 2->0.2, 5->0.25, 10->0.3
             if clampedStrength <= 1 then
                 return clampedStrength * 0.15  -- 低强度线性映射
@@ -854,7 +915,7 @@ local function aimAt(target)
 
         -- 使用插值实现平滑瞄准
         local currentCF = camera.CFrame
-        local targetCF = CFrame.new(camera.CFrame.Position, target.object.Position)
+        local targetCF = CFrame.new(camera.CFrame.Position, targetPosition)
 
         -- 应用强度控制的插值
         camera.CFrame = currentCF:Lerp(targetCF, lerpAlpha)
@@ -1058,21 +1119,80 @@ local inputAimStrength = createInputField("瞄准强度", 5, "大于0的数字",
         end
 end)
 
+-- 预判功能UI元素
+local togglePredict = createToggle("预判功能", false, function(state)
+    if state and not aimEnabled then
+        print("错误: 请先开启自瞄才能使用预判功能")
+        -- 自动关闭预判
+        togglePredict.ToggleButton.Text = "关闭"
+        togglePredict.ToggleButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        predictEnabled = false
+        return
+    end
+    
+    predictEnabled = state
+    if state then
+        print("预判功能已开启")
+    else
+        print("预判功能已关闭")
+    end
+end)
+
+local inputPredictStrength = createInputField("预判强度", 0.1, "大于0的数字", function(value)
+    predictStrength = value
+    print("预判强度设置为: " .. value)
+    
+    -- 根据预判强度给出建议
+    if value < 0.05 then
+        print("预判强度: 轻微预判")
+    elseif value >= 0.05 and value <= 0.2 then
+        print("预判强度: 推荐范围")
+    elseif value > 0.2 and value <= 0.5 then
+        print("预判强度: 较强预判")
+    else
+        print("预判强度: 强力预判")
+    end
+end)
+
+-- 添加鼠标选择目标按钮
+local buttonMouseSelect = createButton("鼠标选择目标", function()
+    isSelectingTarget = true
+    print("请点击游戏中的目标进行选择")
+end)
+
 local buttonSelectAll = createButton("选择全部目标", function()
         aimEnabled = true
+        selectedTarget = nil
         print("已开启自动选择最近目标")
 end)
 
 local buttonSelectTarget = createButton("选择目标", function()
         TargetSelector.Visible = true
         updateTargetSelector()
+        print("已打开目标选择窗口")
 end)
 
 local buttonStopAiming = createButton("停止瞄准", function()
         aimEnabled = false
         selectedTarget = nil
+        predictEnabled = false
+        targetHistory = {}
         print("已停止瞄准")
 end)
+
+-- 动态调整滚动区域大小
+local function updateScrollSize()
+    local totalHeight = 0
+    for _, child in ipairs(Menu:GetChildren()) do
+        if child:IsA("GuiObject") then
+            totalHeight = totalHeight + child.AbsoluteSize.Y + 10
+        end
+    end
+    Menu.CanvasSize = UDim2.new(0, 0, 0, totalHeight + 50)
+end
+
+-- 监听UI变化，动态调整滚动区域
+game:GetService("RunService").Heartbeat:Connect(updateScrollSize)
 
 -- 关闭按钮功能 - 改为最小化
 Close.MouseButton1Click:Connect(function()
@@ -1100,11 +1220,12 @@ userInputService.InputBegan:Connect(function(input, gameProcessed)
                 if target then
                         selectedTarget = target
                         aimEnabled = true
+                        isSelectingTarget = false
                         print("已选择目标: " .. target.name)
                 else
                         print("未找到有效目标")
+                        isSelectingTarget = false
                 end
-                isSelectingTarget = false
         end
 end)
 
@@ -1232,22 +1353,28 @@ print("拖动系统已增强 - 现在可以正常拖动所有窗口了！")
 
 -- 主循环
 runService.RenderStepped:Connect(function()
-        -- 检查当前目标是否仍然有效
-        if selectedTarget and not isTargetValid(selectedTarget) then
-                selectedTarget = nil
-        end
+    -- 更新目标历史位置（用于预判）
+    if predictEnabled and aimEnabled and selectedTarget then
+        updateTargetHistory()
+    end
+    
+    -- 检查当前目标是否仍然有效
+    if selectedTarget and not isTargetValid(selectedTarget) then
+        selectedTarget = nil
+        targetHistory = {} -- 清除历史数据
+    end
 
-        -- 执行瞄准
-        if aimEnabled then
-                if selectedTarget then
-                        -- 瞄准选定的目标
-                        aimAt(selectedTarget)
-                else
-                        -- 自动寻找最近的目标
-                        local nearest = getNearestTarget()
-                        if nearest then
-                                aimAt(nearest)
-                        end
-                end
+    -- 执行瞄准
+    if aimEnabled then
+        if selectedTarget then
+            -- 瞄准选定的目标
+            aimAt(selectedTarget)
+        else
+            -- 自动寻找最近的目标
+            local nearest = getNearestTarget()
+            if nearest then
+                aimAt(nearest)
+            end
         end
+    end
 end)
