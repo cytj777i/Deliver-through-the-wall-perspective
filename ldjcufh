@@ -67,7 +67,7 @@ Title.BackgroundTransparency = 1.000
 Title.Position = UDim2.new(0.05, 0, 0.02, 0)
 Title.Size = UDim2.new(0.8, 0, 0.08, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "自瞄系统 V5.0"
+Title.Text = "自瞄系统 V5.1"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextScaled = true
 Title.TextSize = 14.000
@@ -94,8 +94,8 @@ Menu.BackgroundTransparency = 1.000
 Menu.BorderSizePixel = 0
 Menu.Position = UDim2.new(0.05, 0, 0.12, 0)
 Menu.Size = UDim2.new(0.9, 0, 0.85, 0)
-Menu.CanvasSize = UDim2.new(0, 0, 4, 0) -- 增加滚动区域高度
-Menu.ScrollBarThickness = 8 -- 增加滚动条厚度
+Menu.CanvasSize = UDim2.new(0, 0, 4, 0)
+Menu.ScrollBarThickness = 8
 Menu.ZIndex = 1
 
 UIListLayout.Parent = Menu
@@ -225,7 +225,7 @@ InputButton.TextScaled = true
 InputButton.TextSize = 14.000
 InputButton.TextWrapped = true
 
--- 创建最小化按钮 - 按照参考代码逻辑
+-- 创建最小化按钮
 MinimizeFrame.Name = "MinimizeFrame"
 MinimizeFrame.Parent = Arceus
 MinimizeFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
@@ -364,15 +364,18 @@ local localPlayer = players.LocalPlayer
 local aimEnabled = false
 local teamCheck = false
 local selectedTarget = nil
-local isSelectingTarget = false
 local aimPart = "头部"
 local targetType = "玩家"
-local aimStrength = 0.5 -- 默认中等强度，现在是精确数值
+local aimStrength = 0.5
 
--- 预判变量
+-- 预判变量 - 修改为时间预判
 local predictEnabled = false
-local predictStrength = 0.1 -- 默认预判强度
+local predictTime = 0.1 -- 默认预判0.1秒
 local targetHistory = {} -- 存储目标历史位置用于计算速度
+local targetVelocities = {} -- 存储目标速度
+
+-- 锁定自瞄变量
+local lockAim = false
 
 -- 透视变量
 local espPlayers = false
@@ -436,7 +439,7 @@ local function createComboBox(name, options, defaultIndex, callback)
 
                 dropdownOpen = true
 
-                -- 创建下拉菜单容器（放在Main外面避免被裁剪）
+                -- 创建下拉菜单容器
                 dropdownFrame = Instance.new("Frame")
                 dropdownFrame.Name = "DropdownFrame"
                 dropdownFrame.Parent = Arceus
@@ -484,7 +487,6 @@ local function createComboBox(name, options, defaultIndex, callback)
                         local dropdownPos = dropdownFrame and dropdownFrame.AbsolutePosition or Vector2.new(0,0)
                         local dropdownSize = dropdownFrame and dropdownFrame.AbsoluteSize or Vector2.new(0,0)
 
-                        -- 检查是否点击在组合框或下拉菜单之外
                         if not (mousePos.X >= comboPos.X and mousePos.X <= comboPos.X + comboSize.X and
                                    mousePos.Y >= comboPos.Y and mousePos.Y <= comboPos.Y + comboSize.Y) and
                            not (mousePos.X >= dropdownPos.X and mousePos.X <= dropdownPos.X + dropdownSize.X and
@@ -498,7 +500,7 @@ local function createComboBox(name, options, defaultIndex, callback)
         return combo
 end
 
--- 创建输入框函数 - 修改为无上限显示
+-- 创建输入框函数
 local function createInputField(name, defaultValue, placeholder, callback)
         local input = InputTemplate:Clone()
         input.InputText.Text = name
@@ -510,26 +512,13 @@ local function createInputField(name, defaultValue, placeholder, callback)
                 local value = tonumber(text)
 
                 if value then
-                        -- 验证数值范围 - 现在允许任何大于0的值
-                        if value > 0 then
+                        if value >= 0 then
                                 callback(value)
                                 input.InputBox.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-
-                                -- 根据输入值给出不同的提示
-                                if value < 0.1 then
-                                        print(name .. " 设置为: " .. value .. " (非常平滑)")
-                                elseif value >= 0.1 and value <= 0.5 then
-                                        print(name .. " 设置为: " .. value .. " (推荐范围)")
-                                elseif value > 0.5 and value <= 2 then
-                                        print(name .. " 设置为: " .. value .. " (较强)")
-                                elseif value > 2 and value <= 10 then
-                                        print(name .. " 设置为: " .. value .. " (非常强)")
-                                else
-                                        print(name .. " 设置为: " .. value .. " (显示值超过10，实际强度限制为10)")
-                                end
+                                print(name .. " 设置为: " .. value)
                         else
                                 input.InputBox.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-                                print("错误: " .. name .. " 必须大于0")
+                                print("错误: " .. name .. " 必须大于等于0")
                         end
                 else
                         input.InputBox.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
@@ -570,7 +559,7 @@ local function createESPBox(character, isNPC)
         box.AlwaysOnTop = true
         box.ZIndex = 1
         box.Size = character.HumanoidRootPart.Size + Vector3.new(0.1, 0.1, 0.1)
-        box.Color3 = isNPC and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 255, 0) -- NPC红色，玩家绿色
+        box.Color3 = isNPC and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 255, 0)
         box.Transparency = 0.7
         box.Parent = character.HumanoidRootPart
 
@@ -581,7 +570,7 @@ local function createESPBox(character, isNPC)
         billboard.Name = "ESPLabel"
         billboard.Adornee = character.HumanoidRootPart
         billboard.Size = UDim2.new(0, 200, 0, 50)
-        billboard.StudsOffset = Vector3.new(0, 3, 0) -- 在角色上方显示
+        billboard.StudsOffset = Vector3.new(0, 3, 0)
         billboard.AlwaysOnTop = true
         billboard.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
         billboard.Parent = character.HumanoidRootPart
@@ -662,7 +651,6 @@ local function updateESP()
                         if obj:IsA("Model") then
                                 local humanoid = obj:FindFirstChildOfClass("Humanoid")
                                 if humanoid and humanoid.Health > 0 then
-                                        -- 检查是否不是玩家
                                         if not players:GetPlayerFromCharacter(obj) then
                                                 createESPBox(obj, true)
                                         end
@@ -714,7 +702,6 @@ local function getAllTargets()
                         if obj:IsA("Model") then
                                 local humanoid = obj:FindFirstChildOfClass("Humanoid")
                                 if humanoid and humanoid.Health > 0 then
-                                        -- 检查是否不是玩家
                                         if not players:GetPlayerFromCharacter(obj) then
                                                 local aimObject
                                                 if aimPart == "头部" then
@@ -793,121 +780,130 @@ local function getClosestTarget()
         return closest
 end
 
--- 选择鼠标指向的目标
-local function selectTargetUnderMouse()
-        local mouse = localPlayer:GetMouse()
-        local target = mouse.Target
-
-        if target then
-                local character = target:FindFirstAncestorOfClass("Model")
-                if character then
-                        local humanoid = character:FindFirstChildOfClass("Humanoid")
-                        if humanoid and humanoid.Health > 0 then
-                                -- 团队检查
-                                local player = players:GetPlayerFromCharacter(character)
-                                if teamCheck and player and player.Team == localPlayer.Team then
-                                        return nil
-                                end
-
-                                local aimObject
-                                if aimPart == "头部" then
-                                        aimObject = character:FindFirstChild("Head") or character:FindFirstChild("HumanoidRootPart")
-                                else
-                                        aimObject = character:FindFirstChild("HumanoidRootPart")
-                                end
-
-                                if aimObject then
-                                        return {
-                                                object = aimObject,
-                                                player = player,
-                                                isNPC = not player,
-                                                character = character,
-                                                name = player and player.Name or character.Name
-                                        }
-                                end
-                        end
+-- 智能目标选择：优先选择既离得近又在准星中心的目标
+local function getBestTarget()
+    if not localPlayer.Character then return nil end
+    
+    local camera = workspace.CurrentCamera
+    local viewportSize = camera.ViewportSize
+    local screenCenter = Vector2.new(viewportSize.X / 2, viewportSize.Y / 2)
+    
+    local bestTarget = nil
+    local bestScore = math.huge
+    
+    for _, target in pairs(getAllTargets()) do
+        if target.object and target.object.Parent then
+            local screenPoint, onScreen = camera:WorldToViewportPoint(target.object.Position)
+            
+            if onScreen then
+                local screenPos = Vector2.new(screenPoint.X, screenPoint.Y)
+                local screenDistance = (screenPos - screenCenter).Magnitude
+                
+                local realDistance = (localPlayer.Character.HumanoidRootPart.Position - target.object.Position).Magnitude
+                
+                local score = (screenDistance * 0.7) + (realDistance * 0.3)
+                
+                if score < bestScore then
+                    bestScore = score
+                    bestTarget = target
                 end
+            end
         end
-
-        return nil
+    end
+    
+    return bestTarget
 end
 
--- 预判功能：计算目标移动预测位置
+-- 改进的预判功能：根据目标速度和预判时间计算未来位置
 local function calculatePredictedPosition(target)
-    if not target or not target.object or not targetHistory[target] then
-        return target and target.object and target.object.Position
+    if not target or not target.object then
+        return nil
     end
-    
-    local history = targetHistory[target]
-    if #history < 2 then
+
+    -- 如果预判功能未开启，返回当前位置
+    if not predictEnabled then
         return target.object.Position
     end
+
+    -- 获取目标的速度
+    local velocity = Vector3.new(0, 0, 0)
     
-    -- 获取最近两个位置
-    local currentPos = history[#history]
-    local previousPos = history[#history - 1]
+    -- 方法1：从Humanoid获取速度
+    local humanoid = target.character:FindFirstChildOfClass("Humanoid")
+    if humanoid and humanoid:GetState() == Enum.HumanoidStateType.Running then
+        local rootPart = target.character:FindFirstChild("HumanoidRootPart")
+        if rootPart then
+            velocity = rootPart.Velocity
+        end
+    end
     
-    -- 计算速度向量
-    local velocity = (currentPos - previousPos) / (1/60) -- 假设60FPS
-    
+    -- 方法2：使用历史位置计算速度（备用方法）
+    if velocity.Magnitude < 0.1 and targetHistory[target] and #targetHistory[target] >= 2 then
+        local history = targetHistory[target]
+        local currentPos = history[#history]
+        local previousPos = history[#history - 1]
+        velocity = (currentPos - previousPos) / (1/60) -- 假设60FPS
+    end
+
     -- 如果速度很小，不进行预判
     if velocity.Magnitude < 0.1 then
         return target.object.Position
     end
-    
-    -- 应用预判强度计算预测位置
-    local predictedPos = currentPos + velocity * predictStrength
-    
+
+    -- 应用预判时间计算预测位置
+    local predictedPos = target.object.Position + velocity * predictTime
+
     return predictedPos
 end
 
--- 更新目标历史位置
+-- 更新目标历史位置和速度
 local function updateTargetHistory()
     if selectedTarget and selectedTarget.object and selectedTarget.object.Parent then
         if not targetHistory[selectedTarget] then
             targetHistory[selectedTarget] = {}
         end
-        
+
         local history = targetHistory[selectedTarget]
         table.insert(history, selectedTarget.object.Position)
-        
+
         -- 只保留最近10个位置
         if #history > 10 then
             table.remove(history, 1)
+        end
+
+        -- 计算并存储速度
+        if #history >= 2 then
+            local currentPos = history[#history]
+            local previousPos = history[#history - 1]
+            targetVelocities[selectedTarget] = (currentPos - previousPos) / (1/60)
         end
     else
         -- 清除无效目标的历史
         for target, _ in pairs(targetHistory) do
             if not target or not target.object or not target.object.Parent then
                 targetHistory[target] = nil
+                targetVelocities[target] = nil
             end
         end
     end
 end
 
--- 修复后的瞄准函数 - 使用智能强度映射，实际强度限制在10以内
+-- 瞄准函数
 local function aimAt(target)
     if target and target.object and target.object.Parent then
         local camera = workspace.CurrentCamera
 
         -- 计算目标位置（考虑预判）
-        local targetPosition = target.object.Position
-        if predictEnabled and aimEnabled and selectedTarget == target then
-            targetPosition = calculatePredictedPosition(target)
-        end
+        local targetPosition = calculatePredictedPosition(target) or target.object.Position
 
         -- 智能映射函数：将0.001-10映射到0.001-0.3
-        -- 使用对数函数实现更平滑的强度控制
-        -- 实际强度限制在10以内
         local function mapStrength(strength)
-            -- 将输入强度限制在10以内
             local clampedStrength = math.min(strength, 10)
 
-            -- 基础映射：0.001->0.001, 0.5->0.1, 1->0.15, 2->0.2, 5->0.25, 10->0.3
             if clampedStrength <= 1 then
-                return clampedStrength * 0.15  -- 低强度线性映射
+                return clampedStrength * 0.15
             else
-                return 0.15 + (math.log(clampedStrength) / math.log(10)) * 0.15  -- 高强度对数映射
+                return 0.15 + (math.log(clampedStrength) / math.log(10)) * 0.15
             end
         end
 
@@ -917,7 +913,6 @@ local function aimAt(target)
         local currentCF = camera.CFrame
         local targetCF = CFrame.new(camera.CFrame.Position, targetPosition)
 
-        -- 应用强度控制的插值
         camera.CFrame = currentCF:Lerp(targetCF, lerpAlpha)
     end
 end
@@ -1073,6 +1068,8 @@ local function updateTargetSelector()
 end
 
 -- 创建所有UI元素
+-- 注意：移除了自瞄总开关按钮
+
 local toggleTeamCheck = createToggle("团队检查", false, function(state)
         teamCheck = state
         updateTargetSelector()
@@ -1101,11 +1098,10 @@ local comboTargetType = createComboBox("目标类型", {"玩家", "NPC", "全部
         targetType = option
 end)
 
--- 修改后的瞄准强度输入框 - 无上限显示
-local inputAimStrength = createInputField("瞄准强度", 5, "大于0的数字", function(value)
+-- 瞄准强度输入框
+local inputAimStrength = createInputField("瞄准强度", 0.5, "大于0的数字", function(value)
         aimStrength = value
 
-        -- 根据输入值给出建议
         if value < 0.1 then
                 print("瞄准强度设置为: " .. value .. " (非常平滑)")
         elseif value >= 0.1 and value <= 0.5 then
@@ -1119,51 +1115,69 @@ local inputAimStrength = createInputField("瞄准强度", 5, "大于0的数字",
         end
 end)
 
--- 预判功能UI元素
+-- 改进的预判功能UI元素
 local togglePredict = createToggle("预判功能", false, function(state)
+    -- 检查自瞄是否开启
     if state and not aimEnabled then
-        print("错误: 请先开启自瞄才能使用预判功能")
+        print("错误: 请先选择目标开启自瞄才能使用预判功能")
         -- 自动关闭预判
         togglePredict.ToggleButton.Text = "关闭"
         togglePredict.ToggleButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
         predictEnabled = false
         return
     end
-    
+
     predictEnabled = state
     if state then
-        print("预判功能已开启")
+        print("预判功能已开启 - 预判时间: " .. predictTime .. "秒")
     else
         print("预判功能已关闭")
     end
 end)
 
-local inputPredictStrength = createInputField("预判强度", 0.1, "大于0的数字", function(value)
-    predictStrength = value
-    print("预判强度设置为: " .. value)
-    
-    -- 根据预判强度给出建议
+-- 预判时间输入框（秒）
+local inputPredictTime = createInputField("预判时间(秒)", 0.1, "预判多少秒后的位置", function(value)
+    predictTime = value
+    print("预判时间设置为: " .. value .. "秒")
+
+    -- 根据预判时间给出建议
     if value < 0.05 then
-        print("预判强度: 轻微预判")
+        print("预判时间: 轻微预判 (适合近距离)")
     elseif value >= 0.05 and value <= 0.2 then
-        print("预判强度: 推荐范围")
+        print("预判时间: 推荐范围 (适合中距离)")
     elseif value > 0.2 and value <= 0.5 then
-        print("预判强度: 较强预判")
+        print("预判时间: 较强预判 (适合远距离)")
+    elseif value > 0.5 and value <= 1 then
+        print("预判时间: 强力预判 (适合高速目标)")
     else
-        print("预判强度: 强力预判")
+        print("预判时间: 超强预判 (适合极高速目标)")
     end
 end)
 
--- 添加鼠标选择目标按钮
-local buttonMouseSelect = createButton("鼠标选择目标", function()
-    isSelectingTarget = true
-    print("请点击游戏中的目标进行选择")
+-- 锁定自瞄功能
+local toggleLockAim = createToggle("锁定自瞄", false, function(state)
+    lockAim = state
+    if state then
+        print("锁定自瞄已开启 - 持续跟踪选定目标")
+        if selectedTarget then
+            print("已锁定目标: " .. selectedTarget.name)
+        end
+    else
+        print("锁定自瞄已关闭 - 恢复自动选择最近目标")
+    end
 end)
 
+-- 选择全部目标按钮 - 使用智能目标选择
 local buttonSelectAll = createButton("选择全部目标", function()
+    local bestTarget = getBestTarget()
+    if bestTarget then
+        selectedTarget = bestTarget
         aimEnabled = true
-        selectedTarget = nil
-        print("已开启自动选择最近目标")
+        print("已智能选择目标: " .. bestTarget.name .. " (距离近且在准星中心)")
+        print("自瞄已自动开启")
+    else
+        print("未找到有效目标")
+    end
 end)
 
 local buttonSelectTarget = createButton("选择目标", function()
@@ -1176,7 +1190,16 @@ local buttonStopAiming = createButton("停止瞄准", function()
         aimEnabled = false
         selectedTarget = nil
         predictEnabled = false
+        lockAim = false
         targetHistory = {}
+        targetVelocities = {}
+        
+        -- 重置所有相关按钮状态
+        togglePredict.ToggleButton.Text = "关闭"
+        togglePredict.ToggleButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        toggleLockAim.ToggleButton.Text = "关闭"
+        toggleLockAim.ToggleButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        
         print("已停止瞄准")
 end)
 
@@ -1211,29 +1234,11 @@ TargetSelectorClose.MouseButton1Click:Connect(function()
         TargetSelector.Visible = false
 end)
 
--- 鼠标点击选择目标
-userInputService.InputBegan:Connect(function(input, gameProcessed)
-        if gameProcessed then return end
-
-        if isSelectingTarget and input.UserInputType == Enum.UserInputType.MouseButton1 then
-                local target = selectTargetUnderMouse()
-                if target then
-                        selectedTarget = target
-                        aimEnabled = true
-                        isSelectingTarget = false
-                        print("已选择目标: " .. target.name)
-                else
-                        print("未找到有效目标")
-                        isSelectingTarget = false
-                end
-        end
-end)
-
 -- 监听新玩家加入
 players.PlayerAdded:Connect(function(player)
         player.CharacterAdded:Connect(function(character)
                 if espPlayers then
-                        wait(1) -- 等待角色完全加载
+                        wait(1)
                         createESPBox(character, false)
                 end
         end)
@@ -1242,10 +1247,9 @@ end)
 -- 监听NPC生成
 workspace.DescendantAdded:Connect(function(descendant)
         if descendant:IsA("Model") and espNPCs then
-                wait(0.5) -- 等待模型完全加载
+                wait(0.5)
                 local humanoid = descendant:FindFirstChildOfClass("Humanoid")
                 if humanoid and humanoid.Health > 0 then
-                        -- 检查是否不是玩家
                         if not players:GetPlayerFromCharacter(descendant) then
                                 createESPBox(descendant, true)
                         end
@@ -1260,7 +1264,6 @@ local function setupEnhancedDrag(dragArea, guiObject)
     local dragStart
     local startPos
 
-    -- 获取拖动区域的绝对位置和大小
     local function getDragAreaAbsolute()
         local absolutePosition = dragArea.AbsolutePosition
         local absoluteSize = dragArea.AbsoluteSize
@@ -1272,7 +1275,6 @@ local function setupEnhancedDrag(dragArea, guiObject)
         }
     end
 
-    -- 鼠标是否在拖动区域内
     local function isMouseInDragArea(mousePos)
         local area = getDragAreaAbsolute()
         return mousePos.X >= area.X and mousePos.X <= area.X + area.Width and
@@ -1285,7 +1287,6 @@ local function setupEnhancedDrag(dragArea, guiObject)
             dragStart = input.Position
             startPos = guiObject.Position
 
-            -- 捕获输入
             local connection
             connection = input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
@@ -1306,7 +1307,6 @@ local function setupEnhancedDrag(dragArea, guiObject)
         if dragging and input == dragInput then
             local mousePos = userInputService:GetMouseLocation()
 
-            -- 检查鼠标是否仍在拖动区域内
             if isMouseInDragArea(mousePos) then
                 local delta = input.Position - dragStart
                 guiObject.Position = UDim2.new(
@@ -1316,7 +1316,6 @@ local function setupEnhancedDrag(dragArea, guiObject)
                     startPos.Y.Offset + delta.Y
                 )
             else
-                -- 鼠标移出拖动区域，停止拖动
                 dragging = false
             end
         end
@@ -1327,47 +1326,74 @@ end
 local MinimizeDragArea = Instance.new("Frame")
 MinimizeDragArea.Name = "MinimizeDragArea"
 MinimizeDragArea.Parent = MinimizeFrame
-MinimizeDragArea.BackgroundTransparency = 1  -- 完全透明
-MinimizeDragArea.Size = UDim2.new(1, 0, 1, 0)  -- 覆盖整个最小化窗口
-MinimizeDragArea.ZIndex = 10  -- 确保在最上层
+MinimizeDragArea.BackgroundTransparency = 1
+MinimizeDragArea.Size = UDim2.new(1, 0, 1, 0)
+MinimizeDragArea.ZIndex = 10
 
 -- 为所有可拖动窗口应用增强版拖动功能
 setupEnhancedDrag(Main, Main)
-setupEnhancedDrag(MinimizeDragArea, MinimizeFrame)  -- 使用专门的拖动区域
+setupEnhancedDrag(MinimizeDragArea, MinimizeFrame)
 setupEnhancedDrag(TargetSelector, TargetSelector)
 
--- 额外修复：确保最小化窗口的按钮不会拦截拖动事件
-MinimizeButton.Active = false  -- 禁用按钮的主动状态
-MinimizeButton.BackgroundTransparency = 1  -- 完全透明背景
-
--- 修复：为最小化按钮添加单独的点击事件（不干扰拖动）
+-- 修复：为最小化按钮添加单独的点击事件
 MinimizeButton.MouseButton1Click:Connect(function()
-    if not dragging then  -- 只有在没有拖动时才执行点击操作
+    if not dragging then
         MinimizeFrame.Visible = false
         Main.Visible = true
     end
 end)
 
--- 修复：确保拖动区域在视觉上正确显示
-print("拖动系统已增强 - 现在可以正常拖动所有窗口了！")
+print("自瞄系统 V5.1 已加载!")
+print("主要改进:")
+print("- 移除了自瞄总开关按钮")
+print("- 选择目标后自动开启自瞄")
+print("- 改进的预判系统：基于时间预判")
+print("- 预判功能需要自瞄开启后才能使用")
+print("- 无上限预判时间设置")
 
 -- 主循环
 runService.RenderStepped:Connect(function()
-    -- 更新目标历史位置（用于预判）
-    if predictEnabled and aimEnabled and selectedTarget then
+    -- 更新目标历史位置和速度（用于预判）
+    if aimEnabled and selectedTarget then
         updateTargetHistory()
     end
-    
+
     -- 检查当前目标是否仍然有效
     if selectedTarget and not isTargetValid(selectedTarget) then
         selectedTarget = nil
-        targetHistory = {} -- 清除历史数据
+        targetHistory = {}
+        targetVelocities = {}
+        if lockAim then
+            lockAim = false
+            toggleLockAim.ToggleButton.Text = "关闭"
+            toggleLockAim.ToggleButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+            print("锁定目标已失效，自动关闭锁定自瞄")
+        end
+        
+        -- 如果预判功能开启但目标失效，关闭预判
+        if predictEnabled then
+            predictEnabled = false
+            togglePredict.ToggleButton.Text = "关闭"
+            togglePredict.ToggleButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+            print("目标失效，自动关闭预判功能")
+        end
+    end
+
+    -- 检查预判功能是否在自瞄未开启时被误开启
+    if predictEnabled and not aimEnabled then
+        predictEnabled = false
+        togglePredict.ToggleButton.Text = "关闭"
+        togglePredict.ToggleButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        print("自瞄已关闭，自动关闭预判功能")
     end
 
     -- 执行瞄准
     if aimEnabled then
-        if selectedTarget then
-            -- 瞄准选定的目标
+        if selectedTarget and lockAim then
+            -- 锁定自瞄：始终瞄准选定的目标
+            aimAt(selectedTarget)
+        elseif selectedTarget then
+            -- 有选定目标但未锁定：瞄准选定目标
             aimAt(selectedTarget)
         else
             -- 自动寻找最近的目标
