@@ -1,0 +1,282 @@
+-- 手机忍者注入器 - 人物自动转向最近玩家或NPC（可拖动小UI）
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+
+-- 创建GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "AutoTurnGUI"
+screenGui.ResetOnSpawn = false -- 防止重生时UI消失
+screenGui.Parent = player.PlayerGui
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 150, 0, 100)
+mainFrame.Position = UDim2.new(0, 10, 0, 10)
+mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Selectable = true
+mainFrame.Parent = screenGui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 6)
+corner.Parent = mainFrame
+
+-- 添加阴影效果
+local shadow = Instance.new("ImageLabel")
+shadow.Name = "Shadow"
+shadow.Image = "rbxassetid://5554236805"
+shadow.ScaleType = Enum.ScaleType.Slice
+shadow.SliceCenter = Rect.new(23, 23, 277, 277)
+shadow.ImageTransparency = 0.5
+shadow.BackgroundTransparency = 1
+shadow.Size = UDim2.new(1, 24, 1, 24)
+shadow.Position = UDim2.new(0, -12, 0, -12)
+shadow.Parent = mainFrame
+
+-- 标题栏（作为拖动区域）
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 20)
+titleBar.Position = UDim2.new(0, 0, 0, 0)
+titleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = mainFrame
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 6)
+titleCorner.Parent = titleBar
+
+local titleText = Instance.new("TextLabel")
+titleText.Size = UDim2.new(1, 0, 1, 0)
+titleText.BackgroundTransparency = 1
+titleText.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleText.Text = "自动转向"
+titleText.Font = Enum.Font.GothamBold
+titleText.TextSize = 12
+titleText.Parent = titleBar
+
+-- 开关按钮
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0.8, 0, 0, 25)
+toggleButton.Position = UDim2.new(0.1, 0, 0.25, 0)
+toggleButton.BackgroundColor3 = Color3.fromRGB(76, 175, 80)
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.Text = "开启"
+toggleButton.Font = Enum.Font.Gotham
+toggleButton.TextSize = 12
+toggleButton.Parent = mainFrame
+
+local buttonCorner = Instance.new("UICorner")
+buttonCorner.CornerRadius = UDim.new(0, 4)
+buttonCorner.Parent = toggleButton
+
+-- 频率输入框
+local frequencyBox = Instance.new("TextBox")
+frequencyBox.Size = UDim2.new(0.6, 0, 0, 20)
+frequencyBox.Position = UDim2.new(0.1, 0, 0.6, 0)
+frequencyBox.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+frequencyBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+frequencyBox.Text = "0.025"
+frequencyBox.PlaceholderText = "频率"
+frequencyBox.Font = Enum.Font.Gotham
+frequencyBox.TextSize = 11
+frequencyBox.Parent = mainFrame
+
+local boxCorner = Instance.new("UICorner")
+boxCorner.CornerRadius = UDim.new(0, 4)
+boxCorner.Parent = frequencyBox
+
+-- 频率标签
+local freqLabel = Instance.new("TextLabel")
+freqLabel.Size = UDim2.new(0.25, 0, 0, 20)
+freqLabel.Position = UDim2.new(0.75, 0, 0.6, 0)
+freqLabel.BackgroundTransparency = 1
+freqLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+freqLabel.Text = "频率"
+freqLabel.Font = Enum.Font.Gotham
+freqLabel.TextSize = 10
+freqLabel.Parent = mainFrame
+
+-- 变量
+local isEnabled = false
+local connection
+local currentFrequency = 0.025
+local lastTurnTime = 0  -- 记录上次转向的时间
+
+-- 获取最近目标（玩家或NPC）
+function getNearestTarget()
+    local nearestTarget = nil
+    local shortestDistance = math.huge
+    local localCharacter = player.Character
+    local localRootPart = localCharacter and localCharacter:FindFirstChild("HumanoidRootPart")
+    
+    if not localRootPart then return nil end
+    
+    -- 检查所有玩家
+    for _, otherPlayer in pairs(Players:GetPlayers()) do
+        if otherPlayer ~= player and otherPlayer.Character then
+            local character = otherPlayer.Character
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            local rootPart = character:FindFirstChild("HumanoidRootPart")
+            
+            if humanoid and humanoid.Health > 0 and rootPart then
+                local distance = (localRootPart.Position - rootPart.Position).Magnitude
+                if distance < shortestDistance then
+                    shortestDistance = distance
+                    nearestTarget = {
+                        rootPart = rootPart,
+                        type = "player",
+                        name = otherPlayer.Name
+                    }
+                end
+            end
+        end
+    end
+    
+    -- 检查NPC（具有Humanoid的非玩家角色）
+    for _, obj in pairs(workspace:GetChildren()) do
+        if obj:IsA("Model") and not Players:GetPlayerFromCharacter(obj) then
+            local humanoid = obj:FindFirstChildOfClass("Humanoid")
+            local rootPart = obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChild("Torso") or obj:FindFirstChild("UpperTorso")
+            
+            -- 放宽NPC检测条件，只要有Humanoid就认为是NPC
+            if humanoid and humanoid.Health > 0 and rootPart then
+                local distance = (localRootPart.Position - rootPart.Position).Magnitude
+                if distance < shortestDistance then
+                    shortestDistance = distance
+                    nearestTarget = {
+                        rootPart = rootPart,
+                        type = "npc",
+                        name = obj.Name
+                    }
+                end
+            end
+        end
+    end
+    
+    return nearestTarget
+end
+
+-- 人物转向目标函数
+function turnToTarget()
+    if not isEnabled then return end
+    
+    local nearestTarget = getNearestTarget()
+    if nearestTarget and nearestTarget.rootPart then
+        local targetRoot = nearestTarget.rootPart
+        local localCharacter = player.Character
+        local localRoot = localCharacter and localCharacter:FindFirstChild("HumanoidRootPart")
+        
+        if targetRoot and localRoot then
+            -- 计算目标方向（只考虑水平方向）
+            local targetPosition = targetRoot.Position
+            local currentPosition = localRoot.Position
+            
+            -- 创建水平方向向量（忽略Y轴高度差）
+            local direction = Vector3.new(
+                targetPosition.X - currentPosition.X,
+                0,
+                targetPosition.Z - currentPosition.Z
+            )
+            
+            if direction.Magnitude > 0 then
+                -- 标准化方向向量
+                direction = direction.Unit
+                
+                -- 创建朝向目标的CFrame并应用到人物
+                localRoot.CFrame = CFrame.new(currentPosition, currentPosition + direction)
+            end
+        end
+    end
+end
+
+-- 更新频率
+function updateFrequency()
+    local newFreq = tonumber(frequencyBox.Text)
+    if newFreq then
+        if newFreq < 0.001 then
+            newFreq = 0.001
+            frequencyBox.Text = "0.001"
+        elseif newFreq > 1 then
+            newFreq = 1
+            frequencyBox.Text = "1"
+        end
+        currentFrequency = newFreq
+        print("频率已更新为: " .. currentFrequency) -- 调试信息
+    else
+        frequencyBox.Text = "0.025"
+        currentFrequency = 0.025
+        print("频率重置为默认值: " .. currentFrequency) -- 调试信息
+    end
+end
+
+-- 开关按钮点击事件
+toggleButton.MouseButton1Click:Connect(function()
+    isEnabled = not isEnabled
+    
+    if isEnabled then
+        toggleButton.Text = "关闭"
+        toggleButton.BackgroundColor3 = Color3.fromRGB(244, 67, 54)
+        
+        -- 开始自动转向
+        if connection then
+            connection:Disconnect()
+        end
+        
+        lastTurnTime = tick() -- 重置计时器
+        
+        connection = RunService.Heartbeat:Connect(function()
+            local currentTime = tick()
+            if currentTime - lastTurnTime >= currentFrequency then
+                turnToTarget()
+                lastTurnTime = currentTime
+            end
+        end)
+        
+    else
+        toggleButton.Text = "开启"
+        toggleButton.BackgroundColor3 = Color3.fromRGB(76, 175, 80)
+        
+        -- 停止自动转向
+        if connection then
+            connection:Disconnect()
+            connection = nil
+        end
+    end
+end)
+
+-- 频率输入框事件
+frequencyBox.FocusLost:Connect(function(enterPressed)
+    updateFrequency()
+end)
+
+-- 初始更新频率
+updateFrequency()
+
+-- 防止人物死亡后出错并保持UI
+local function onCharacterAdded(character)
+    -- 等待HumanoidRootPart出现
+    character:WaitForChild("HumanoidRootPart")
+end
+
+player.CharacterAdded:Connect(onCharacterAdded)
+if player.Character then
+    onCharacterAdded(player.Character)
+end
+
+-- 确保UI在玩家重生时不会消失
+player.CharacterRemoving:Connect(function()
+    -- 玩家死亡时，UI仍然保留
+    -- 可以在这里添加逻辑来处理玩家死亡时的行为
+end)
+
+print("手机忍者注入器 - 人物自动转向已加载!")
+print("功能: 自动转向最近的玩家或NPC")
+print("使用方法: 点击开启按钮开始自动转向")
+print("拖动标题栏可以移动UI位置")
+print("死亡后UI不会消失")
+print("当前频率: " .. currentFrequency)
