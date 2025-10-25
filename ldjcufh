@@ -225,13 +225,13 @@ InputButton.TextScaled = true
 InputButton.TextSize = 14.000
 InputButton.TextWrapped = true
 
--- 创建最小化按钮
+-- 创建最小化按钮 - 扩大并添加快捷按钮
 MinimizeFrame.Name = "MinimizeFrame"
 MinimizeFrame.Parent = Arceus
 MinimizeFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 MinimizeFrame.BorderSizePixel = 0
 MinimizeFrame.Position = UDim2.new(0, 10, 0.5, 0)
-MinimizeFrame.Size = UDim2.new(0, 40, 0, 40)
+MinimizeFrame.Size = UDim2.new(0, 40, 0, 80) -- 高度增加到80以容纳两个按钮
 MinimizeFrame.Visible = false
 MinimizeFrame.Active = true
 MinimizeFrame.Draggable = true
@@ -243,13 +243,29 @@ MinimizeButton.Name = "MinimizeButton"
 MinimizeButton.Parent = MinimizeFrame
 MinimizeButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
 MinimizeButton.BackgroundTransparency = 1.000
-MinimizeButton.Size = UDim2.new(1, 0, 1, 0)
+MinimizeButton.Position = UDim2.new(0, 0, 0, 0)
+MinimizeButton.Size = UDim2.new(1, 0, 0.5, 0) -- 调整比例
 MinimizeButton.Font = Enum.Font.GothamBold
 MinimizeButton.Text = "打开"
 MinimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 MinimizeButton.TextScaled = true
 MinimizeButton.TextSize = 14.000
 MinimizeButton.TextWrapped = true
+
+-- 添加快捷按钮 - 全选功能
+local QuickSelectButton = Instance.new("TextButton")
+QuickSelectButton.Name = "QuickSelectButton"
+QuickSelectButton.Parent = MinimizeFrame
+QuickSelectButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+QuickSelectButton.BackgroundTransparency = 0
+QuickSelectButton.Position = UDim2.new(0, 0, 0.5, 0)
+QuickSelectButton.Size = UDim2.new(1, 0, 0.5, 0)
+QuickSelectButton.Font = Enum.Font.GothamBold
+QuickSelectButton.Text = "全选:关"
+QuickSelectButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+QuickSelectButton.TextScaled = true
+QuickSelectButton.TextSize = 14.000
+QuickSelectButton.TextWrapped = true
 
 -- 创建目标选择窗口
 TargetSelector.Name = "TargetSelector"
@@ -386,6 +402,10 @@ local espConnections = {}
 
 -- 目标选择窗口变量
 local targetButtons = {}
+
+-- 新增：快捷按钮状态
+local quickSelectEnabled = false
+local quickButtonCooldown = false -- 防止快速重复点击
 
 -- 创建UI元素的函数
 local function createToggle(name, initialState, callback)
@@ -783,26 +803,26 @@ end
 -- 智能目标选择：优先选择既离得近又在准星中心的目标
 local function getBestTarget()
     if not localPlayer.Character then return nil end
-    
+
     local camera = workspace.CurrentCamera
     local viewportSize = camera.ViewportSize
     local screenCenter = Vector2.new(viewportSize.X / 2, viewportSize.Y / 2)
-    
+
     local bestTarget = nil
     local bestScore = math.huge
-    
+
     for _, target in pairs(getAllTargets()) do
         if target.object and target.object.Parent then
             local screenPoint, onScreen = camera:WorldToViewportPoint(target.object.Position)
-            
+
             if onScreen then
                 local screenPos = Vector2.new(screenPoint.X, screenPoint.Y)
                 local screenDistance = (screenPos - screenCenter).Magnitude
-                
+
                 local realDistance = (localPlayer.Character.HumanoidRootPart.Position - target.object.Position).Magnitude
-                
+
                 local score = (screenDistance * 0.7) + (realDistance * 0.3)
-                
+
                 if score < bestScore then
                     bestScore = score
                     bestTarget = target
@@ -810,7 +830,7 @@ local function getBestTarget()
             end
         end
     end
-    
+
     return bestTarget
 end
 
@@ -827,7 +847,7 @@ local function calculatePredictedPosition(target)
 
     -- 获取目标的速度
     local velocity = Vector3.new(0, 0, 0)
-    
+
     -- 方法1：从Humanoid获取速度
     local humanoid = target.character:FindFirstChildOfClass("Humanoid")
     if humanoid and humanoid:GetState() == Enum.HumanoidStateType.Running then
@@ -836,7 +856,7 @@ local function calculatePredictedPosition(target)
             velocity = rootPart.Velocity
         end
     end
-    
+
     -- 方法2：使用历史位置计算速度（备用方法）
     if velocity.Magnitude < 0.1 and targetHistory[target] and #targetHistory[target] >= 2 then
         local history = targetHistory[target]
@@ -1191,15 +1211,18 @@ local buttonStopAiming = createButton("停止瞄准", function()
         selectedTarget = nil
         predictEnabled = false
         lockAim = false
+        quickSelectEnabled = false -- 停止瞄准时也关闭快捷按钮状态
         targetHistory = {}
         targetVelocities = {}
-        
+
         -- 重置所有相关按钮状态
         togglePredict.ToggleButton.Text = "关闭"
         togglePredict.ToggleButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
         toggleLockAim.ToggleButton.Text = "关闭"
         toggleLockAim.ToggleButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-        
+        QuickSelectButton.Text = "全选:关"
+        QuickSelectButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+
         print("已停止瞄准")
 end)
 
@@ -1232,29 +1255,6 @@ end)
 -- 目标选择窗口关闭按钮
 TargetSelectorClose.MouseButton1Click:Connect(function()
         TargetSelector.Visible = false
-end)
-
--- 监听新玩家加入
-players.PlayerAdded:Connect(function(player)
-        player.CharacterAdded:Connect(function(character)
-                if espPlayers then
-                        wait(1)
-                        createESPBox(character, false)
-                end
-        end)
-end)
-
--- 监听NPC生成
-workspace.DescendantAdded:Connect(function(descendant)
-        if descendant:IsA("Model") and espNPCs then
-                wait(0.5)
-                local humanoid = descendant:FindFirstChildOfClass("Humanoid")
-                if humanoid and humanoid.Health > 0 then
-                        if not players:GetPlayerFromCharacter(descendant) then
-                                createESPBox(descendant, true)
-                        end
-                end
-        end
 end)
 
 -- 增强版拖动功能
@@ -1343,6 +1343,45 @@ MinimizeButton.MouseButton1Click:Connect(function()
     end
 end)
 
+-- 新增：快捷按钮功能 - 选择全部目标
+QuickSelectButton.MouseButton1Click:Connect(function()
+    if quickButtonCooldown then return end
+    quickButtonCooldown = true
+    
+    -- 切换全选状态
+    quickSelectEnabled = not quickSelectEnabled
+    
+    if quickSelectEnabled then
+        -- 开启全选功能
+        local bestTarget = getBestTarget()
+        if bestTarget then
+            selectedTarget = bestTarget
+            aimEnabled = true
+            QuickSelectButton.Text = "全选:开"
+            QuickSelectButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+            print("全选功能: 已智能选择目标: " .. bestTarget.name)
+            print("自瞄已自动开启")
+            print("说明: 将瞄准当前准星瞄准的玩家，直到该玩家被击败")
+        else
+            print("全选功能: 未找到有效目标")
+            quickSelectEnabled = false
+            QuickSelectButton.Text = "全选:关"
+            QuickSelectButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+        end
+    else
+        -- 关闭全选功能
+        aimEnabled = false
+        selectedTarget = nil
+        QuickSelectButton.Text = "全选:关"
+        QuickSelectButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+        print("全选功能: 已停止瞄准")
+    end
+    
+    -- 0.3秒冷却时间
+    wait(0.3)
+    quickButtonCooldown = false
+end)
+
 print("自瞄系统 V5.1 已加载!")
 print("主要改进:")
 print("- 移除了自瞄总开关按钮")
@@ -1350,6 +1389,30 @@ print("- 选择目标后自动开启自瞄")
 print("- 改进的预判系统：基于时间预判")
 print("- 预判功能需要自瞄开启后才能使用")
 print("- 无上限预判时间设置")
+print("- 新增快捷按钮：选择全部目标")
+
+-- 监听新玩家加入
+players.PlayerAdded:Connect(function(player)
+        player.CharacterAdded:Connect(function(character)
+                if espPlayers then
+                        wait(1)
+                        createESPBox(character, false)
+                end
+        end)
+end)
+
+-- 监听NPC生成
+workspace.DescendantAdded:Connect(function(descendant)
+        if descendant:IsA("Model") and espNPCs then
+                wait(0.5)
+                local humanoid = descendant:FindFirstChildOfClass("Humanoid")
+                if humanoid and humanoid.Health > 0 then
+                        if not players:GetPlayerFromCharacter(descendant) then
+                                createESPBox(descendant, true)
+                        end
+                end
+        end
+end)
 
 -- 主循环
 runService.RenderStepped:Connect(function()
@@ -1369,13 +1432,29 @@ runService.RenderStepped:Connect(function()
             toggleLockAim.ToggleButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
             print("锁定目标已失效，自动关闭锁定自瞄")
         end
-        
+
         -- 如果预判功能开启但目标失效，关闭预判
         if predictEnabled then
             predictEnabled = false
             togglePredict.ToggleButton.Text = "关闭"
             togglePredict.ToggleButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
             print("目标失效，自动关闭预判功能")
+        end
+        
+        -- 如果全选功能开启，自动寻找下一个目标
+        if quickSelectEnabled then
+            local newTarget = getNearestTarget()
+            if newTarget then
+                selectedTarget = newTarget
+                aimEnabled = true
+                print("全选功能: 目标已被击败，已自动切换到最近目标: " .. newTarget.name)
+            else
+                aimEnabled = false
+                quickSelectEnabled = false
+                QuickSelectButton.Text = "全选:关"
+                QuickSelectButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+                print("全选功能: 未找到新目标，自动关闭")
+            end
         end
     end
 
