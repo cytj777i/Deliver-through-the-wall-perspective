@@ -1,0 +1,218 @@
+-- Kenny汉化脚本 - Roblox自然灾害模拟器
+local Translations = {
+    -- 主界面标题和版本
+    ["NDS HUB"] = "NDS脚本",
+    ["Scripts"] = "脚本",
+    ["Misc"] = "实用工具",
+    ["Developed by Katerhub // running on script version 0.5.3"] = "由Katerhub开发 // 运行脚本版本 0.5.3",
+    
+    -- 游戏状态信息
+    ["waiting for next disaster"] = "等待下一场灾难",
+    ["Server: Default"] = "服务器: 默认",
+    ["Server: China"] = "服务器: 中国区",
+    ["Server"] = "服务器"
+    
+    -- 按钮功能
+    ["go to China"] = "前往中国服务器",
+    ["Rejoin"] = "重新加入",
+    
+    -- 传送功能
+    ["Teleports"] = "传送点",
+    ["Tower"] = "高塔",
+    ["Island"] = "岛屿",
+    
+    -- 切换选项
+    ["Toggles"] = "功能开关",
+    ["disable failedmage"] = "禁用失败法师",
+    ["disable effects"] = "禁用特效",
+    ["announce disasters"] = "灾难预告",
+    ["reset fog"] = "重置雾气",
+    ["reset cloud"] = "重置云层",
+    
+    -- 地图功能
+    ["maps functions"] = "地图功能",
+    ["disaster toggels"] = "灾难切换",
+    
+    -- 发射基地功能
+    ["Launch Land"] = "发射基地",
+    ["launch Rocket"] = "发射火箭",
+    ["tp into Rocket"] = "传送进火箭",
+    
+    -- 监狱功能
+    ["Prison Panic"] = "监狱",
+    ["go to Prison"] = "前往监狱",
+    ["tp to basketball"] = "传送到篮球场",
+    
+    -- 灾难切换选项
+    ["Toggels for some stuff."] = "一些功能的切换开关",
+    ["Walk on Mater"] = "水上行走",
+    ["Island rocks collision"] = "小岛的石头碰撞",
+    ["Disable Virus Orbs"] = "禁用病毒传染",
+    ["Reduce earthquake"] = "减少地震",
+    
+    -- 复制功能
+    ["Copy discontinuite"] = "复制断开连接",
+    
+    -- 界面控制
+    ["Toggle GUI    LeftCtrl"] = "切换界面   左Ctrl",
+    
+    -- 杂项功能
+    ["misc. functions (will cause logs!)"] = "杂项功能(会产生日志!)",
+    ["rgb disaster effects"] = "RGB灾难效果",
+    ["rgb water"] = "RGB水",
+    ["forcefield island"] = "力场岛屿",
+    ["FM:#! Death Sound"] = "FM:#! 死亡音效",
+    ["KaterHub-Theme Sun"] = "KaterHub主题太阳",
+    ["change billboards"] = "改变广告牌",
+    
+    -- 用户欢迎信息
+    ["Welcome"] = "欢迎",
+    ["Developed by Katerhub 11 running on script version 0.5.3"] = "由Katerhub 11开发，运行脚本版本0.5.3",
+    
+    -- 默认设置
+    ["Set Default"] = "设置默认",
+    ["Disable Void"] = "禁用虚空",
+    ["Inf Jump"] = "无限跳跃",
+    ["NoPlayer Collision"] = "无玩家碰撞",
+    
+    -- 传送工具
+    ["Teleport Tools"] = "传送工具",
+    ["Goto hidespot"] = "前往隐藏点",
+    ["Toggle"] = "切换",
+    ["Teleport Key"] = "传送键",
+    ["X"] = "X",
+    
+    -- 移动设置
+    ["Walkspeed"] = "移动速度",
+    ["Jumppower"] = "跳跃力量",
+    ["Play"] = "运行",
+    
+    -- 数值单位
+    ["MB"] = "MB",
+    ["ms"] = "ms"
+}
+
+local function translateText(text)
+    if not text or type(text) ~= "string" then return text end
+    
+    -- 首先检查完整匹配
+    if Translations[text] then
+        return Translations[text]
+    end
+    
+    -- 处理包含数字和单位的文本
+    local translated = text
+    
+    -- 翻译带单位的数值
+    if text:match("^[%d,%.]+ MB$") then
+        translated = text:gsub("MB", "MB")
+    elseif text:match("^[%d,%.]+ ms$") then
+        translated = text:gsub("ms", "ms")
+    end
+    
+    -- 部分匹配替换
+    for en, cn in pairs(Translations) do
+        if en ~= "" and text:find(en, 1, true) then
+            translated = translated:gsub(en, cn)
+        end
+    end
+    
+    return translated
+end
+
+local function setupTranslationEngine()
+    local success, err = pcall(function()
+        local oldIndex = getrawmetatable(game).__newindex
+        setreadonly(getrawmetatable(game), false)
+        
+        getrawmetatable(game).__newindex = newcclosure(function(t, k, v)
+            if (t:IsA("TextLabel") or t:IsA("TextButton") or t:IsA("TextBox")) and k == "Text" then
+                v = translateText(tostring(v))
+            end
+            return oldIndex(t, k, v)
+        end)
+        
+        setreadonly(getrawmetatable(game), true)
+    end)
+    
+    if not success then
+        warn("元表劫持失败:", err)
+       
+        local translated = {}
+        local function scanAndTranslate()
+            for _, gui in ipairs(game:GetService("CoreGui"):GetDescendants()) do
+                if (gui:IsA("TextLabel") or gui:IsA("TextButton") or gui:IsA("TextBox")) and not translated[gui] then
+                    pcall(function()
+                        local text = gui.Text
+                        if text and text ~= "" then
+                            local translatedText = translateText(text)
+                            if translatedText ~= text then
+                                gui.Text = translatedText
+                                translated[gui] = true
+                            end
+                        end
+                    end)
+                end
+            end
+            
+            local player = game:GetService("Players").LocalPlayer
+            if player and player:FindFirstChild("PlayerGui") then
+                for _, gui in ipairs(player.PlayerGui:GetDescendants()) do
+                    if (gui:IsA("TextLabel") or gui:IsA("TextButton") or gui:IsA("TextBox")) and not translated[gui] then
+                        pcall(function()
+                            local text = gui.Text
+                            if text and text ~= "" then
+                                local translatedText = translateText(text)
+                                if translatedText ~= text then
+                                    gui.Text = translatedText
+                                    translated[gui] = true
+                                end
+                            end
+                        end)
+                    end
+                end
+            end
+        end
+        
+        local function setupDescendantListener(parent)
+            parent.DescendantAdded:Connect(function(descendant)
+                if descendant:IsA("TextLabel") or descendant:IsA("TextButton") or descendant:IsA("TextBox") then
+                    task.wait(0.1)
+                    pcall(function()
+                        local text = descendant.Text
+                        if text and text ~= "" then
+                            local translatedText = translateText(text)
+                            if translatedText ~= text then
+                                descendant.Text = translatedText
+                            end
+                        end
+                    end)
+                end
+            end)
+        end
+        
+        pcall(setupDescendantListener, game:GetService("CoreGui"))
+        local player = game:GetService("Players").LocalPlayer
+        if player and player:FindFirstChild("PlayerGui") then
+            pcall(setupDescendantListener, player.PlayerGui)
+        end
+        
+        while true do
+            scanAndTranslate()
+            task.wait(3)
+        end
+    end
+end
+
+task.wait(2)
+
+setupTranslationEngine()
+
+local success, err = pcall(function()
+-- 加载原脚本
+loadstring(game:HttpGet("https://raw.githubusercontent.com/KaterHub-Inc/NaturalDisasterSurvival/refs/heads/main/main.lua"))()
+end)
+
+if not success then
+    warn("加载失败:", err)
+end
