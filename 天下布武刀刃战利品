@@ -1,0 +1,409 @@
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
+
+local UIState = {
+    isAutoKilling = false,
+    isAutoUpgrading = false,
+    isAutoRebirthing = false,
+    isRapidAttack = false,
+    speedBoost = 50,
+    attackRange = 100,
+    attackFrequency = 0.05,
+    attackDeadNPCs = true,
+    rapidAttackCount = 10,
+    rapidAttackInterval = 0.01
+}
+
+local RS = game:GetService("ReplicatedStorage")
+local Combat = RS.Remote.Event.Combat
+local Upgrade = RS.Remote.Event.Upgrade
+local Rebirth = RS.Remote.Event.Rebirth
+
+local Window = WindUI:CreateWindow({
+    Title = "天下布武",
+    Icon = "swords",
+    Author = "杀戮系统",
+    Folder = "天下布武",
+    Size = UDim2.fromOffset(500, 550),
+    Theme = "Dark"
+})
+
+local MainTab = Window:Section({ Title = "功能控制", Opened = true })
+local Handles = MainTab:Tab({ Title = "所有功能", Icon = "settings" })
+
+local speedBodyVelocity
+
+function getNearbyNPCs()
+    local nearbyNPCs = {}
+    local player = game:GetService("Players").LocalPlayer
+    local character = player.Character
+    
+    if not character or not character:FindFirstChild("HumanoidRootPart") then
+        return nearbyNPCs
+    end
+    
+    local playerPos = character.HumanoidRootPart.Position
+    local live = workspace:FindFirstChild("Live")
+    if not live then return nearbyNPCs end
+    
+    local locations = {"MobModel", "Mob"}
+    for _, location in ipairs(locations) do
+        local container = live:FindFirstChild(location)
+        if container then
+            for _, npc in pairs(container:GetChildren()) do
+                if npc:IsA("Model") and npc:FindFirstChild("HumanoidRootPart") then
+                    local npcPos = npc.HumanoidRootPart.Position
+                    local distance = (playerPos - npcPos).Magnitude
+                    
+                    if distance <= UIState.attackRange then
+                        local isDead = false
+                        
+                        for _, child in pairs(npc:GetChildren()) do
+                            if child:IsA("ObjectValue") or child:IsA("BoolValue") then
+                                if child.Name:lower():find("dead") or child.Name:lower():find("death") then
+                                    isDead = true
+                                    break
+                                end
+                            end
+                        end
+                        
+                        if not isDead then
+                            isDead = npc:GetAttribute("Dead") == true
+                        end
+                        
+                        if not isDead or (isDead and UIState.attackDeadNPCs) then
+                            table.insert(nearbyNPCs, npc.Name)
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    return nearbyNPCs
+end
+
+function rangeAttackNPCs()
+    local nearbyNPCs = getNearbyNPCs()
+    if #nearbyNPCs == 0 then
+        return 0
+    end
+    
+    local npcTable = {}
+    for i, npcName in ipairs(nearbyNPCs) do
+        npcTable[i] = npcName
+    end
+    
+    pcall(function()
+        Combat.M1:FireServer(unpack({npcTable}))
+    end)
+    
+    return #nearbyNPCs
+end
+
+function rapidAttackNPCs()
+    local nearbyNPCs = getNearbyNPCs()
+    if #nearbyNPCs == 0 then
+        return 0
+    end
+    
+    local npcTable = {}
+    for i, npcName in ipairs(nearbyNPCs) do
+        npcTable[i] = npcName
+    end
+    
+    for i = 1, UIState.rapidAttackCount do
+        pcall(function()
+            Combat.M1:FireServer(unpack({npcTable}))
+        end)
+        wait(UIState.rapidAttackInterval)
+    end
+    
+    return #nearbyNPCs
+end
+
+function upgradeStat(statType)
+    pcall(function()
+        local args = {[1] = statType, [2] = 1}
+        Upgrade["[C-S]TryAddPoint"]:FireServer(unpack(args))
+    end)
+end
+
+function balancedUpgrade()
+    upgradeStat("Health")
+    wait(0.05)
+    upgradeStat("Defense")
+    wait(0.05)
+    upgradeStat("Damage")
+end
+
+function rebirth()
+    pcall(function()
+        Rebirth["[C-S]TryRebirth"]:FireServer()
+    end)
+end
+
+function applySpeedBoost()
+    local player = game:GetService("Players").LocalPlayer
+    local character = player.Character
+    
+    if character and character:FindFirstChild("HumanoidRootPart") then
+        if speedBodyVelocity then
+            speedBodyVelocity:Destroy()
+            speedBodyVelocity = nil
+        end
+        
+        speedBodyVelocity = Instance.new("BodyVelocity")
+        speedBodyVelocity.Velocity = Vector3.new(0, 0, 0)
+        speedBodyVelocity.MaxForce = Vector3.new(4000, 0, 4000)
+        speedBodyVelocity.Parent = character.HumanoidRootPart
+        
+        spawn(function()
+            while UIState.speedBoost > 0 and character and character:FindFirstChild("HumanoidRootPart") do
+                local humanoid = character:FindFirstChild("Humanoid")
+                if humanoid then
+                    local moveDirection = humanoid.MoveDirection
+                    speedBodyVelocity.Velocity = moveDirection * UIState.speedBoost
+                end
+                wait(0.1)
+            end
+        end)
+    end
+end
+
+function removeSpeedBoost()
+    if speedBodyVelocity then
+        speedBodyVelocity:Destroy()
+        speedBodyVelocity = nil
+    end
+end
+
+Handles:Paragraph({
+    Title = "攻击设置",
+    Desc = "调整攻击参数",
+    Image = "settings",
+    ImageSize = 20,
+    Color = "White"
+})
+
+local attackRangeInput = Handles:Input({
+    Title = "攻击距离",
+    Desc = "设置攻击范围 (格)",
+    Value = "100",
+    Callback = function(value)
+        local range = tonumber(value)
+        if range and range > 0 then
+            UIState.attackRange = range
+        end
+    end
+})
+
+local attackFrequencyInput = Handles:Input({
+    Title = "攻击频率",
+    Desc = "设置攻击间隔 (秒)",
+    Value = "0.05",
+    Callback = function(value)
+        local frequency = tonumber(value)
+        if frequency and frequency > 0 then
+            UIState.attackFrequency = frequency
+        end
+    end
+})
+
+local rapidAttackCountInput = Handles:Input({
+    Title = "快速攻击次数",
+    Desc = "设置快速攻击的连续攻击次数",
+    Value = "10",
+    Callback = function(value)
+        local count = tonumber(value)
+        if count and count > 0 then
+            UIState.rapidAttackCount = count
+        end
+    end
+})
+
+local rapidAttackIntervalInput = Handles:Input({
+    Title = "快速攻击间隔",
+    Desc = "设置快速攻击的间隔 (秒)",
+    Value = "0.01",
+    Callback = function(value)
+        local interval = tonumber(value)
+        if interval and interval > 0 then
+            UIState.rapidAttackInterval = interval
+        end
+    end
+})
+
+local attackDeadToggle = Handles:Toggle({
+    Title = "攻击死亡NPC",
+    Desc = "攻击已死亡的NPC以快速升级",
+    Value = true,
+    Callback = function(state)
+        UIState.attackDeadNPCs = state
+    end
+})
+
+local speedInput = Handles:Input({
+    Title = "物理速度 (跳跃才能加速)",
+    Desc = "设置物理推进速度，需要跳跃才能生效",
+    Value = "50",
+    Callback = function(value)
+        local speed = tonumber(value)
+        if speed and speed >= 0 then
+            UIState.speedBoost = speed
+            if speed > 0 then
+                applySpeedBoost()
+            else
+                removeSpeedBoost()
+            end
+        end
+    end
+})
+
+Handles:Divider()
+
+Handles:Paragraph({
+    Title = "快速攻击",
+    Desc = "在短时间内连续攻击多次",
+    Image = "zap",
+    ImageSize = 20,
+    Color = "White"
+})
+
+Handles:Button({
+    Title = "闪电攻击",
+    Icon = "zap",
+    Variant = "Primary",
+    Callback = function()
+        rapidAttackNPCs()
+    end
+})
+
+local autoRapidAttackToggle = Handles:Toggle({
+    Title = "自动闪电攻击",
+    Desc = "自动使用快速攻击模式",
+    Value = false,
+    Callback = function(state)
+        UIState.isRapidAttack = state
+        if state then
+            spawn(function()
+                while UIState.isRapidAttack do
+                    rapidAttackNPCs()
+                    wait(UIState.attackFrequency)
+                end
+            end)
+        end
+    end
+})
+
+Handles:Divider()
+
+Handles:Paragraph({
+    Title = "自动功能",
+    Desc = "开启后自动执行相应功能",
+    Image = "play",
+    ImageSize = 20,
+    Color = "White"
+})
+
+local autoKillToggle = Handles:Toggle({
+    Title = "自动杀怪",
+    Desc = "自动攻击范围内的所有NPC",
+    Value = false,
+    Callback = function(state)
+        UIState.isAutoKilling = state
+        if state then
+            spawn(function()
+                while UIState.isAutoKilling do
+                    rangeAttackNPCs()
+                    wait(UIState.attackFrequency)
+                end
+            end)
+        end
+    end
+})
+
+local autoUpgradeToggle = Handles:Toggle({
+    Title = "自动升级",
+    Desc = "自动平均分配属性点",
+    Value = false,
+    Callback = function(state)
+        UIState.isAutoUpgrading = state
+        if state then
+            spawn(function()
+                while UIState.isAutoUpgrading do
+                    balancedUpgrade()
+                    wait(1)
+                end
+            end)
+        end
+    end
+})
+
+local autoRebirthToggle = Handles:Toggle({
+    Title = "自动重生",
+    Desc = "每3秒自动重生一次",
+    Value = false,
+    Callback = function(state)
+        UIState.isAutoRebirthing = state
+        if state then
+            spawn(function()
+                while UIState.isAutoRebirthing do
+                    rebirth()
+                    wait(3)
+                end
+            end)
+        end
+    end
+})
+
+Handles:Divider()
+
+Handles:Paragraph({
+    Title = "手动功能",
+    Desc = "点击按钮执行相应操作",
+    Image = "hand",
+    ImageSize = 20,
+    Color = "White"
+})
+
+Handles:Button({
+    Title = "范围杀怪",
+    Icon = "swords",
+    Variant = "Primary",
+    Callback = function()
+        rangeAttackNPCs()
+    end
+})
+
+Handles:Button({
+    Title = "一键升级",
+    Icon = "trending-up",
+    Callback = function()
+        balancedUpgrade()
+    end
+})
+
+Handles:Button({
+    Title = "立即重生",
+    Icon = "refresh-cw",
+    Callback = function()
+        rebirth()
+    end
+})
+
+game:GetService("Players").LocalPlayer.CharacterAdded:Connect(function(character)
+    wait(1)
+    if UIState.speedBoost > 0 then
+        applySpeedBoost()
+    end
+end)
+
+game:GetService("Players").LocalPlayer.CharacterRemoving:Connect(function()
+    removeSpeedBoost()
+end)
+
+if UIState.speedBoost > 0 then
+    applySpeedBoost()
+end
+
+print("天下布武 WindUI版已加载！")
