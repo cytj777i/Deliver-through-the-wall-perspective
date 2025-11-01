@@ -1,0 +1,284 @@
+-- 手机版自动吃食物UI脚本
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+-- 创建UI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "AutoEatUI"
+ScreenGui.ResetOnSpawn = false
+
+-- 主窗口
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 200, 0, 150)
+MainFrame.Position = UDim2.new(0, 10, 0, 10)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+
+-- 圆角
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 8)
+UICorner.Parent = MainFrame
+
+-- 标题栏（可拖动）
+local TitleBar = Instance.new("Frame")
+TitleBar.Name = "TitleBar"
+TitleBar.Size = UDim2.new(1, 0, 0, 30)
+TitleBar.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+TitleBar.BorderSizePixel = 0
+
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 8)
+TitleCorner.Parent = TitleBar
+
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Name = "TitleLabel"
+TitleLabel.Size = UDim2.new(1, -60, 1, 0)
+TitleLabel.Position = UDim2.new(0, 10, 0, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "自动吃食物"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.TextSize = 14
+TitleLabel.Font = Enum.Font.GothamSemibold
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+-- 缩小按钮
+local MinimizeButton = Instance.new("TextButton")
+MinimizeButton.Name = "MinimizeButton"
+MinimizeButton.Size = UDim2.new(0, 25, 0, 25)
+MinimizeButton.Position = UDim2.new(1, -55, 0, 2)
+MinimizeButton.BackgroundColor3 = Color3.fromRGB(60, 60, 75)
+MinimizeButton.BorderSizePixel = 0
+MinimizeButton.Text = "-"
+MinimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinimizeButton.TextSize = 16
+
+local MinimizeCorner = Instance.new("UICorner")
+MinimizeCorner.CornerRadius = UDim.new(0, 4)
+MinimizeCorner.Parent = MinimizeButton
+
+-- 关闭按钮
+local CloseButton = Instance.new("TextButton")
+CloseButton.Name = "CloseButton"
+CloseButton.Size = UDim2.new(0, 25, 0, 25)
+CloseButton.Position = UDim2.new(1, -25, 0, 2)
+CloseButton.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+CloseButton.BorderSizePixel = 0
+CloseButton.Text = "×"
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.TextSize = 16
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 4)
+CloseCorner.Parent = CloseButton
+
+-- 内容区域
+local ContentFrame = Instance.new("Frame")
+ContentFrame.Name = "ContentFrame"
+ContentFrame.Size = UDim2.new(1, 0, 1, -30)
+ContentFrame.Position = UDim2.new(0, 0, 0, 30)
+ContentFrame.BackgroundTransparency = 1
+
+-- 开关按钮
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Name = "ToggleButton"
+ToggleButton.Size = UDim2.new(0, 160, 0, 50)
+ToggleButton.Position = UDim2.new(0.5, -80, 0, 20)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+ToggleButton.BorderSizePixel = 0
+ToggleButton.Text = "开始自动吃"
+ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleButton.TextSize = 16
+ToggleButton.Font = Enum.Font.GothamBold
+
+local ToggleCorner = Instance.new("UICorner")
+ToggleCorner.CornerRadius = UDim.new(0, 8)
+ToggleCorner.Parent = ToggleButton
+
+-- 状态显示
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Name = "StatusLabel"
+StatusLabel.Size = UDim2.new(1, -20, 0, 20)
+StatusLabel.Position = UDim2.new(0, 10, 0, 80)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Text = "状态: 未启动"
+StatusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+StatusLabel.TextSize = 12
+StatusLabel.Font = Enum.Font.Gotham
+StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+-- 计数器
+local CounterLabel = Instance.new("TextLabel")
+CounterLabel.Name = "CounterLabel"
+CounterLabel.Size = UDim2.new(1, -20, 0, 20)
+CounterLabel.Position = UDim2.new(0, 10, 0, 100)
+CounterLabel.BackgroundTransparency = 1
+CounterLabel.Text = "已吃: 0"
+CounterLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+CounterLabel.TextSize = 12
+CounterLabel.Font = Enum.Font.Gotham
+CounterLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+-- 组装UI
+TitleBar.Parent = MainFrame
+TitleLabel.Parent = TitleBar
+MinimizeButton.Parent = TitleBar
+CloseButton.Parent = TitleBar
+ContentFrame.Parent = MainFrame
+ToggleButton.Parent = ContentFrame
+StatusLabel.Parent = ContentFrame
+CounterLabel.Parent = ContentFrame
+MainFrame.Parent = ScreenGui
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+-- 变量
+local isAutoEating = false
+local eatCount = 0
+local isMinimized = false
+local dragStartPos
+local frameStartPos
+
+-- 获取游戏事件
+local function getEvents()
+    local Character = LocalPlayer.Character
+    if Character then
+        local Events = Character:FindFirstChild("Events")
+        if Events then
+            return Events:FindFirstChild("Grab"), Events:FindFirstChild("Eat")
+        end
+    end
+    return nil, nil
+end
+
+-- 快速吃食物函数（直接发送远程事件）
+local function quickEatFood()
+    local GrabEvent, EatEvent = getEvents()
+    if GrabEvent and EatEvent then
+        -- 直接发送抓取事件（参数与抓包信息一致）
+        local args = {false, false, false}
+        GrabEvent:FireServer(unpack(args))
+        
+        -- 立即发送吃掉事件
+        EatEvent:FireServer()
+        
+        eatCount = eatCount + 1
+        CounterLabel.Text = "已吃: " .. eatCount
+        
+        return true
+    end
+    return false
+end
+
+-- 自动吃循环
+local autoEatConnection
+local function startAutoEat()
+    if autoEatConnection then
+        autoEatConnection:Disconnect()
+    end
+    
+    autoEatConnection = RunService.Heartbeat:Connect(function()
+        if isAutoEating then
+            quickEatFood()
+        end
+    end)
+end
+
+local function stopAutoEat()
+    if autoEatConnection then
+        autoEatConnection:Disconnect()
+        autoEatConnection = nil
+    end
+end
+
+-- 拖动功能
+TitleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then
+        dragStartPos = input.Position
+        frameStartPos = MainFrame.Position
+    end
+end)
+
+TitleBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch and dragStartPos then
+        local delta = input.Position - dragStartPos
+        MainFrame.Position = UDim2.new(
+            frameStartPos.X.Scale, 
+            frameStartPos.X.Offset + delta.X,
+            frameStartPos.Y.Scale, 
+            frameStartPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+TitleBar.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then
+        dragStartPos = nil
+        frameStartPos = nil
+    end
+end)
+
+-- 缩小功能
+MinimizeButton.MouseButton1Click:Connect(function()
+    if isMinimized then
+        -- 恢复
+        MainFrame.Size = UDim2.new(0, 200, 0, 150)
+        ContentFrame.Visible = true
+        isMinimized = false
+    else
+        -- 缩小
+        MainFrame.Size = UDim2.new(0, 200, 0, 30)
+        ContentFrame.Visible = false
+        isMinimized = true
+    end
+end)
+
+-- 关闭功能
+CloseButton.MouseButton1Click:Connect(function()
+    stopAutoEat()
+    ScreenGui:Destroy()
+end)
+
+-- 开关功能
+ToggleButton.MouseButton1Click:Connect(function()
+    isAutoEating = not isAutoEating
+    
+    if isAutoEating then
+        ToggleButton.BackgroundColor3 = Color3.fromRGB(60, 180, 60)
+        ToggleButton.Text = "停止自动吃"
+        StatusLabel.Text = "状态: 运行中"
+        startAutoEat()
+    else
+        ToggleButton.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+        ToggleButton.Text = "开始自动吃"
+        StatusLabel.Text = "状态: 已停止"
+        stopAutoEat()
+    end
+end)
+
+-- 角色重生处理
+LocalPlayer.CharacterAdded:Connect(function()
+    wait(1) -- 等待角色加载
+    if isAutoEating then
+        startAutoEat()
+    end
+end)
+
+-- 触摸优化（防止按钮点击触发拖动）
+local function preventDragOnButtons(button)
+    button.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch then
+            dragStartPos = nil
+        end
+    end)
+end
+
+preventDragOnButtons(ToggleButton)
+preventDragOnButtons(MinimizeButton)
+preventDragOnButtons(CloseButton)
+
+print("自动吃食物UI已加载!")
+print("功能: 拖动标题栏移动窗口 | 点击-按钮缩小 | 点击×按钮关闭")
