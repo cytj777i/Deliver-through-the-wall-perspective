@@ -1,0 +1,317 @@
+-- 本地脚本：文字显示UI（手机端优化版）
+-- 放在StarterPlayerScripts中
+
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+
+-- 创建主屏幕GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "TextDisplayUI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- 创建主框架
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 280, 0, 110) -- 大幅减小高度，只保留必要空间
+MainFrame.Position = UDim2.new(0.5, -140, 0.3, -55)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+
+-- 创建圆角效果
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 8)
+UICorner.Parent = MainFrame
+
+-- 创建标题栏
+local TitleBar = Instance.new("Frame")
+TitleBar.Name = "TitleBar"
+TitleBar.Size = UDim2.new(1, 0, 0, 30)
+TitleBar.Position = UDim2.new(0, 0, 0, 0)
+TitleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+TitleBar.BorderSizePixel = 0
+TitleBar.ZIndex = 2
+
+local TitleBarCorner = Instance.new("UICorner")
+TitleBarCorner.CornerRadius = UDim.new(0, 8)
+TitleBarCorner.Parent = TitleBar
+
+-- 标题文字
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Name = "TitleLabel"
+TitleLabel.Size = UDim2.new(0.5, 0, 1, 0) -- 减小标题宽度，为按钮腾出空间
+TitleLabel.Position = UDim2.new(0, 10, 0, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "文字显示脚本"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.Font = Enum.Font.Gotham
+TitleLabel.TextSize = 14
+TitleLabel.ZIndex = 3
+
+-- 清空按钮
+local ClearButton = Instance.new("TextButton")
+ClearButton.Name = "ClearButton"
+ClearButton.Size = UDim2.new(0, 25, 0, 25)
+ClearButton.Position = UDim2.new(1, -85, 0, 2) -- 在最小化按钮左边
+ClearButton.BackgroundColor3 = Color3.fromRGB(90, 90, 160) -- 蓝色背景
+ClearButton.BorderSizePixel = 0
+ClearButton.Text = "△"
+ClearButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ClearButton.Font = Enum.Font.GothamBold
+ClearButton.TextSize = 14
+ClearButton.ZIndex = 3
+
+local ClearButtonCorner = Instance.new("UICorner")
+ClearButtonCorner.CornerRadius = UDim.new(0, 6)
+ClearButtonCorner.Parent = ClearButton
+
+-- 最小化按钮
+local MinimizeButton = Instance.new("TextButton")
+MinimizeButton.Name = "MinimizeButton"
+MinimizeButton.Size = UDim2.new(0, 25, 0, 25)
+MinimizeButton.Position = UDim2.new(1, -55, 0, 2) -- 调整位置
+MinimizeButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+MinimizeButton.BorderSizePixel = 0
+MinimizeButton.Text = "_"
+MinimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinimizeButton.Font = Enum.Font.GothamBold
+MinimizeButton.TextSize = 16
+MinimizeButton.ZIndex = 3
+
+local MinimizeButtonCorner = Instance.new("UICorner")
+MinimizeButtonCorner.CornerRadius = UDim.new(0, 6)
+MinimizeButtonCorner.Parent = MinimizeButton
+
+-- 关闭按钮
+local CloseButton = Instance.new("TextButton")
+CloseButton.Name = "CloseButton"
+CloseButton.Size = UDim2.new(0, 25, 0, 25)
+CloseButton.Position = UDim2.new(1, -25, 0, 2)
+CloseButton.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+CloseButton.BorderSizePixel = 0
+CloseButton.Text = "X"
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.TextSize = 14
+CloseButton.ZIndex = 3
+
+local CloseButtonCorner = Instance.new("UICorner")
+CloseButtonCorner.CornerRadius = UDim.new(0, 6)
+CloseButtonCorner.Parent = CloseButton
+
+-- 创建滚动框用于文本输入
+local ScrollingFrame = Instance.new("ScrollingFrame")
+ScrollingFrame.Name = "ScrollingFrame"
+ScrollingFrame.Size = UDim2.new(1, -16, 0, 70) -- 输入区域高度
+ScrollingFrame.Position = UDim2.new(0, 8, 0, 35) -- 紧贴标题栏下方
+ScrollingFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60) -- 灰色输入区域
+ScrollingFrame.BorderSizePixel = 0
+ScrollingFrame.ScrollBarThickness = 6
+ScrollingFrame.ScrollBarImageColor3 = Color3.fromRGB(220, 220, 220)
+ScrollingFrame.ScrollBarImageTransparency = 0
+ScrollingFrame.VerticalScrollBarInset = Enum.ScrollBarInset.Always
+ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+ScrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+
+local ScrollingCorner = Instance.new("UICorner")
+ScrollingCorner.CornerRadius = UDim.new(0, 4)
+ScrollingCorner.Parent = ScrollingFrame
+
+-- 文本框
+local TextBox = Instance.new("TextBox")
+TextBox.Name = "TextBox"
+TextBox.Size = UDim2.new(1, -10, 1, -10)
+TextBox.Position = UDim2.new(0, 5, 0, 5)
+TextBox.BackgroundTransparency = 1
+TextBox.Text = "请输入文本"
+TextBox.TextColor3 = Color3.fromRGB(180, 180, 180)
+TextBox.TextXAlignment = Enum.TextXAlignment.Left
+TextBox.TextYAlignment = Enum.TextYAlignment.Top
+TextBox.Font = Enum.Font.Gotham
+TextBox.TextSize = 14
+TextBox.TextWrapped = true
+TextBox.ClearTextOnFocus = false
+TextBox.MultiLine = true
+TextBox.TextTruncate = Enum.TextTruncate.None
+
+-- 组装UI
+TextBox.Parent = ScrollingFrame
+TitleLabel.Parent = TitleBar
+ClearButton.Parent = TitleBar
+MinimizeButton.Parent = TitleBar
+CloseButton.Parent = TitleBar
+TitleBar.Parent = MainFrame
+ScrollingFrame.Parent = MainFrame
+MainFrame.Parent = ScreenGui
+ScreenGui.Parent = PlayerGui
+
+-- 状态变量
+local isMinimized = false
+local originalSize = MainFrame.Size
+local originalScrollSize = ScrollingFrame.Size
+
+-- 拖动功能
+local dragging = false
+local dragInput, dragStart, startPos
+
+local function updateInput(input)
+	local delta = input.Position - dragStart
+	MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+TitleBar.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = MainFrame.Position
+		
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+TitleBar.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+		dragInput = input
+	end
+end)
+
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+	if input == dragInput and dragging then
+		updateInput(input)
+	end
+end)
+
+-- 关闭功能
+CloseButton.MouseButton1Click:Connect(function()
+	ScreenGui.Enabled = false
+end)
+
+-- 最小化/最大化功能
+MinimizeButton.MouseButton1Click:Connect(function()
+	if isMinimized then
+		-- 恢复原状
+		MainFrame.Size = originalSize
+		ScrollingFrame.Visible = true
+		ScrollingFrame.Size = originalScrollSize
+		MinimizeButton.Text = "_"
+		isMinimized = false
+	else
+		-- 最小化
+		originalSize = MainFrame.Size
+		originalScrollSize = ScrollingFrame.Size
+		MainFrame.Size = UDim2.new(originalSize.X.Scale, originalSize.X.Offset, 0, 30)
+		ScrollingFrame.Visible = false
+		MinimizeButton.Text = "□"
+		isMinimized = true
+	end
+end)
+
+-- 清空功能
+ClearButton.MouseButton1Click:Connect(function()
+	TextBox.Text = ""
+	TextBox.TextColor3 = Color3.fromRGB(180, 180, 180)
+	TextBox.Text = "请输入文本"
+	
+	-- 重置到最小尺寸
+	if not isMinimized then
+		MainFrame.Size = UDim2.new(0, 280, 0, 110)
+		ScrollingFrame.Size = UDim2.new(1, -16, 0, 70)
+	end
+end)
+
+-- 文本输入和自动调整大小功能
+local function updateFrameSize()
+	-- 计算文本需要的行数
+	local text = TextBox.Text
+	if text == "请输入文本" then
+		return
+	end
+	
+	local textSize = game:GetService("TextService"):GetTextSize(
+		text,
+		TextBox.TextSize,
+		TextBox.Font,
+		Vector2.new(TextBox.AbsoluteSize.X, math.huge)
+	)
+	
+	-- 计算需要的高度（文本高度 + 边距）
+	local textHeight = textSize.Y + 20
+	local minHeight = 110  -- 最小高度
+	local maxHeight = 400  -- 最大高度
+	
+	-- 调整滚动框大小
+	local scrollHeight = math.min(math.max(textHeight, 70), 300)
+	ScrollingFrame.Size = UDim2.new(1, -16, 0, scrollHeight)
+	
+	-- 调整主框架大小 - 只增加必要的高度，没有多余黑色区域
+	local targetHeight = 35 + scrollHeight + 5  -- 标题栏高度 + 滚动框高度 + 底部边距
+	
+	-- 只有在没有最小化时才调整大小
+	if not isMinimized and targetHeight >= minHeight and targetHeight <= maxHeight then
+		MainFrame.Size = UDim2.new(MainFrame.Size.X.Scale, MainFrame.Size.X.Offset, 0, targetHeight)
+	end
+end
+
+-- 监听文本变化
+TextBox:GetPropertyChangedSignal("Text"):Connect(updateFrameSize)
+
+-- 文本框焦点事件
+TextBox.Focused:Connect(function()
+	if TextBox.Text == "请输入文本" then
+		TextBox.Text = ""
+		TextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+	end
+end)
+
+TextBox.FocusLost:Connect(function()
+	if TextBox.Text == "" then
+		TextBox.Text = "请输入文本"
+		TextBox.TextColor3 = Color3.fromRGB(180, 180, 180)
+		-- 重置到最小尺寸
+		if not isMinimized then
+			MainFrame.Size = UDim2.new(0, 280, 0, 110)
+			ScrollingFrame.Size = UDim2.new(1, -16, 0, 70)
+		end
+	end
+end)
+
+-- 初始调整
+updateFrameSize()
+
+-- 手机端重新打开UI的功能（点击屏幕任意位置显示/隐藏）
+local touchCount = 0
+local lastTouchTime = 0
+
+game:GetService("UserInputService").TouchStarted:Connect(function(input, gameProcessed)
+	if gameProcessed then return end
+	
+	local currentTime = tick()
+	if currentTime - lastTouchTime < 0.5 then
+		touchCount = touchCount + 1
+	else
+		touchCount = 1
+	end
+	lastTouchTime = currentTime
+	
+	-- 双击屏幕中央区域显示/隐藏UI
+	if touchCount >= 2 then
+		local touchPos = input.Position
+		local screenSize = workspace.CurrentCamera.ViewportSize
+		local centerRegion = 0.3 -- 屏幕中央30%区域
+		
+		if touchPos.X > screenSize.X * (1 - centerRegion)/2 and 
+		   touchPos.X < screenSize.X * (1 + centerRegion)/2 and
+		   touchPos.Y > screenSize.Y * (1 - centerRegion)/2 and 
+		   touchPos.Y < screenSize.Y * (1 + centerRegion)/2 then
+			ScreenGui.Enabled = not ScreenGui.Enabled
+			touchCount = 0
+		end
+	end
+end)
