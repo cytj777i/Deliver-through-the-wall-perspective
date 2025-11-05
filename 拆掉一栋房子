@@ -1,0 +1,177 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local LocalPlayer = Players.LocalPlayer
+local Events = ReplicatedStorage.Events
+
+-- 配置
+local isActive = false
+local demolitionSpeed = 0.5  -- 默认频率为0.5秒
+local isMinimized = false
+
+local function getBuildings()
+    local buildings = {}
+    for _, part in pairs(workspace:GetDescendants()) do
+        if part:IsA("Part") then
+            table.insert(buildings, part)
+        end
+    end
+    return buildings
+end
+
+local function executeDemolition()
+    if not isActive then return end
+    local buildings = getBuildings()
+    for _, building in pairs(buildings) do
+        local args = {[1] = 1}
+        Events.Remote.Hammer.TryHammerAttack:FireServer(unpack(args))
+        local highlight = Instance.new("Highlight")
+        highlight.FillColor = Color3.new(1,0,0)
+        highlight.OutlineColor = Color3.new(1,1,1)
+        highlight.Parent = building
+        game:GetService("Debris"):AddItem(highlight, 0.3)
+    end
+end
+
+-- 修复拖动函数 - 只让主UI可拖动
+local function makeDraggable(frame)
+    frame.Active = true
+    frame.Draggable = true
+end
+
+local function createControlGUI()
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "DemolitionHelper"
+    screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+    
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Size = UDim2.new(0, 300, 0, 160)
+    mainFrame.Position = UDim2.new(0, 10, 0, 10)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(30,30,40)
+    mainFrame.BackgroundTransparency = 0.2
+    mainFrame.BorderSizePixel = 0
+    mainFrame.Active = true
+    mainFrame.Parent = screenGui
+
+    -- 标题栏
+    local titleBar = Instance.new("Frame")
+    titleBar.Size = UDim2.new(1,0,0,30)
+    titleBar.Position = UDim2.new(0,0,0,0)
+    titleBar.BackgroundTransparency = 1
+    titleBar.Active = false  -- 标题栏不可拖动
+    titleBar.Parent = mainFrame
+
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1,-30,1,0)
+    title.Position = UDim2.new(0,0,0,0)
+    title.Text = "建筑拆除辅助工具"
+    title.TextColor3 = Color3.new(1,1,1)
+    title.BackgroundTransparency = 1
+    title.Font = Enum.Font.GothamBold
+    title.TextSize = 16
+    title.Parent = titleBar
+
+    -- 缩小按钮
+    local miniBtn = Instance.new("TextButton")
+    miniBtn.Size = UDim2.new(0,30,1,0)
+    miniBtn.Position = UDim2.new(1,-30,0,0)
+    miniBtn.Text = "-"
+    miniBtn.BackgroundColor3 = Color3.fromRGB(76,175,80)
+    miniBtn.TextColor3 = Color3.new(1,1,1)
+    miniBtn.Parent = titleBar
+    miniBtn.Active = true
+
+    -- 速度控制
+    local speedLabel = Instance.new("TextLabel")
+    speedLabel.Size = UDim2.new(1,0,0,25)
+    speedLabel.Position = UDim2.new(0,0,0,40)
+    speedLabel.Text = "拆除频率(秒/次):"
+    speedLabel.TextColor3 = Color3.new(1,1,1)
+    speedLabel.BackgroundTransparency = 1
+    speedLabel.Parent = mainFrame
+    
+    local speedBox = Instance.new("TextBox")
+    speedBox.Size = UDim2.new(0.8, 0, 0, 25)
+    speedBox.Position = UDim2.new(0.1, 0, 0, 70)
+    speedBox.PlaceholderText = "输入 0.1 ~ 1"
+    speedBox.Text = tostring(demolitionSpeed)
+    speedBox.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+    speedBox.TextColor3 = Color3.new(1, 1, 1)
+    speedBox.Parent = mainFrame
+
+    -- 开关按钮
+    local toggleButton = Instance.new("TextButton")
+    toggleButton.Size = UDim2.new(0.8,0,0,35)
+    toggleButton.Position = UDim2.new(0.1,0,0,110)
+    toggleButton.Text = "开始拆除"
+    toggleButton.BackgroundColor3 = Color3.fromRGB(76,175,80)
+    toggleButton.TextColor3 = Color3.new(1,1,1)
+    toggleButton.Font = Enum.Font.GothamBold
+    toggleButton.Parent = mainFrame
+    toggleButton.Active = true
+
+    -- 只让主UI可拖动
+    makeDraggable(mainFrame)
+
+    speedBox.FocusLost:Connect(function(enterPressed)
+        local val = tonumber(speedBox.Text)
+        if val and val >= 0.1 and val <= 1 then
+            demolitionSpeed = val
+        else
+            speedBox.Text = tostring(demolitionSpeed)
+        end
+    end)
+    
+    toggleButton.MouseButton1Click:Connect(function()
+        isActive = not isActive
+        if isActive then
+            toggleButton.Text = "停止拆除"
+            toggleButton.BackgroundColor3 = Color3.fromRGB(244,67,54)
+        else
+            toggleButton.Text = "开始拆除"
+            toggleButton.BackgroundColor3 = Color3.fromRGB(76,175,80)
+        end
+    end)
+
+    local miniFrame = nil
+    miniBtn.MouseButton1Click:Connect(function()
+        if not isMinimized then
+            isMinimized = true
+            mainFrame.Visible = false
+
+            miniFrame = Instance.new("TextButton")
+            miniFrame.Size = UDim2.new(0,80,0,30)
+            miniFrame.Position = mainFrame.Position
+            miniFrame.Text = "展开工具"
+            miniFrame.BackgroundColor3 = Color3.fromRGB(76,175,80)
+            miniFrame.TextColor3 = Color3.new(1,1,1)
+            miniFrame.Parent = screenGui
+            miniFrame.Active = true
+
+            makeDraggable(miniFrame)
+
+            miniFrame.MouseButton1Click:Connect(function()
+                isMinimized = false
+                mainFrame.Visible = true
+                miniFrame:Destroy()
+            end)
+        end
+    end)
+
+    return screenGui
+end
+
+local controlGUI = createControlGUI()
+
+-- 修复频率问题
+local lastExecutionTime = 0
+RunService.Heartbeat:Connect(function()
+    if isActive then
+        local currentTime = tick()
+        if currentTime - lastExecutionTime >= demolitionSpeed then
+            executeDemolition()
+            lastExecutionTime = currentTime
+        end
+    end
+end)
