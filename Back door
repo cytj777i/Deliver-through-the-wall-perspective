@@ -526,3 +526,68 @@ SourceFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
     wait()
     updateScrollSize()
 end)
+-- 修复滚动和文本显示问题的函数
+local function updateTextBoxSize()
+    local text = SourceTextBox.Text
+    if text == "" then
+        ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+        return
+    end
+
+    -- 计算文本所需的高度
+    local textSize = TextService:GetTextSize(
+        text,
+        SourceTextBox.TextSize,
+        SourceTextBox.Font,
+        Vector2.new(SourceTextBox.AbsoluteSize.X, math.huge)
+    )
+    
+    -- 设置最小高度，确保即使文本很少也能正常显示
+    local minHeight = ScrollingFrame.AbsoluteSize.Y
+    local textHeight = math.max(textSize.Y + 20, minHeight)
+    
+    -- 更新CanvasSize
+    ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, textHeight)
+    
+    -- 更新文本框大小
+    SourceTextBox.Size = UDim2.new(1, -5, 0, textHeight)
+    TextBoxContainer.Size = UDim2.new(1, 0, 0, textHeight)
+end
+
+-- 改进的文本框属性设置
+SourceTextBox.TextWrapped = true
+SourceTextBox.ClearTextOnFocus = false
+SourceTextBox.TextXAlignment = Enum.TextXAlignment.Left
+SourceTextBox.TextYAlignment = Enum.TextYAlignment.Top
+
+-- 监听文本框变化
+SourceTextBox:GetPropertyChangedSignal("Text"):Connect(function()
+    wait() -- 等待一帧确保文本已更新
+    updateTextBoxSize()
+end)
+
+SourceTextBox:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+    wait()
+    updateTextBoxSize()
+end)
+
+ScrollingFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+    wait()
+    updateTextBoxSize()
+end)
+
+-- 初始焦点设置
+SourceTextBox.Focused:Connect(function()
+    if SourceTextBox.Text == "请输入文本" then
+        SourceTextBox.Text = ""
+    end
+end)
+
+SourceTextBox.FocusLost:Connect(function()
+    if SourceTextBox.Text == "" then
+        SourceTextBox.Text = "请输入文本"
+    end
+end)
+
+-- 初始调整
+updateTextBoxSize()
