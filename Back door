@@ -6,6 +6,7 @@ local Workspace = game:GetService("Workspace");
 local JointsService = game:GetService("JointsService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RobloxReplicatedStorage = game:GetService("RobloxReplicatedStorage")
+local TextService = game:GetService("TextService")
 
 -- 变量
 local LocalPlayer = Players.LocalPlayer
@@ -231,12 +232,13 @@ SourceFrame.Size = UDim2.new(1, -20, 0, 260)
 SourceFrame.Position = UDim2.new(0, 10, 0, 90)
 SourceFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 SourceFrame.BorderSizePixel = 0
+SourceFrame.ClipsDescendants = true
 
 local SourceFrameCorner = Instance.new("UICorner")
 SourceFrameCorner.CornerRadius = UDim.new(0, 6)
 SourceFrameCorner.Parent = SourceFrame
 
--- 滚动框 - 这是修复的关键部分
+-- 滚动框 - 修复滚动问题
 local ScrollingFrame = Instance.new("ScrollingFrame")
 ScrollingFrame.Name = "ScrollingFrame"
 ScrollingFrame.Size = UDim2.new(1, -10, 1, -10)
@@ -247,13 +249,20 @@ ScrollingFrame.ScrollBarThickness = 8
 ScrollingFrame.ScrollBarImageColor3 = Color3.fromRGB(120, 120, 120)
 ScrollingFrame.VerticalScrollBarInset = Enum.ScrollBarInset.Always
 ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-ScrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y -- 自动调整画布大小
+ScrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+
+-- 文本框容器
+local TextBoxContainer = Instance.new("Frame")
+TextBoxContainer.Name = "TextBoxContainer"
+TextBoxContainer.Size = UDim2.new(1, 0, 1, 0)
+TextBoxContainer.BackgroundTransparency = 1
+TextBoxContainer.BorderSizePixel = 0
 
 -- 文本框
 local SourceTextBox = Instance.new("TextBox")
 SourceTextBox.Name = "Source"
-SourceTextBox.Size = UDim2.new(1, 0, 1, 0)
-SourceTextBox.Position = UDim2.new(0, 0, 0, 0)
+SourceTextBox.Size = UDim2.new(1, -5, 1, 0)
+SourceTextBox.Position = UDim2.new(0, 5, 0, 0)
 SourceTextBox.BackgroundTransparency = 1
 SourceTextBox.Text = "print('Hello World!')"
 SourceTextBox.TextColor3 = Color3.fromRGB(220, 220, 220)
@@ -267,7 +276,8 @@ SourceTextBox.TextTruncate = Enum.TextTruncate.None
 SourceTextBox.ClearTextOnFocus = false
 
 -- 组装UI
-SourceTextBox.Parent = ScrollingFrame
+SourceTextBox.Parent = TextBoxContainer
+TextBoxContainer.Parent = ScrollingFrame
 ScrollingFrame.Parent = SourceFrame
 ScanButton.Parent = ButtonsFrame
 ExecuteButton.Parent = ButtonsFrame
@@ -466,19 +476,53 @@ local function promtDiscordInvite()
 
 end
 
+-- 修复滚动功能的关键函数
+local function updateScrollSize()
+    local text = SourceTextBox.Text
+    if text == "" then
+        ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+        return
+    end
+    
+    -- 使用TextService计算文本大小
+    local textSize = TextService:GetTextSize(
+        text,
+        SourceTextBox.TextSize,
+        SourceTextBox.Font,
+        Vector2.new(ScrollingFrame.AbsoluteSize.X - 20, math.huge) -- 考虑滚动条宽度
+    )
+    
+    -- 设置CanvasSize，确保有足够空间显示所有文本
+    local canvasHeight = math.max(textSize.Y + 20, ScrollingFrame.AbsoluteSize.Y)
+    ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, canvasHeight)
+    
+    -- 确保文本框容器有正确的大小
+    TextBoxContainer.Size = UDim2.new(1, 0, 0, canvasHeight)
+    SourceTextBox.Size = UDim2.new(1, -5, 0, canvasHeight)
+end
+
 -- 连接按钮事件
 Variables.Topbar.CloseButton.MouseButton1Click:Connect(function() Variables.UI:Destroy() end)
 Variables.Topbar.R6Button.MouseButton1Click:Connect(function() executeScript(("require(3041175937):r6('%s')"):format(LocalPlayer.Name)) end)
 Variables.MainButtons.ScanButton.MouseButton1Click:Connect(scanGame)
 Variables.MainButtons.ExecuteButton.MouseButton1Click:Connect(executeScript)
-Variables.MainButtons.ClearButton.MouseButton1Click:Connect(function() Variables.SourceFrame.Source.Text = "" end)
+Variables.MainButtons.ClearButton.MouseButton1Click:Connect(function() 
+    Variables.SourceFrame.Source.Text = "" 
+    updateScrollSize()
+end)
 Variables.MainButtons.HideButton.MouseButton1Click:Connect(function() 
     SourceFrame.Visible = not SourceFrame.Visible 
 end)
 Variables.MainButtons.InviteButton.MouseButton1Click:Connect(promtDiscordInvite)
 
--- 确保文本框内容变化时滚动框能正确调整
-Variables.SourceFrame.Source:GetPropertyChangedSignal("Text"):Connect(function()
-    -- 这会自动触发滚动框的AutomaticCanvasSize
-    wait() -- 等待一帧确保文本已渲染
+-- 监听文本框变化并更新滚动
+Variables.SourceFrame.Source:GetPropertyChangedSignal("Text"):Connect(updateScrollSize)
+
+-- 初始调整滚动大小
+updateScrollSize()
+
+-- 确保UI大小变化时也更新滚动
+SourceFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+    wait()
+    updateScrollSize()
 end)
