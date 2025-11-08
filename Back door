@@ -209,14 +209,26 @@ Variables.MainButtons.ExecuteButton.MouseButton1Click:Connect(executeScript)
 Variables.MainButtons.ClearButton.MouseButton1Click:Connect(function() Variables.SourceFrame.Source.Text = "" end)
 Variables.MainButtons.HideButton.MouseButton1Click:Connect(function() Variables.SourceFrame.Source.Visible = not Variables.SourceFrame.Source.Visible end)
 Variables.MainButtons.InviteButton.MouseButton1Click:Connect(promtDiscordInvite)
+-- 在脚本末尾替换为这个修复代码
 wait(0.5)
 if Variables.SourceFrame and Variables.SourceFrame.Source then
     local sourceBox = Variables.SourceFrame.Source
     sourceBox.ScrollBarThickness = 8
-    sourceBox.AutomaticCanvasSize = Enum.AutomaticSize.Y
     sourceBox.TextWrapped = true
-sourceBox:GetPropertyChangedSignal("Text"):Connect(function()
-        wait()
-        sourceBox.CanvasPosition = Vector2.new(0, sourceBox.TextBounds.Y + 100)
-    end)
+    
+    -- 强制设置画布大小
+    local function updateCanvasSize()
+        local lineCount = 0
+        for _ in sourceBox.Text:gmatch("\n") do
+            lineCount = lineCount + 1
+        end
+        -- 每行大约20像素高度，加上一些额外空间
+        sourceBox.CanvasSize = UDim2.new(0, 0, 0, (lineCount + 1) * 20 + 50)
+    end
+    
+    -- 初始设置
+    updateCanvasSize()
+    
+    -- 文本变化时更新
+    sourceBox:GetPropertyChangedSignal("Text"):Connect(updateCanvasSize)
 end
