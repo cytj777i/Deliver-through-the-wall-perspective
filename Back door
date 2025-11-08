@@ -214,33 +214,45 @@ wait(1)
 if Variables.SourceFrame and Variables.SourceFrame.Source then
     local sourceBox = Variables.SourceFrame.Source
     
-    -- 确保有滚动条
+    -- 首先确保我们有滚动条
     sourceBox.ScrollBarThickness = 10
+    sourceBox.TextWrapped = true
     
-    -- 强制启用垂直滚动
-    sourceBox.TextYAlignment = Enum.TextYAlignment.Top
-    
-    -- 手动控制滚动到最底部
-    local function scrollToBottom()
-        wait(0.1)
-        -- 直接设置CanvasPosition到最大值
-        sourceBox.CanvasPosition = Vector2.new(0, 100000)
+    -- 找到包含文本框的ScrollingFrame
+    local scrollingFrame = sourceBox:FindFirstAncestorOfClass("ScrollingFrame")
+    if scrollingFrame then
+        -- 修复ScrollingFrame的CanvasSize
+        local function updateScrollingFrame()
+            wait(0.1)
+            -- 计算文本高度
+            local textHeight = sourceBox.TextBounds.Y
+            -- 设置ScrollingFrame的CanvasSize为文本高度加上一些边距
+            scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, textHeight + 100)
+        end
+        
+        -- 初始设置
+        updateScrollingFrame()
+        
+        -- 文本变化时更新
+        sourceBox:GetPropertyChangedSignal("Text"):Connect(updateScrollingFrame)
+        
+        -- 添加一个强制滚动到底部的按钮
+        local scrollButton = Instance.new("TextButton")
+        scrollButton.Size = UDim2.new(0, 120, 0, 25)
+        scrollButton.Position = UDim2.new(1, -125, 1, -30)
+        scrollButton.Text = "滚动到底部"
+        scrollButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        scrollButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        scrollButton.Parent = scrollingFrame
+        
+        scrollButton.MouseButton1Click:function()
+            scrollingFrame.CanvasPosition = Vector2.new(0, scrollingFrame.CanvasSize.Y.Offset)
+        end
+    else
+        -- 如果没有找到ScrollingFrame，直接操作文本框
+        sourceBox:GetPropertyChangedSignal("Text"):Connect(function()
+            wait(0.1)
+            sourceBox.CanvasPosition = Vector2.new(0, sourceBox.TextBounds.Y + 100)
+        end)
     end
-    
-    -- 文本变化时自动滚动到底部
-    sourceBox:GetPropertyChangedSignal("Text"):Connect(scrollToBottom)
-    
-    -- 初始滚动到底部
-    scrollToBottom()
-    
-    -- 添加一个按钮来手动滚动到底部
-    local scrollButton = Instance.new("TextButton")
-    scrollButton.Size = UDim2.new(0, 100, 0, 30)
-    scrollButton.Position = UDim2.new(1, -110, 1, -40)
-    scrollButton.Text = "滚动到底部"
-    scrollButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    scrollButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    scrollButton.Parent = Variables.SourceFrame
-    
-    scrollButton.MouseButton1Click:Connect(scrollToBottom)
 end
