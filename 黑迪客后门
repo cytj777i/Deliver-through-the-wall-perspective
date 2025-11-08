@@ -1,4 +1,4 @@
--- 由XTTT使用91deep seek制作
+-- 由XTTT使用91Ai制作
 local Players = game:GetService("Players")
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
@@ -198,6 +198,48 @@ local function CreateServerSideUI(player)
                 end
             end
         end
+    end)
+
+    buttonY = buttonY + 40
+
+    -- 所有物体贴图功能
+    CreateButton("所有物体贴图", UDim2.new(0, 5, 0, buttonY), function()
+        local decalTexture = "http://www.roblox.com/asset/?id=131394090456182"
+
+        -- 改变所有物体的贴图
+        local function applyDecalsToAllObjects()
+            local descendants = game.Workspace:GetDescendants()
+            for _, descendant in pairs(descendants) do
+                if descendant:IsA("Part") or descendant:IsA("UnionOperation") then
+                    -- 为每个面添加贴图
+                    for _, face in pairs(Enum.NormalId:GetEnumItems()) do
+                        local decal = Instance.new("Decal")
+                        decal.Face = face
+                        decal.Texture = decalTexture
+                        decal.ZIndex = 99
+                        decal.Parent = descendant
+                    end
+                end
+            end
+        end
+
+        -- 执行贴图改变
+        applyDecalsToAllObjects()
+
+        -- 处理新创建的物体
+        game.Workspace.DescendantAdded:Connect(function(descendant)
+            wait(0.1) -- 稍等确保物体完全加载
+            if descendant:IsA("Part") or descendant:IsA("UnionOperation") then
+                -- 为新物体添加贴图
+                for _, face in pairs(Enum.NormalId:GetEnumItems()) do
+                    local decal = Instance.new("Decal")
+                    decal.Face = face
+                    decal.Texture = decalTexture
+                    decal.ZIndex = 99
+                    decal.Parent = descendant
+                end
+            end
+        end)
     end)
 
     buttonY = buttonY + 40
@@ -415,6 +457,13 @@ local function CreateServerSideUI(player)
         for _, hint in pairs(game.Workspace:GetChildren()) do
             if hint:IsA("Hint") then
                 hint:Destroy()
+            end
+        end
+        
+        -- 清除贴图
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj:IsA("Decal") then
+                obj:Destroy()
             end
         end
         
