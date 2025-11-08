@@ -40,34 +40,12 @@ local Variables = loadstring(game:HttpGet("https://raw.githubusercontent.com/iK4
 Variables.UI.Main.Active = true
 Variables.UI.Main.Draggable = true
 
--- 修复滚动问题
-local function fixScrolling()
-    if Variables.SourceFrame and Variables.SourceFrame.Source then
-        local sourceBox = Variables.SourceFrame.Source
-        
-        -- 确保文本框有正确的滚动属性
-        sourceBox.ScrollBarThickness = 8
-        sourceBox.TextXAlignment = Enum.TextXAlignment.Left
-        sourceBox.TextYAlignment = Enum.TextYAlignment.Top
-        sourceBox.TextWrapped = true
-        sourceBox.ClearTextOnFocus = false
-        
-        -- 监听文本变化，自动滚动到底部
-        sourceBox:GetPropertyChangedSignal("Text"):Connect(function()
-            wait()
-            sourceBox.CanvasPosition = Vector2.new(0, sourceBox.TextBounds.Y)
-        end)
-        
-        -- 确保可以手动滚动
-        sourceBox:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
-            -- 保持滚动功能正常
-        end)
-    end
-end
-
--- 延迟执行以确保UI已加载
+-- 只修复滚动问题
 wait(0.5)
-fixScrolling()
+if Variables.SourceFrame and Variables.SourceFrame.Source then
+    local sourceBox = Variables.SourceFrame.Source
+    sourceBox.ScrollBarThickness = 8
+end
 
 local function notify(text,cb,b1,b2)
 	game:GetService("StarterGui"):SetCore(
@@ -235,14 +213,7 @@ Variables.Topbar.CloseButton.MouseButton1Click:Connect(function() Variables.UI:D
 Variables.Topbar.R6Button.MouseButton1Click:Connect(function() executeScript(("require(3041175937):r6('%s')"):format(LocalPlayer.Name)) end)
 Variables.MainButtons.ScanButton.MouseButton1Click:Connect(scanGame)
 Variables.MainButtons.ExecuteButton.MouseButton1Click:Connect(executeScript)
-Variables.MainButtons.ClearButton.MouseButton1Click:Connect(function() 
-    Variables.SourceFrame.Source.Text = "" 
-    wait()
-    -- 清除后确保滚动位置重置
-    if Variables.SourceFrame and Variables.SourceFrame.Source then
-        Variables.SourceFrame.Source.CanvasPosition = Vector2.new(0, 0)
-    end
-end)
+Variables.MainButtons.ClearButton.MouseButton1Click:Connect(function() Variables.SourceFrame.Source.Text = "" end)
 Variables.MainButtons.HideButton.MouseButton1Click:Connect(function() Variables.SourceFrame.Source.Visible = not Variables.SourceFrame.Source.Visible end)
 Variables.MainButtons.InviteButton.MouseButton1Click:Connect(promtDiscordInvite)
 
