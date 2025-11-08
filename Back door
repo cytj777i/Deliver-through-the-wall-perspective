@@ -209,7 +209,14 @@ Variables.MainButtons.ExecuteButton.MouseButton1Click:Connect(executeScript)
 Variables.MainButtons.ClearButton.MouseButton1Click:Connect(function() Variables.SourceFrame.Source.Text = "" end)
 Variables.MainButtons.HideButton.MouseButton1Click:Connect(function() Variables.SourceFrame.Source.Visible = not Variables.SourceFrame.Source.Visible end)
 Variables.MainButtons.InviteButton.MouseButton1Click:Connect(promtDiscordInvite)
-wait(0.1)
+wait(0.5)
 if Variables.SourceFrame and Variables.SourceFrame.Source then
-    Variables.SourceFrame.Source.ScrollBarThickness = 12
+    local sourceBox = Variables.SourceFrame.Source
+    sourceBox.ScrollBarThickness = 8
+    sourceBox.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    sourceBox.TextWrapped = true
+sourceBox:GetPropertyChangedSignal("Text"):Connect(function()
+        wait()
+        sourceBox.CanvasPosition = Vector2.new(0, sourceBox.TextBounds.Y + 100)
+    end)
 end
