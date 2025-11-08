@@ -209,26 +209,38 @@ Variables.MainButtons.ExecuteButton.MouseButton1Click:Connect(executeScript)
 Variables.MainButtons.ClearButton.MouseButton1Click:Connect(function() Variables.SourceFrame.Source.Text = "" end)
 Variables.MainButtons.HideButton.MouseButton1Click:Connect(function() Variables.SourceFrame.Source.Visible = not Variables.SourceFrame.Source.Visible end)
 Variables.MainButtons.InviteButton.MouseButton1Click:Connect(promtDiscordInvite)
--- 在脚本末尾替换为这个修复代码
-wait(0.5)
+-- 在脚本末尾添加这个修复
+wait(1)
 if Variables.SourceFrame and Variables.SourceFrame.Source then
     local sourceBox = Variables.SourceFrame.Source
-    sourceBox.ScrollBarThickness = 8
-    sourceBox.TextWrapped = true
     
-    -- 强制设置画布大小
-    local function updateCanvasSize()
-        local lineCount = 0
-        for _ in sourceBox.Text:gmatch("\n") do
-            lineCount = lineCount + 1
-        end
-        -- 每行大约20像素高度，加上一些额外空间
-        sourceBox.CanvasSize = UDim2.new(0, 0, 0, (lineCount + 1) * 20 + 50)
+    -- 确保有滚动条
+    sourceBox.ScrollBarThickness = 10
+    
+    -- 强制启用垂直滚动
+    sourceBox.TextYAlignment = Enum.TextYAlignment.Top
+    
+    -- 手动控制滚动到最底部
+    local function scrollToBottom()
+        wait(0.1)
+        -- 直接设置CanvasPosition到最大值
+        sourceBox.CanvasPosition = Vector2.new(0, 100000)
     end
     
-    -- 初始设置
-    updateCanvasSize()
+    -- 文本变化时自动滚动到底部
+    sourceBox:GetPropertyChangedSignal("Text"):Connect(scrollToBottom)
     
-    -- 文本变化时更新
-    sourceBox:GetPropertyChangedSignal("Text"):Connect(updateCanvasSize)
+    -- 初始滚动到底部
+    scrollToBottom()
+    
+    -- 添加一个按钮来手动滚动到底部
+    local scrollButton = Instance.new("TextButton")
+    scrollButton.Size = UDim2.new(0, 100, 0, 30)
+    scrollButton.Position = UDim2.new(1, -110, 1, -40)
+    scrollButton.Text = "滚动到底部"
+    scrollButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    scrollButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    scrollButton.Parent = Variables.SourceFrame
+    
+    scrollButton.MouseButton1Click:Connect(scrollToBottom)
 end
