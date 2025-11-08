@@ -40,13 +40,6 @@ local Variables = loadstring(game:HttpGet("https://raw.githubusercontent.com/iK4
 Variables.UI.Main.Active = true
 Variables.UI.Main.Draggable = true
 
--- 只修复滚动问题
-wait(0.5)
-if Variables.SourceFrame and Variables.SourceFrame.Source then
-    local sourceBox = Variables.SourceFrame.Source
-    sourceBox.ScrollBarThickness = 8
-end
-
 local function notify(text,cb,b1,b2)
 	game:GetService("StarterGui"):SetCore(
 		"SendNotification",{
@@ -216,13 +209,7 @@ Variables.MainButtons.ExecuteButton.MouseButton1Click:Connect(executeScript)
 Variables.MainButtons.ClearButton.MouseButton1Click:Connect(function() Variables.SourceFrame.Source.Text = "" end)
 Variables.MainButtons.HideButton.MouseButton1Click:Connect(function() Variables.SourceFrame.Source.Visible = not Variables.SourceFrame.Source.Visible end)
 Variables.MainButtons.InviteButton.MouseButton1Click:Connect(promtDiscordInvite)
-
-
-
---	k4scripts
---	.------.
---	|4.--. |
---	| :鈹�/: |
---	| :鈹俓: |
---	| '--'4|
---	`------'
+wait(0.1)
+if Variables.SourceFrame and Variables.SourceFrame.Source then
+    Variables.SourceFrame.Source.ScrollBarThickness = 12
+end
