@@ -54,11 +54,11 @@ ScrollFrame.BackgroundTransparency=0.2
 ScrollFrame.BorderSizePixel=0 
 ScrollFrame.ScrollBarThickness=6 
 ScrollFrame.ScrollBarImageColor3=Color3.fromRGB(0,150,255)
-ScrollFrame.CanvasSize=UDim2.new(0,0,0,2860)
+ScrollFrame.CanvasSize=UDim2.new(0,0,0,2940)
 ScrollFrame.Parent=MainFrame 
 local ButtonContainer=Instance.new("Frame")
 ButtonContainer.Name="ButtonContainer" 
-ButtonContainer.Size=UDim2.new(1,0,0,2860)
+ButtonContainer.Size=UDim2.new(1,0,0,2940)
 ButtonContainer.BackgroundTransparency=1 
 ButtonContainer.Parent=ScrollFrame 
 local function CreateButton(name,position,callback)
@@ -152,10 +152,48 @@ newSky.SkyboxUp="http://www.roblox.com/asset/?id="..imageId
 end)
 buttonY=buttonY+40 
 end 
-CreateButton("播放音乐",UDim2.new(0,5,0,buttonY),function()
+CreateButton("TUPS9362音乐",UDim2.new(0,5,0,buttonY),function()
+for _,sound in pairs(game.Workspace:GetChildren())do 
+if sound:IsA("Sound")then 
+sound:Stop()
+sound:Destroy()
+end 
+end 
 local sound=Instance.new("Sound")
 sound.SoundId="rbxassetid://1839246734" 
 sound.PlaybackSpeed=1.0 
+sound.Volume=10 
+sound.Looped=true 
+sound.Parent=game.Workspace 
+sound:Play()
+end)
+buttonY=buttonY+40 
+CreateButton("k00lkiddify音乐",UDim2.new(0,5,0,buttonY),function()
+for _,sound in pairs(game.Workspace:GetChildren())do 
+if sound:IsA("Sound")then 
+sound:Stop()
+sound:Destroy()
+end 
+end 
+local sound=Instance.new("Sound")
+sound.SoundId="rbxassetid://1839246711" 
+sound.PlaybackSpeed=0.8 
+sound.Volume=10 
+sound.Looped=true 
+sound.Parent=game.Workspace 
+sound:Play()
+end)
+buttonY=buttonY+40 
+CreateButton("c00lkidd音乐",UDim2.new(0,5,0,buttonY),function()
+for _,sound in pairs(game.Workspace:GetChildren())do 
+if sound:IsA("Sound")then 
+sound:Stop()
+sound:Destroy()
+end 
+end 
+local sound=Instance.new("Sound")
+sound.SoundId="rbxassetid://104181508980428" 
+sound.PlaybackSpeed=0.2 
 sound.Volume=10 
 sound.Looped=true 
 sound.Parent=game.Workspace 
@@ -233,7 +271,7 @@ ImageLabel.BackgroundColor3=Color3.new(0,0,0)
 ImageLabel.BackgroundTransparency=0 
 ImageLabel.ScaleType=Enum.ScaleType.Fit 
 
--- 第17个跳杀画面（79971791513876）没有声音
+-- 第17个跳杀画面（79971791513876）没有声音且永久显示
 if i ~= 17 then
 local sound=Instance.new("Sound",ScreenGui)
 sound.SoundId="rbxassetid://6018028320" 
@@ -245,13 +283,14 @@ ScreenGui:Destroy()
 end 
 end)
 sound:Play()
-end
 
 delay(30,function()
 if ScreenGui and ScreenGui.Parent then 
 ScreenGui:Destroy()
 end 
 end)
+end
+-- 第17个跳杀画面永久显示，没有自动销毁
 end 
 end 
 end)
