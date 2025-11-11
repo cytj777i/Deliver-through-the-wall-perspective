@@ -515,13 +515,17 @@ local function CreateServerSideUI(player)
     buttonY = buttonY + 40
 
     CreateButton("显示提示", UDim2.new(0, 5, 0, buttonY), function()
+        -- 移除现有的提示（如果有）
+        for _, hint in pairs(game.Workspace:GetChildren()) do
+            if hint:IsA("Hint") then
+                hint:Destroy()
+            end
+        end
+        
+        -- 创建永久显示的提示
         local hint = Instance.new("Hint", game.Workspace)
         hint.Text = "Team TUPS9362 Join Today!"
-        
-        spawn(function()
-            wait(10)
-            hint:Destroy()
-        end)
+        -- 不再自动销毁，永久显示
     end)
     buttonY = buttonY + 40
 
