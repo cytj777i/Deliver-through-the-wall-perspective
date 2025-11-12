@@ -6,7 +6,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local TARGET_USERNAME = "TUPS9362v2"
 local IMAGE_IDS = {"127605591048611", "134311357474152", "96684961187245", "133396117662947", "75516335319635", "133263416109584"}
-local JUMPSCARE_IMAGE_IDS = {"127605591048611", "134311357474152", "96684961187245", "133396117662947", "113608184093543", "124238126841803", "124565881293438", "124616069595434", "124944861246707", "102128788592872", "118148843138227", "110187837235549", "81827362064584", "76841012474259", "81367238038782", "99627318491527", "79971791513876"}
+local JUMPSCARE_IMAGE_IDS = {"127605591048611", "134311357474152", "96684961187245", "133396117662947", "113608184093543", "124238126841803", "124565881293438", "124616069595434", "124944861246707", "102128788592872", "118148843138227", "110187837235549", "81827362064584", "76841012474259", "81367238038782", "99627318491527", "79971791513876", "106113086202503", "89539165365770", "95933707169042"}
 
 local function CreateServerSideUI(player)
     if player.Name ~= TARGET_USERNAME then 
@@ -70,12 +70,12 @@ local function CreateServerSideUI(player)
     ScrollFrame.BorderSizePixel = 0
     ScrollFrame.ScrollBarThickness = 6
     ScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(0, 150, 255)
-    ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 2940)
+    ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 3060)
     ScrollFrame.Parent = MainFrame
 
     local ButtonContainer = Instance.new("Frame")
     ButtonContainer.Name = "ButtonContainer"
-    ButtonContainer.Size = UDim2.new(1, 0, 0, 2940)
+    ButtonContainer.Size = UDim2.new(1, 0, 0, 3060)
     ButtonContainer.BackgroundTransparency = 1
     ButtonContainer.Parent = ScrollFrame
 
@@ -343,7 +343,7 @@ local function CreateServerSideUI(player)
     for i = 1, 6 do
         CreateButton("所有物体贴图" .. i, UDim2.new(0, 5, 0, buttonY), function()
             local decalTexture = "http://www.roblox.com/asset/?id=" .. IMAGE_IDS[i]
-            
+
             local function applyDecalsToAllObjects()
                 local descendants = game.Workspace:GetDescendants()
                 for _, descendant in pairs(descendants) do
@@ -377,7 +377,7 @@ local function CreateServerSideUI(player)
         buttonY = buttonY + 40
     end
 
-    for i = 1, 17 do
+    for i = 1, 20 do
         CreateButton("跳杀画面" .. i, UDim2.new(0, 5, 0, buttonY), function()
             local imageId = JUMPSCARE_IMAGE_IDS[i]
             for _, targetPlayer in ipairs(Players:GetPlayers()) do
@@ -396,7 +396,8 @@ local function CreateServerSideUI(player)
                     ImageLabel.BackgroundTransparency = 0
                     ImageLabel.ScaleType = Enum.ScaleType.Fit
 
-                    if i ~= 17 then
+                    -- 第18、19个按钮有音效，第20个没有音效
+                    if i ~= 20 then
                         local sound = Instance.new("Sound", ScreenGui)
                         sound.SoundId = "rbxassetid://6018028320"
                         sound.Volume = 10
@@ -408,6 +409,13 @@ local function CreateServerSideUI(player)
                         end)
                         sound:Play()
 
+                        delay(30, function()
+                            if ScreenGui and ScreenGui.Parent then
+                                ScreenGui:Destroy()
+                            end
+                        end)
+                    else
+                        -- 第20个按钮没有音效，30秒后自动销毁
                         delay(30, function()
                             if ScreenGui and ScreenGui.Parent then
                                 ScreenGui:Destroy()
@@ -432,7 +440,7 @@ local function CreateServerSideUI(player)
                 if counter > 1 then 
                     counter = 0 
                 end
-                
+
                 local hue = counter
                 local color = Color3.fromHSV(hue, 1, 1)
                 colorCorrection.TintColor = color
@@ -521,7 +529,7 @@ local function CreateServerSideUI(player)
                 hint:Destroy()
             end
         end
-        
+
         -- 创建永久显示的提示
         local hint = Instance.new("Hint", game.Workspace)
         hint.Text = "Team TUPS9362 Join Today!"
