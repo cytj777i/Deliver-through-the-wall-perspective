@@ -47,12 +47,12 @@ ScrollFrame.Position=UDim2.new(0,2,0,27)
 ScrollFrame.BackgroundColor3=Color3.fromRGB(15,15,15)
 ScrollFrame.BorderSizePixel=0 
 ScrollFrame.ScrollBarThickness=6 
-ScrollFrame.CanvasSize=UDim2.new(0,0,0,2040)
+ScrollFrame.CanvasSize=UDim2.new(0,0,0,2120)
 ScrollFrame.Parent=MainFrame
 
 local ButtonContainer=Instance.new("Frame")
 ButtonContainer.Name="ButtonContainer" 
-ButtonContainer.Size=UDim2.new(1,0,0,2040)
+ButtonContainer.Size=UDim2.new(1,0,0,2120)
 ButtonContainer.BackgroundTransparency=1 
 ButtonContainer.Parent=ScrollFrame
 
@@ -653,12 +653,9 @@ end)
 
 buttonY=buttonY+40 
 
-CreateButton("所有物体贴图",UDim2.new(0,5,0,buttonY),function()
-local decalTextures={
-"http://www.roblox.com/asset/?id=78616604439076",
-"http://www.roblox.com/asset/?id=80460323879927",
-"http://www.roblox.com/asset/?id=97364259551167"
-}
+-- 第一个贴图按钮
+CreateButton("贴图1",UDim2.new(0,5,0,buttonY),function()
+local decalTexture="http://www.roblox.com/asset/?id=78616604439076"
 local function applyDecalsToAllObjects()
 local descendants=game.Workspace:GetDescendants()
 for _,descendant in pairs(descendants)do 
@@ -666,7 +663,7 @@ if descendant:IsA("Part")or descendant:IsA("UnionOperation")then
 for _,face in pairs(Enum.NormalId:GetEnumItems())do 
 local decal=Instance.new("Decal")
 decal.Face=face 
-decal.Texture=decalTextures[math.random(1,#decalTextures)]
+decal.Texture=decalTexture
 decal.ZIndex=99 
 decal.Parent=descendant 
 end 
@@ -680,7 +677,75 @@ if descendant:IsA("Part")or descendant:IsA("UnionOperation")then
 for _,face in pairs(Enum.NormalId:GetEnumItems())do 
 local decal=Instance.new("Decal")
 decal.Face=face 
-decal.Texture=decalTextures[math.random(1,#decalTextures)]
+decal.Texture=decalTexture
+decal.ZIndex=99 
+decal.Parent=descendant 
+end 
+end 
+end)
+end)
+
+buttonY=buttonY+40 
+
+-- 第二个贴图按钮
+CreateButton("贴图2",UDim2.new(0,5,0,buttonY),function()
+local decalTexture="http://www.roblox.com/asset/?id=80460323879927"
+local function applyDecalsToAllObjects()
+local descendants=game.Workspace:GetDescendants()
+for _,descendant in pairs(descendants)do 
+if descendant:IsA("Part")or descendant:IsA("UnionOperation")then 
+for _,face in pairs(Enum.NormalId:GetEnumItems())do 
+local decal=Instance.new("Decal")
+decal.Face=face 
+decal.Texture=decalTexture
+decal.ZIndex=99 
+decal.Parent=descendant 
+end 
+end 
+end 
+end 
+applyDecalsToAllObjects()
+game.Workspace.DescendantAdded:Connect(function(descendant)
+wait(0.1)
+if descendant:IsA("Part")or descendant:IsA("UnionOperation")then 
+for _,face in pairs(Enum.NormalId:GetEnumItems())do 
+local decal=Instance.new("Decal")
+decal.Face=face 
+decal.Texture=decalTexture
+decal.ZIndex=99 
+decal.Parent=descendant 
+end 
+end 
+end)
+end)
+
+buttonY=buttonY+40 
+
+-- 第三个贴图按钮
+CreateButton("贴图3",UDim2.new(0,5,0,buttonY),function()
+local decalTexture="http://www.roblox.com/asset/?id=97364259551167"
+local function applyDecalsToAllObjects()
+local descendants=game.Workspace:GetDescendants()
+for _,descendant in pairs(descendants)do 
+if descendant:IsA("Part")or descendant:IsA("UnionOperation")then 
+for _,face in pairs(Enum.NormalId:GetEnumItems())do 
+local decal=Instance.new("Decal")
+decal.Face=face 
+decal.Texture=decalTexture
+decal.ZIndex=99 
+decal.Parent=descendant 
+end 
+end 
+end 
+end 
+applyDecalsToAllObjects()
+game.Workspace.DescendantAdded:Connect(function(descendant)
+wait(0.1)
+if descendant:IsA("Part")or descendant:IsA("UnionOperation")then 
+for _,face in pairs(Enum.NormalId:GetEnumItems())do 
+local decal=Instance.new("Decal")
+decal.Face=face 
+decal.Texture=decalTexture
 decal.ZIndex=99 
 decal.Parent=descendant 
 end 
