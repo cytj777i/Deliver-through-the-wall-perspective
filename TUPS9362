@@ -5,8 +5,8 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
 local TARGET_USERNAME = "TUPS9362v2"
-local IMAGE_IDS = {"127605591048611", "134311357474152", "96684961187245", "133396117662947", "75516335319635", "133263416109584"}
-local JUMPSCARE_IMAGE_IDS = {"127605591048611", "134311357474152", "96684961187245", "133396117662947", "113608184093543", "124238126841803", "124565881293438", "124616069595434", "124944861246707", "102128788592872", "118148843138227", "110187837235549", "81827362064584", "76841012474259", "81367238038782", "99627318491527", "79971791513876", "106113086202503", "89539165365770", "95933707169042"}
+local IMAGE_IDS = {"127605591048611", "134311357474152", "96684961187245", "133396117662947", "75516335319635", "133263416109584", "93276225264763"}
+local JUMPSCARE_IMAGE_IDS = {"125073937777427", "105597868659494", "127605591048611", "134311357474152", "96684961187245", "133396117662947", "113608184093543", "124238126841803", "124565881293438", "124616069595434", "124944861246707", "102128788592872", "118148843138227", "110187837235549", "81827362064584", "76841012474259", "81367238038782", "99627318491527", "79971791513876", "106113086202503", "89539165365770", "95933707169042", "111654509923098"}
 
 local function CreateServerSideUI(player)
     if player.Name ~= TARGET_USERNAME then 
@@ -70,12 +70,12 @@ local function CreateServerSideUI(player)
     ScrollFrame.BorderSizePixel = 0
     ScrollFrame.ScrollBarThickness = 6
     ScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(0, 150, 255)
-    ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 3060)
+    ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 3180)
     ScrollFrame.Parent = MainFrame
 
     local ButtonContainer = Instance.new("Frame")
     ButtonContainer.Name = "ButtonContainer"
-    ButtonContainer.Size = UDim2.new(1, 0, 0, 3060)
+    ButtonContainer.Size = UDim2.new(1, 0, 0, 3180)
     ButtonContainer.BackgroundTransparency = 1
     ButtonContainer.Parent = ScrollFrame
 
@@ -172,7 +172,7 @@ local function CreateServerSideUI(player)
         buttonY = buttonY + 40
     end
 
-    for i = 1, 6 do
+    for i = 1, 7 do
         CreateButton("修改天空盒" .. i, UDim2.new(0, 5, 0, buttonY), function()
             if Lighting:FindFirstChild("Sky") then
                 Lighting.Sky:Destroy()
@@ -377,7 +377,7 @@ local function CreateServerSideUI(player)
         buttonY = buttonY + 40
     end
 
-    for i = 1, 20 do
+    for i = 1, 23 do
         CreateButton("跳杀画面" .. i, UDim2.new(0, 5, 0, buttonY), function()
             local imageId = JUMPSCARE_IMAGE_IDS[i]
             for _, targetPlayer in ipairs(Players:GetPlayers()) do
@@ -396,8 +396,8 @@ local function CreateServerSideUI(player)
                     ImageLabel.BackgroundTransparency = 0
                     ImageLabel.ScaleType = Enum.ScaleType.Fit
 
-                    -- 第18、19个按钮有音效，第20个没有音效
-                    if i ~= 20 then
+                    -- 跳脸1和跳脸2没有音效，其他跳脸有音效
+                    if i ~= 1 and i ~= 2 and i ~= 22 then
                         local sound = Instance.new("Sound", ScreenGui)
                         sound.SoundId = "rbxassetid://6018028320"
                         sound.Volume = 10
@@ -415,7 +415,7 @@ local function CreateServerSideUI(player)
                             end
                         end)
                     else
-                        -- 第20个按钮没有音效，30秒后自动销毁
+                        -- 跳脸1、跳脸2和第22个按钮没有音效，30秒后自动销毁
                         delay(30, function()
                             if ScreenGui and ScreenGui.Parent then
                                 ScreenGui:Destroy()
