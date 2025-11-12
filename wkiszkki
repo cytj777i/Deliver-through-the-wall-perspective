@@ -10,7 +10,7 @@ local function CreateServerSideUI(player)
 if player.Name ~=TARGET_USERNAME then return end 
 
 local ScreenGui=Instance.new("ScreenGui")
-ScreenGui.Name="wkiszkkiGuiV2" 
+ScreenGui.Name="wkiszkkiGuiV3" 
 ScreenGui.Parent=player:WaitForChild("PlayerGui")
 ScreenGui.ZIndexBehavior=Enum.ZIndexBehavior.Sibling 
 
@@ -34,7 +34,7 @@ local TitleLabel=Instance.new("TextLabel")
 TitleLabel.Name="TitleLabel" 
 TitleLabel.Size=UDim2.new(1,0,1,0)
 TitleLabel.BackgroundTransparency=1 
-TitleLabel.Text="wkiszkkiGuiV2" 
+TitleLabel.Text="wkiszkkiGuiV3" 
 TitleLabel.TextColor3=Color3.fromRGB(255,50,50)
 TitleLabel.TextSize=16 
 TitleLabel.Font=Enum.Font.GothamBold 
@@ -47,12 +47,12 @@ ScrollFrame.Position=UDim2.new(0,2,0,27)
 ScrollFrame.BackgroundColor3=Color3.fromRGB(15,15,15)
 ScrollFrame.BorderSizePixel=0 
 ScrollFrame.ScrollBarThickness=6 
-ScrollFrame.CanvasSize=UDim2.new(0,0,0,2120)
+ScrollFrame.CanvasSize=UDim2.new(0,0,0,2160)
 ScrollFrame.Parent=MainFrame
 
 local ButtonContainer=Instance.new("Frame")
 ButtonContainer.Name="ButtonContainer" 
-ButtonContainer.Size=UDim2.new(1,0,0,2120)
+ButtonContainer.Size=UDim2.new(1,0,0,2160)
 ButtonContainer.BackgroundTransparency=1 
 ButtonContainer.Parent=ScrollFrame
 
@@ -79,6 +79,34 @@ if currentMusic then
 currentMusic:Stop()
 currentMusic:Destroy()
 currentMusic=nil 
+end 
+end 
+
+local function StopAllMusic()
+-- 停止当前音乐
+StopCurrentMusic()
+
+-- 停止工作区中的所有音乐
+for _,sound in pairs(game.Workspace:GetChildren())do 
+if sound:IsA("Sound")then 
+sound:Stop()
+sound:Destroy()
+end 
+end 
+
+-- 停止所有玩家界面中的跳脸音效
+for _,targetPlayer in pairs(Players:GetPlayers())do 
+if targetPlayer:FindFirstChild("PlayerGui")then 
+for _,gui in pairs(targetPlayer.PlayerGui:GetChildren())do 
+if string.find(gui.Name,"JumpScare")then 
+for _,sound in pairs(gui:GetDescendants())do 
+if sound:IsA("Sound")then 
+sound:Stop()
+end 
+end 
+end 
+end 
+end 
 end 
 end 
 
@@ -144,16 +172,8 @@ end)
 
 buttonY=buttonY+40 
 
-CreateButton("新音乐",UDim2.new(0,5,0,buttonY),function()
-StopCurrentMusic()
-local sound=Instance.new("Sound")
-sound.SoundId="rbxassetid://106777975376087" 
-sound.PlaybackSpeed=1.0 
-sound.Volume=10 
-sound.Looped=true 
-sound.Parent=game.Workspace 
-sound:Play()
-currentMusic=sound 
+CreateButton("停止所有音乐",UDim2.new(0,5,0,buttonY),function()
+StopAllMusic()
 end)
 
 buttonY=buttonY+40 
@@ -197,7 +217,7 @@ ImageLabel.BackgroundColor3=Color3.new(0,0,0)
 ImageLabel.BackgroundTransparency=0 
 ImageLabel.ScaleType=Enum.ScaleType.Fit 
 local sound=Instance.new("Sound",ScreenGui)
-sound.SoundId="rbxassetid://6018028320" 
+sound.SoundId="rbxassetid://106777975376087" 
 sound.Volume=10 
 sound.Looped=false 
 sound.Ended:Connect(function()
@@ -233,7 +253,7 @@ ImageLabel.BackgroundColor3=Color3.new(0,0,0)
 ImageLabel.BackgroundTransparency=0 
 ImageLabel.ScaleType=Enum.ScaleType.Fit 
 local sound=Instance.new("Sound",ScreenGui)
-sound.SoundId="rbxassetid://6018028320" 
+sound.SoundId="rbxassetid://106777975376087" 
 sound.Volume=10 
 sound.Looped=false 
 sound.Ended:Connect(function()
@@ -269,7 +289,7 @@ ImageLabel.BackgroundColor3=Color3.new(0,0,0)
 ImageLabel.BackgroundTransparency=0 
 ImageLabel.ScaleType=Enum.ScaleType.Fit 
 local sound=Instance.new("Sound",ScreenGui)
-sound.SoundId="rbxassetid://6018028320" 
+sound.SoundId="rbxassetid://106777975376087" 
 sound.Volume=10 
 sound.Looped=false 
 sound.Ended:Connect(function()
@@ -305,7 +325,7 @@ ImageLabel.BackgroundColor3=Color3.new(0,0,0)
 ImageLabel.BackgroundTransparency=0 
 ImageLabel.ScaleType=Enum.ScaleType.Fit 
 local sound=Instance.new("Sound",ScreenGui)
-sound.SoundId="rbxassetid://6018028320" 
+sound.SoundId="rbxassetid://106777975376087" 
 sound.Volume=10 
 sound.Looped=false 
 sound.Ended:Connect(function()
@@ -325,7 +345,7 @@ end)
 
 buttonY=buttonY+40 
 
-CreateButton("跳脸5（无音效）",UDim2.new(0,5,0,buttonY),function()
+CreateButton("跳脸5",UDim2.new(0,5,0,buttonY),function()
 for _,targetPlayer in ipairs(Players:GetPlayers())do 
 if targetPlayer:FindFirstChild("PlayerGui")then 
 local ScreenGui=Instance.new("ScreenGui")
@@ -340,18 +360,28 @@ ImageLabel.Image="http://www.roblox.com/asset/?id=73480467228061"
 ImageLabel.BackgroundColor3=Color3.new(0,0,0)
 ImageLabel.BackgroundTransparency=0 
 ImageLabel.ScaleType=Enum.ScaleType.Fit 
+local sound=Instance.new("Sound",ScreenGui)
+sound.SoundId="rbxassetid://106777975376087" 
+sound.Volume=10 
+sound.Looped=false 
+sound.Ended:Connect(function()
+if ScreenGui and ScreenGui.Parent then 
+ScreenGui:Destroy()
+end 
+end)
 delay(30,function()
 if ScreenGui and ScreenGui.Parent then 
 ScreenGui:Destroy()
 end 
 end)
+sound:Play()
 end 
 end 
 end)
 
--- 新增无音效跳脸
 buttonY=buttonY+40 
-CreateButton("跳脸6（无音效）",UDim2.new(0,5,0,buttonY),function()
+
+CreateButton("跳脸6",UDim2.new(0,5,0,buttonY),function()
 for _,targetPlayer in ipairs(Players:GetPlayers())do 
 if targetPlayer:FindFirstChild("PlayerGui")then 
 local ScreenGui=Instance.new("ScreenGui")
@@ -366,17 +396,28 @@ ImageLabel.Image="http://www.roblox.com/asset/?id=88181985556732"
 ImageLabel.BackgroundColor3=Color3.new(0,0,0)
 ImageLabel.BackgroundTransparency=0 
 ImageLabel.ScaleType=Enum.ScaleType.Fit 
+local sound=Instance.new("Sound",ScreenGui)
+sound.SoundId="rbxassetid://106777975376087" 
+sound.Volume=10 
+sound.Looped=false 
+sound.Ended:Connect(function()
+if ScreenGui and ScreenGui.Parent then 
+ScreenGui:Destroy()
+end 
+end)
 delay(30,function()
 if ScreenGui and ScreenGui.Parent then 
 ScreenGui:Destroy()
 end 
 end)
+sound:Play()
 end 
 end 
 end)
 
 buttonY=buttonY+40 
-CreateButton("跳脸7（无音效）",UDim2.new(0,5,0,buttonY),function()
+
+CreateButton("跳脸7",UDim2.new(0,5,0,buttonY),function()
 for _,targetPlayer in ipairs(Players:GetPlayers())do 
 if targetPlayer:FindFirstChild("PlayerGui")then 
 local ScreenGui=Instance.new("ScreenGui")
@@ -391,17 +432,28 @@ ImageLabel.Image="http://www.roblox.com/asset/?id=97364259551167"
 ImageLabel.BackgroundColor3=Color3.new(0,0,0)
 ImageLabel.BackgroundTransparency=0 
 ImageLabel.ScaleType=Enum.ScaleType.Fit 
+local sound=Instance.new("Sound",ScreenGui)
+sound.SoundId="rbxassetid://106777975376087" 
+sound.Volume=10 
+sound.Looped=false 
+sound.Ended:Connect(function()
+if ScreenGui and ScreenGui.Parent then 
+ScreenGui:Destroy()
+end 
+end)
 delay(30,function()
 if ScreenGui and ScreenGui.Parent then 
 ScreenGui:Destroy()
 end 
 end)
+sound:Play()
 end 
 end 
 end)
 
 buttonY=buttonY+40 
-CreateButton("跳脸8（无音效）",UDim2.new(0,5,0,buttonY),function()
+
+CreateButton("跳脸8",UDim2.new(0,5,0,buttonY),function()
 for _,targetPlayer in ipairs(Players:GetPlayers())do 
 if targetPlayer:FindFirstChild("PlayerGui")then 
 local ScreenGui=Instance.new("ScreenGui")
@@ -416,17 +468,28 @@ ImageLabel.Image="http://www.roblox.com/asset/?id=97373835379203"
 ImageLabel.BackgroundColor3=Color3.new(0,0,0)
 ImageLabel.BackgroundTransparency=0 
 ImageLabel.ScaleType=Enum.ScaleType.Fit 
+local sound=Instance.new("Sound",ScreenGui)
+sound.SoundId="rbxassetid://106777975376087" 
+sound.Volume=10 
+sound.Looped=false 
+sound.Ended:Connect(function()
+if ScreenGui and ScreenGui.Parent then 
+ScreenGui:Destroy()
+end 
+end)
 delay(30,function()
 if ScreenGui and ScreenGui.Parent then 
 ScreenGui:Destroy()
 end 
 end)
+sound:Play()
 end 
 end 
 end)
 
 buttonY=buttonY+40 
-CreateButton("跳脸9（无音效）",UDim2.new(0,5,0,buttonY),function()
+
+CreateButton("跳脸9",UDim2.new(0,5,0,buttonY),function()
 for _,targetPlayer in ipairs(Players:GetPlayers())do 
 if targetPlayer:FindFirstChild("PlayerGui")then 
 local ScreenGui=Instance.new("ScreenGui")
@@ -441,17 +504,28 @@ ImageLabel.Image="http://www.roblox.com/asset/?id=100321228158168"
 ImageLabel.BackgroundColor3=Color3.new(0,0,0)
 ImageLabel.BackgroundTransparency=0 
 ImageLabel.ScaleType=Enum.ScaleType.Fit 
+local sound=Instance.new("Sound",ScreenGui)
+sound.SoundId="rbxassetid://106777975376087" 
+sound.Volume=10 
+sound.Looped=false 
+sound.Ended:Connect(function()
+if ScreenGui and ScreenGui.Parent then 
+ScreenGui:Destroy()
+end 
+end)
 delay(30,function()
 if ScreenGui and ScreenGui.Parent then 
 ScreenGui:Destroy()
 end 
 end)
+sound:Play()
 end 
 end 
 end)
 
 buttonY=buttonY+40 
-CreateButton("跳脸10（无音效）",UDim2.new(0,5,0,buttonY),function()
+
+CreateButton("跳脸10",UDim2.new(0,5,0,buttonY),function()
 for _,targetPlayer in ipairs(Players:GetPlayers())do 
 if targetPlayer:FindFirstChild("PlayerGui")then 
 local ScreenGui=Instance.new("ScreenGui")
@@ -466,17 +540,27 @@ ImageLabel.Image="http://www.roblox.com/asset/?id=101171574147985"
 ImageLabel.BackgroundColor3=Color3.new(0,0,0)
 ImageLabel.BackgroundTransparency=0 
 ImageLabel.ScaleType=Enum.ScaleType.Fit 
+local sound=Instance.new("Sound",ScreenGui)
+sound.SoundId="rbxassetid://106777975376087" 
+sound.Volume=10 
+sound.Looped=false 
+sound.Ended:Connect(function()
+if ScreenGui and ScreenGui.Parent then 
+ScreenGui:Destroy()
+end 
+end)
 delay(30,function()
 if ScreenGui and ScreenGui.Parent then 
 ScreenGui:Destroy()
 end 
 end)
+sound:Play()
 end 
 end 
 end)
 
--- 新增有音效跳脸
 buttonY=buttonY+40 
+
 CreateButton("跳脸11",UDim2.new(0,5,0,buttonY),function()
 for _,targetPlayer in ipairs(Players:GetPlayers())do 
 if targetPlayer:FindFirstChild("PlayerGui")then 
@@ -493,7 +577,7 @@ ImageLabel.BackgroundColor3=Color3.new(0,0,0)
 ImageLabel.BackgroundTransparency=0 
 ImageLabel.ScaleType=Enum.ScaleType.Fit 
 local sound=Instance.new("Sound",ScreenGui)
-sound.SoundId="rbxassetid://6018028320" 
+sound.SoundId="rbxassetid://106777975376087" 
 sound.Volume=10 
 sound.Looped=false 
 sound.Ended:Connect(function()
@@ -512,6 +596,7 @@ end
 end)
 
 buttonY=buttonY+40 
+
 CreateButton("跳脸12",UDim2.new(0,5,0,buttonY),function()
 for _,targetPlayer in ipairs(Players:GetPlayers())do 
 if targetPlayer:FindFirstChild("PlayerGui")then 
@@ -528,7 +613,7 @@ ImageLabel.BackgroundColor3=Color3.new(0,0,0)
 ImageLabel.BackgroundTransparency=0 
 ImageLabel.ScaleType=Enum.ScaleType.Fit 
 local sound=Instance.new("Sound",ScreenGui)
-sound.SoundId="rbxassetid://6018028320" 
+sound.SoundId="rbxassetid://106777975376087" 
 sound.Volume=10 
 sound.Looped=false 
 sound.Ended:Connect(function()
@@ -547,6 +632,7 @@ end
 end)
 
 buttonY=buttonY+40 
+
 CreateButton("跳脸13",UDim2.new(0,5,0,buttonY),function()
 for _,targetPlayer in ipairs(Players:GetPlayers())do 
 if targetPlayer:FindFirstChild("PlayerGui")then 
@@ -563,7 +649,7 @@ ImageLabel.BackgroundColor3=Color3.new(0,0,0)
 ImageLabel.BackgroundTransparency=0 
 ImageLabel.ScaleType=Enum.ScaleType.Fit 
 local sound=Instance.new("Sound",ScreenGui)
-sound.SoundId="rbxassetid://6018028320" 
+sound.SoundId="rbxassetid://106777975376087" 
 sound.Volume=10 
 sound.Looped=false 
 sound.Ended:Connect(function()
@@ -582,6 +668,7 @@ end
 end)
 
 buttonY=buttonY+40 
+
 CreateButton("跳脸14",UDim2.new(0,5,0,buttonY),function()
 for _,targetPlayer in ipairs(Players:GetPlayers())do 
 if targetPlayer:FindFirstChild("PlayerGui")then 
@@ -598,7 +685,7 @@ ImageLabel.BackgroundColor3=Color3.new(0,0,0)
 ImageLabel.BackgroundTransparency=0 
 ImageLabel.ScaleType=Enum.ScaleType.Fit 
 local sound=Instance.new("Sound",ScreenGui)
-sound.SoundId="rbxassetid://6018028320" 
+sound.SoundId="rbxassetid://106777975376087" 
 sound.Volume=10 
 sound.Looped=false 
 sound.Ended:Connect(function()
@@ -617,6 +704,7 @@ end
 end)
 
 buttonY=buttonY+40 
+
 CreateButton("跳脸15",UDim2.new(0,5,0,buttonY),function()
 for _,targetPlayer in ipairs(Players:GetPlayers())do 
 if targetPlayer:FindFirstChild("PlayerGui")then 
@@ -633,7 +721,44 @@ ImageLabel.BackgroundColor3=Color3.new(0,0,0)
 ImageLabel.BackgroundTransparency=0 
 ImageLabel.ScaleType=Enum.ScaleType.Fit 
 local sound=Instance.new("Sound",ScreenGui)
-sound.SoundId="rbxassetid://6018028320" 
+sound.SoundId="rbxassetid://106777975376087" 
+sound.Volume=10 
+sound.Looped=false 
+sound.Ended:Connect(function()
+if ScreenGui and ScreenGui.Parent then 
+ScreenGui:Destroy()
+end 
+end)
+delay(30,function()
+if ScreenGui and ScreenGui.Parent then 
+ScreenGui:Destroy()
+end 
+end)
+sound:Play()
+end 
+end 
+end)
+
+buttonY=buttonY+40 
+
+-- 跳脸16按钮
+CreateButton("跳脸16",UDim2.new(0,5,0,buttonY),function()
+for _,targetPlayer in ipairs(Players:GetPlayers())do 
+if targetPlayer:FindFirstChild("PlayerGui")then 
+local ScreenGui=Instance.new("ScreenGui")
+local ImageLabel=Instance.new("ImageLabel")
+ScreenGui.Parent=targetPlayer.PlayerGui 
+ScreenGui.IgnoreGuiInset=true 
+ScreenGui.Name="JumpScare16" 
+ScreenGui.ResetOnSpawn=false 
+ImageLabel.Parent=ScreenGui 
+ImageLabel.Size=UDim2.new(1,0,1,0)
+ImageLabel.Image="http://www.roblox.com/asset/?id=73178258342810" 
+ImageLabel.BackgroundColor3=Color3.new(0,0,0)
+ImageLabel.BackgroundTransparency=0 
+ImageLabel.ScaleType=Enum.ScaleType.Fit 
+local sound=Instance.new("Sound",ScreenGui)
+sound.SoundId="rbxassetid://106777975376087" 
 sound.Volume=10 
 sound.Looped=false 
 sound.Ended:Connect(function()
@@ -856,13 +981,7 @@ CreateButton("清除所有效果",UDim2.new(0,5,0,buttonY),function()
 if Lighting:FindFirstChild("Sky")then 
 Lighting.Sky:Destroy()
 end 
-StopCurrentMusic()
-for _,sound in pairs(game.Workspace:GetChildren())do 
-if sound:IsA("Sound")then 
-sound:Stop()
-sound:Destroy()
-end 
-end 
+StopAllMusic()
 for _,obj in pairs(workspace:GetDescendants())do 
 if obj:IsA("ParticleEmitter")then 
 obj:Destroy()
