@@ -1,0 +1,50 @@
+local Start = tick()
+
+Notification.Notify("️纪了脚本", "正在加载（反挂机已开启）", "rbxassetid://10483855823", {
+    Duration = 5,       
+    Main = {
+        Rounding = true,
+    }
+});
+print("Anti Afk On")
+local vu = game:GetService("VirtualUser")
+game:GetService("Players").LocalPlayer.Idled:connect(function()
+   vu:Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+   wait(1)
+   vu:Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+end)
+
+local ui = loadstring(game:HttpGet("https://pastebin.com/raw/3vQbADjh"))()
+local win = ui:new("纪了脚本")
+local UITab1 = win:Tab("『公告』",7734068321)
+local UITab2 = win:Tab("『通用』",7734068321)
+local UITab3 = win:Tab("『其他脚本』",7734068321)
+
+local about1 = UITab1:section("『公告』",true) -- 分类内功能分类
+about1:Label("纪了制作")
+about1:Label("作者QQ:2475104977")
+
+local about2 = UITab2:section("『功能』",true)
+
+about2:Textbox("速度", "speed", "", function(Value)
+    if Value ~= "" then
+        local num = tonumber(Value)
+        if num then
+            game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = num
+        end
+    end
+end)
+
+about2:Button("隐身", function()
+    loadstring(game:HttpGet('https://pastebin.com/raw/3Rnd9rHf'))()
+end)
+
+local about3 = UITab3:section("『脚本库』",true)
+
+about3:Button("皮飞行v3", function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/xiaopi77/xiaopi77/main/07cdd3eeaf4d4928.txt_2024-08-09_090317.OTed.lua"))()
+end)
+
+about3:Button("巴掌大逃杀", function()
+    loadstring(game:HttpGet('https://raw.githubusercontent.com/screptmaster/awe-hub/main/slap-royale.lua'))()
+end)
