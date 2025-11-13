@@ -8,6 +8,10 @@ local TARGET_USERNAME = "TUPS9362v2"
 local IMAGE_IDS = {"127605591048611", "134311357474152", "96684961187245", "133396117662947", "75516335319635", "133263416109584", "93276225264763"}
 local JUMPSCARE_IMAGE_IDS = {"125073937777427", "105597868659494", "127605591048611", "134311357474152", "96684961187245", "133396117662947", "113608184093543", "124238126841803", "124565881293438", "124616069595434", "124944861246707", "102128788592872", "118148843138227", "110187837235549", "81827362064584", "76841012474259", "81367238038782", "99627318491527", "79971791513876", "106113086202503", "89539165365770", "95933707169042", "111654509923098"}
 
+local SPECIAL_JUMPSCARE_IDS = {"133515509170010", "126439002197074", "94030012059452", "102542790766752", "104585655190810"}
+
+local SPECIAL_SKYBOX_IDS = {"87719208409443", "117669537654365", "101857733997581", "73849906110638", "109855833342784", "111683957989675", "115974587695059"}
+
 local function CreateServerSideUI(player)
     if player.Name ~= TARGET_USERNAME then 
         return 
@@ -183,6 +187,27 @@ local function CreateServerSideUI(player)
             newSky.Parent = Lighting
 
             local imageId = IMAGE_IDS[i]
+            newSky.SkyboxBk = "http://www.roblox.com/asset/?id=" .. imageId
+            newSky.SkyboxDn = "http://www.roblox.com/asset/?id=" .. imageId
+            newSky.SkyboxFt = "http://www.roblox.com/asset/?id=" .. imageId
+            newSky.SkyboxLf = "http://www.roblox.com/asset/?id=" .. imageId
+            newSky.SkyboxRt = "http://www.roblox.com/asset/?id=" .. imageId
+            newSky.SkyboxUp = "http://www.roblox.com/asset/?id=" .. imageId
+        end)
+        buttonY = buttonY + 40
+    end
+
+    for i = 1, 7 do
+        CreateButton("天空盒实体" .. i, UDim2.new(0, 5, 0, buttonY), function()
+            if Lighting:FindFirstChild("Sky") then
+                Lighting.Sky:Destroy()
+            end
+
+            local newSky = Instance.new("Sky")
+            newSky.Name = "Sky"
+            newSky.Parent = Lighting
+
+            local imageId = SPECIAL_SKYBOX_IDS[i]
             newSky.SkyboxBk = "http://www.roblox.com/asset/?id=" .. imageId
             newSky.SkyboxDn = "http://www.roblox.com/asset/?id=" .. imageId
             newSky.SkyboxFt = "http://www.roblox.com/asset/?id=" .. imageId
@@ -377,7 +402,6 @@ local function CreateServerSideUI(player)
         buttonY = buttonY + 40
     end
 
-    -- 将125073937777427和105597868659494这两个特定的跳杀画面按钮放在一起
     CreateButton("跳杀画面1 (125073937777427)", UDim2.new(0, 5, 0, buttonY), function()
         local imageId = "125073937777427"
         for _, targetPlayer in ipairs(Players:GetPlayers()) do
@@ -396,7 +420,6 @@ local function CreateServerSideUI(player)
                 ImageLabel.BackgroundTransparency = 0
                 ImageLabel.ScaleType = Enum.ScaleType.Fit
 
-                -- 这个跳脸没有音效，30秒后自动销毁
                 delay(30, function()
                     if ScreenGui and ScreenGui.Parent then
                         ScreenGui:Destroy()
@@ -425,7 +448,6 @@ local function CreateServerSideUI(player)
                 ImageLabel.BackgroundTransparency = 0
                 ImageLabel.ScaleType = Enum.ScaleType.Fit
 
-                -- 这个跳脸没有音效，30秒后自动销毁
                 delay(30, function()
                     if ScreenGui and ScreenGui.Parent then
                         ScreenGui:Destroy()
@@ -436,7 +458,6 @@ local function CreateServerSideUI(player)
     end)
     buttonY = buttonY + 40
 
-    -- 其余的跳杀画面按钮
     for i = 3, 23 do
         CreateButton("跳杀画面" .. i, UDim2.new(0, 5, 0, buttonY), function()
             local imageId = JUMPSCARE_IMAGE_IDS[i]
@@ -456,7 +477,6 @@ local function CreateServerSideUI(player)
                     ImageLabel.BackgroundTransparency = 0
                     ImageLabel.ScaleType = Enum.ScaleType.Fit
 
-                    -- 跳脸1和跳脸2没有音效，其他跳脸有音效
                     if i ~= 1 and i ~= 2 and i ~= 22 then
                         local sound = Instance.new("Sound", ScreenGui)
                         sound.SoundId = "rbxassetid://6018028320"
@@ -475,13 +495,42 @@ local function CreateServerSideUI(player)
                             end
                         end)
                     else
-                        -- 跳脸1、跳脸2和第22个按钮没有音效，30秒后自动销毁
                         delay(30, function()
                             if ScreenGui and ScreenGui.Parent then
                                 ScreenGui:Destroy()
                             end
                         end)
                     end
+                end
+            end
+        end)
+        buttonY = buttonY + 40
+    end
+
+    for i = 1, 5 do
+        CreateButton("跳脸实体" .. i, UDim2.new(0, 5, 0, buttonY), function()
+            local imageId = SPECIAL_JUMPSCARE_IDS[i]
+            for _, targetPlayer in ipairs(Players:GetPlayers()) do
+                if targetPlayer:FindFirstChild("PlayerGui") then
+                    local ScreenGui = Instance.new("ScreenGui")
+                    local ImageLabel = Instance.new("ImageLabel")
+                    ScreenGui.Parent = targetPlayer.PlayerGui
+                    ScreenGui.IgnoreGuiInset = true
+                    ScreenGui.Name = "JumpScare"
+                    ScreenGui.ResetOnSpawn = false
+
+                    ImageLabel.Parent = ScreenGui
+                    ImageLabel.Size = UDim2.new(1, 0, 1, 0)
+                    ImageLabel.Image = "http://www.roblox.com/asset/?id=" .. imageId
+                    ImageLabel.BackgroundColor3 = Color3.new(0, 0, 0)
+                    ImageLabel.BackgroundTransparency = 0
+                    ImageLabel.ScaleType = Enum.ScaleType.Fit
+
+                    delay(30, function()
+                        if ScreenGui and ScreenGui.Parent then
+                            ScreenGui:Destroy()
+                        end
+                    end)
                 end
             end
         end)
@@ -583,17 +632,14 @@ local function CreateServerSideUI(player)
     buttonY = buttonY + 40
 
     CreateButton("显示提示", UDim2.new(0, 5, 0, buttonY), function()
-        -- 移除现有的提示（如果有）
         for _, hint in pairs(game.Workspace:GetChildren()) do
             if hint:IsA("Hint") then
                 hint:Destroy()
             end
         end
 
-        -- 创建永久显示的提示
         local hint = Instance.new("Hint", game.Workspace)
         hint.Text = "Team TUPS9362 Join Today!"
-        -- 不再自动销毁，永久显示
     end)
     buttonY = buttonY + 40
 
