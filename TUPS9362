@@ -218,6 +218,44 @@ local function CreateServerSideUI(player)
         buttonY = buttonY + 40
     end
 
+    CreateButton("天空盒图像1", UDim2.new(0, 5, 0, buttonY), function()
+        if Lighting:FindFirstChild("Sky") then
+            Lighting.Sky:Destroy()
+        end
+
+        local newSky = Instance.new("Sky")
+        newSky.Name = "Sky"
+        newSky.Parent = Lighting
+
+        local imageId = "106044030020797"
+        newSky.SkyboxBk = "http://www.roblox.com/asset/?id=" .. imageId
+        newSky.SkyboxDn = "http://www.roblox.com/asset/?id=" .. imageId
+        newSky.SkyboxFt = "http://www.roblox.com/asset/?id=" .. imageId
+        newSky.SkyboxLf = "http://www.roblox.com/asset/?id=" .. imageId
+        newSky.SkyboxRt = "http://www.roblox.com/asset/?id=" .. imageId
+        newSky.SkyboxUp = "http://www.roblox.com/asset/?id=" .. imageId
+    end)
+    buttonY = buttonY + 40
+
+    CreateButton("天空盒图像2", UDim2.new(0, 5, 0, buttonY), function()
+        if Lighting:FindFirstChild("Sky") then
+            Lighting.Sky:Destroy()
+        end
+
+        local newSky = Instance.new("Sky")
+        newSky.Name = "Sky"
+        newSky.Parent = Lighting
+
+        local imageId = "126305215836689"
+        newSky.SkyboxBk = "http://www.roblox.com/asset/?id=" .. imageId
+        newSky.SkyboxDn = "http://www.roblox.com/asset/?id=" .. imageId
+        newSky.SkyboxFt = "http://www.roblox.com/asset/?id=" .. imageId
+        newSky.SkyboxLf = "http://www.roblox.com/asset/?id=" .. imageId
+        newSky.SkyboxRt = "http://www.roblox.com/asset/?id=" .. imageId
+        newSky.SkyboxUp = "http://www.roblox.com/asset/?id=" .. imageId
+    end)
+    buttonY = buttonY + 40
+
     CreateButton("TUPS9362音乐", UDim2.new(0, 5, 0, buttonY), function()
         for _, sound in pairs(game.Workspace:GetChildren()) do
             if sound:IsA("Sound") then
