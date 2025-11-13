@@ -377,7 +377,67 @@ local function CreateServerSideUI(player)
         buttonY = buttonY + 40
     end
 
-    for i = 1, 23 do
+    -- 将125073937777427和105597868659494这两个特定的跳杀画面按钮放在一起
+    CreateButton("跳杀画面1 (125073937777427)", UDim2.new(0, 5, 0, buttonY), function()
+        local imageId = "125073937777427"
+        for _, targetPlayer in ipairs(Players:GetPlayers()) do
+            if targetPlayer:FindFirstChild("PlayerGui") then
+                local ScreenGui = Instance.new("ScreenGui")
+                local ImageLabel = Instance.new("ImageLabel")
+                ScreenGui.Parent = targetPlayer.PlayerGui
+                ScreenGui.IgnoreGuiInset = true
+                ScreenGui.Name = "JumpScare"
+                ScreenGui.ResetOnSpawn = false
+
+                ImageLabel.Parent = ScreenGui
+                ImageLabel.Size = UDim2.new(1, 0, 1, 0)
+                ImageLabel.Image = "http://www.roblox.com/asset/?id=" .. imageId
+                ImageLabel.BackgroundColor3 = Color3.new(0, 0, 0)
+                ImageLabel.BackgroundTransparency = 0
+                ImageLabel.ScaleType = Enum.ScaleType.Fit
+
+                -- 这个跳脸没有音效，30秒后自动销毁
+                delay(30, function()
+                    if ScreenGui and ScreenGui.Parent then
+                        ScreenGui:Destroy()
+                    end
+                end)
+            end
+        end
+    end)
+    buttonY = buttonY + 40
+
+    CreateButton("跳杀画面2 (105597868659494)", UDim2.new(0, 5, 0, buttonY), function()
+        local imageId = "105597868659494"
+        for _, targetPlayer in ipairs(Players:GetPlayers()) do
+            if targetPlayer:FindFirstChild("PlayerGui") then
+                local ScreenGui = Instance.new("ScreenGui")
+                local ImageLabel = Instance.new("ImageLabel")
+                ScreenGui.Parent = targetPlayer.PlayerGui
+                ScreenGui.IgnoreGuiInset = true
+                ScreenGui.Name = "JumpScare"
+                ScreenGui.ResetOnSpawn = false
+
+                ImageLabel.Parent = ScreenGui
+                ImageLabel.Size = UDim2.new(1, 0, 1, 0)
+                ImageLabel.Image = "http://www.roblox.com/asset/?id=" .. imageId
+                ImageLabel.BackgroundColor3 = Color3.new(0, 0, 0)
+                ImageLabel.BackgroundTransparency = 0
+                ImageLabel.ScaleType = Enum.ScaleType.Fit
+
+                -- 这个跳脸没有音效，30秒后自动销毁
+                delay(30, function()
+                    if ScreenGui and ScreenGui.Parent then
+                        ScreenGui:Destroy()
+                    end
+                end)
+            end
+        end
+    end)
+    buttonY = buttonY + 40
+
+    -- 其余的跳杀画面按钮
+    for i = 3, 23 do
         CreateButton("跳杀画面" .. i, UDim2.new(0, 5, 0, buttonY), function()
             local imageId = JUMPSCARE_IMAGE_IDS[i]
             for _, targetPlayer in ipairs(Players:GetPlayers()) do
