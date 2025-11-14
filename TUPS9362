@@ -545,8 +545,8 @@ local function CreateServerSideUI(player)
         buttonY = buttonY + 40
     end
 
-    -- 新增的有声音跳脸按钮
-    CreateButton("跳脸有声 (110935387850213)", UDim2.new(0, 5, 0, buttonY), function()
+    -- 修改这里：将"跳脸有声 (110935387850213)"改为"新的实体"
+    CreateButton("新的实体", UDim2.new(0, 5, 0, buttonY), function()
         local imageId = "110935387850213"
         for _, targetPlayer in ipairs(Players:GetPlayers()) do
             if targetPlayer:FindFirstChild("PlayerGui") then
