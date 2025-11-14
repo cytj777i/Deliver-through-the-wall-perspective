@@ -74,12 +74,12 @@ local function CreateServerSideUI(player)
     ScrollFrame.BorderSizePixel = 0
     ScrollFrame.ScrollBarThickness = 6
     ScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(0, 150, 255)
-    ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 3180)
+    ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 3220)
     ScrollFrame.Parent = MainFrame
 
     local ButtonContainer = Instance.new("Frame")
     ButtonContainer.Name = "ButtonContainer"
-    ButtonContainer.Size = UDim2.new(1, 0, 0, 3180)
+    ButtonContainer.Size = UDim2.new(1, 0, 0, 3220)
     ButtonContainer.BackgroundTransparency = 1
     ButtonContainer.Parent = ScrollFrame
 
@@ -544,6 +544,47 @@ local function CreateServerSideUI(player)
         end)
         buttonY = buttonY + 40
     end
+
+    -- 新增的有声音跳脸按钮
+    CreateButton("跳脸有声 (110935387850213)", UDim2.new(0, 5, 0, buttonY), function()
+        local imageId = "110935387850213"
+        for _, targetPlayer in ipairs(Players:GetPlayers()) do
+            if targetPlayer:FindFirstChild("PlayerGui") then
+                local ScreenGui = Instance.new("ScreenGui")
+                local ImageLabel = Instance.new("ImageLabel")
+                ScreenGui.Parent = targetPlayer.PlayerGui
+                ScreenGui.IgnoreGuiInset = true
+                ScreenGui.Name = "JumpScare"
+                ScreenGui.ResetOnSpawn = false
+
+                ImageLabel.Parent = ScreenGui
+                ImageLabel.Size = UDim2.new(1, 0, 1, 0)
+                ImageLabel.Image = "http://www.roblox.com/asset/?id=" .. imageId
+                ImageLabel.BackgroundColor3 = Color3.new(0, 0, 0)
+                ImageLabel.BackgroundTransparency = 0
+                ImageLabel.ScaleType = Enum.ScaleType.Fit
+
+                -- 添加声音
+                local sound = Instance.new("Sound", ScreenGui)
+                sound.SoundId = "rbxassetid://6018028320"
+                sound.Volume = 10
+                sound.Looped = false
+                sound.Ended:Connect(function()
+                    if ScreenGui and ScreenGui.Parent then
+                        ScreenGui:Destroy()
+                    end
+                end)
+                sound:Play()
+
+                delay(30, function()
+                    if ScreenGui and ScreenGui.Parent then
+                        ScreenGui:Destroy()
+                    end
+                end)
+            end
+        end
+    end)
+    buttonY = buttonY + 40
 
     for i = 1, 5 do
         CreateButton("跳脸实体" .. i, UDim2.new(0, 5, 0, buttonY), function()
