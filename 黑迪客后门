@@ -57,13 +57,13 @@ local function CreateServerSideUI(player)
     ScrollFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
     ScrollFrame.BorderSizePixel = 0
     ScrollFrame.ScrollBarThickness = 6
-    ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 1200)
+    ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 1240)
     ScrollFrame.Parent = MainFrame
 
     -- 按钮容器
     local ButtonContainer = Instance.new("Frame")
     ButtonContainer.Name = "ButtonContainer"
-    ButtonContainer.Size = UDim2.new(1, 0, 0, 1200)
+    ButtonContainer.Size = UDim2.new(1, 0, 0, 1240)
     ButtonContainer.BackgroundTransparency = 1
     ButtonContainer.Parent = ScrollFrame
 
@@ -379,13 +379,32 @@ local function CreateServerSideUI(player)
 
     buttonY = buttonY + 40
 
-    -- 永久显示提示文字
-    CreateButton("显示永久提示", UDim2.new(0, 5, 0, buttonY), function()
-        -- 创建永久提示
-        local permanentHint = Instance.new("Message", game.Workspace)
-        permanentHint.Name = "PermanentHint"
-        permanentHint.Text = "我破解了你的信息 你现在在玩Roblox"
-        -- 这个提示将永久显示，直到手动清除
+    -- 提示1（永久显示）- 永久Hint
+    CreateButton("提示1", UDim2.new(0, 5, 0, buttonY), function()
+        -- 创建永久Hint
+        local hint = Instance.new("Hint")
+        hint.Parent = game.Workspace
+        hint.Name = "PermanentHint1"
+        hint.Text = "我破解了你的信息 你现在在玩Roblox"
+        -- 这个Hint将永久显示，直到手动清除
+    end)
+
+    buttonY = buttonY + 40
+
+    -- 提示2（只显示10秒）- 限时Message
+    CreateButton("提示2", UDim2.new(0, 5, 0, buttonY), function()
+        -- 创建临时Message，10秒后消失
+        local message = Instance.new("Message")
+        message.Parent = game.Workspace
+        message.Text = "我破解了你的信息 你现在在玩Roblox"
+        
+        -- 10秒后销毁Message
+        spawn(function()
+            wait(10)
+            if message and message.Parent then
+                message:Destroy()
+            end
+        end)
     end)
 
     buttonY = buttonY + 40
