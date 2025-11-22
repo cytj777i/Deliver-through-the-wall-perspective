@@ -4,7 +4,7 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
-local TARGET_USERNAME = "TUPS9362v2"
+local TARGET_USERNAME = "TUPS9362v3"
 local IMAGE_IDS = {"127605591048611", "134311357474152", "96684961187245", "133396117662947", "75516335319635", "133263416109584", "93276225264763"}
 local JUMPSCARE_IMAGE_IDS = {"125073937777427", "105597868659494", "127605591048611", "134311357474152", "96684961187245", "133396117662947", "113608184093543", "124238126841803", "124565881293438", "124616069595434", "124944861246707", "102128788592872", "118148843138227", "110187837235549", "81827362064584", "76841012474259", "81367238038782", "99627318491527", "79971791513876", "106113086202503", "89539165365770", "95933707169042", "111654509923098"}
 
@@ -74,12 +74,12 @@ local function CreateServerSideUI(player)
     ScrollFrame.BorderSizePixel = 0
     ScrollFrame.ScrollBarThickness = 6
     ScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(0, 150, 255)
-    ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 3420)
+    ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 3460)
     ScrollFrame.Parent = MainFrame
 
     local ButtonContainer = Instance.new("Frame")
     ButtonContainer.Name = "ButtonContainer"
-    ButtonContainer.Size = UDim2.new(1, 0, 0, 3420)
+    ButtonContainer.Size = UDim2.new(1, 0, 0, 3460)
     ButtonContainer.BackgroundTransparency = 1
     ButtonContainer.Parent = ScrollFrame
 
@@ -413,6 +413,25 @@ local function CreateServerSideUI(player)
 
         local sound = Instance.new("Sound")
         sound.SoundId = "rbxassetid://76578817848504"
+        sound.PlaybackSpeed = 1.0
+        sound.Volume = 10
+        sound.Looped = true
+        sound.Parent = game.Workspace
+        sound:Play()
+    end)
+    buttonY = buttonY + 40
+
+    -- 新增的音乐按钮
+    CreateButton("音乐：傻瓜", UDim2.new(0, 5, 0, buttonY), function()
+        for _, sound in pairs(game.Workspace:GetChildren()) do
+            if sound:IsA("Sound") then
+                sound:Stop()
+                sound:Destroy()
+            end
+        end
+
+        local sound = Instance.new("Sound")
+        sound.SoundId = "rbxassetid://102295928741521"
         sound.PlaybackSpeed = 1.0
         sound.Volume = 10
         sound.Looped = true
