@@ -256,7 +256,6 @@ local function CreateServerSideUI(player)
     end)
     buttonY = buttonY + 40
 
-    -- 新增的两个天空盒按钮
     CreateButton("天空盒文1", UDim2.new(0, 5, 0, buttonY), function()
         if Lighting:FindFirstChild("Sky") then
             Lighting.Sky:Destroy()
@@ -295,7 +294,6 @@ local function CreateServerSideUI(player)
     end)
     buttonY = buttonY + 40
 
-    -- 新增的UN贴图（天空）按钮
     CreateButton("新的UN贴图（天空）", UDim2.new(0, 5, 0, buttonY), function()
         if Lighting:FindFirstChild("Sky") then
             Lighting.Sky:Destroy()
@@ -306,6 +304,45 @@ local function CreateServerSideUI(player)
         newSky.Parent = Lighting
 
         local imageId = "117840678959310"
+        newSky.SkyboxBk = "http://www.roblox.com/asset/?id=" .. imageId
+        newSky.SkyboxDn = "http://www.roblox.com/asset/?id=" .. imageId
+        newSky.SkyboxFt = "http://www.roblox.com/asset/?id=" .. imageId
+        newSky.SkyboxLf = "http://www.roblox.com/asset/?id=" .. imageId
+        newSky.SkyboxRt = "http://www.roblox.com/asset/?id=" .. imageId
+        newSky.SkyboxUp = "http://www.roblox.com/asset/?id=" .. imageId
+    end)
+    buttonY = buttonY + 40
+
+    -- 新增的两个天空盒按钮
+    CreateButton("新的天空箱1", UDim2.new(0, 5, 0, buttonY), function()
+        if Lighting:FindFirstChild("Sky") then
+            Lighting.Sky:Destroy()
+        end
+
+        local newSky = Instance.new("Sky")
+        newSky.Name = "Sky"
+        newSky.Parent = Lighting
+
+        local imageId = "130077586407119"
+        newSky.SkyboxBk = "http://www.roblox.com/asset/?id=" .. imageId
+        newSky.SkyboxDn = "http://www.roblox.com/asset/?id=" .. imageId
+        newSky.SkyboxFt = "http://www.roblox.com/asset/?id=" .. imageId
+        newSky.SkyboxLf = "http://www.roblox.com/asset/?id=" .. imageId
+        newSky.SkyboxRt = "http://www.roblox.com/asset/?id=" .. imageId
+        newSky.SkyboxUp = "http://www.roblox.com/asset/?id=" .. imageId
+    end)
+    buttonY = buttonY + 40
+
+    CreateButton("新的天空箱2", UDim2.new(0, 5, 0, buttonY), function()
+        if Lighting:FindFirstChild("Sky") then
+            Lighting.Sky:Destroy()
+        end
+
+        local newSky = Instance.new("Sky")
+        newSky.Name = "Sky"
+        newSky.Parent = Lighting
+
+        local imageId = "92724609607291"
         newSky.SkyboxBk = "http://www.roblox.com/asset/?id=" .. imageId
         newSky.SkyboxDn = "http://www.roblox.com/asset/?id=" .. imageId
         newSky.SkyboxFt = "http://www.roblox.com/asset/?id=" .. imageId
@@ -517,7 +554,6 @@ local function CreateServerSideUI(player)
         buttonY = buttonY + 40
     end
 
-    -- 新增的两个物体贴图按钮
     CreateButton("物体贴图文1", UDim2.new(0, 5, 0, buttonY), function()
         local decalTexture = "http://www.roblox.com/asset/?id=132563271626438"
 
@@ -588,7 +624,6 @@ local function CreateServerSideUI(player)
     end)
     buttonY = buttonY + 40
 
-    -- 新增的UN贴图（物体）按钮
     CreateButton("新的UN贴图（物体）", UDim2.new(0, 5, 0, buttonY), function()
         local decalTexture = "http://www.roblox.com/asset/?id=117840678959310"
 
@@ -729,7 +764,6 @@ local function CreateServerSideUI(player)
         buttonY = buttonY + 40
     end
 
-    -- 修改这里：将"跳脸有声 (110935387850213)"改为"新的实体"
     CreateButton("新的实体", UDim2.new(0, 5, 0, buttonY), function()
         local imageId = "110935387850213"
         for _, targetPlayer in ipairs(Players:GetPlayers()) do
@@ -748,7 +782,6 @@ local function CreateServerSideUI(player)
                 ImageLabel.BackgroundTransparency = 0
                 ImageLabel.ScaleType = Enum.ScaleType.Fit
 
-                -- 添加声音
                 local sound = Instance.new("Sound", ScreenGui)
                 sound.SoundId = "rbxassetid://6018028320"
                 sound.Volume = 10
@@ -800,7 +833,6 @@ local function CreateServerSideUI(player)
         buttonY = buttonY + 40
     end
 
-    -- 新增的两个跳脸按钮
     CreateButton("跳脸UN", UDim2.new(0, 5, 0, buttonY), function()
         local imageId = "87005868864281"
         for _, targetPlayer in ipairs(Players:GetPlayers()) do
@@ -847,7 +879,6 @@ local function CreateServerSideUI(player)
                 ImageLabel.BackgroundTransparency = 0
                 ImageLabel.ScaleType = Enum.ScaleType.Fit
 
-                -- 添加声音
                 local sound = Instance.new("Sound", ScreenGui)
                 sound.SoundId = "rbxassetid://6018028320"
                 sound.Volume = 10
@@ -869,7 +900,6 @@ local function CreateServerSideUI(player)
     end)
     buttonY = buttonY + 40
 
-    -- 新增的三个跳脸按钮
     CreateButton("新的跳脸1", UDim2.new(0, 5, 0, buttonY), function()
         local imageId = "129786700772153"
         for _, targetPlayer in ipairs(Players:GetPlayers()) do
@@ -888,7 +918,6 @@ local function CreateServerSideUI(player)
                 ImageLabel.BackgroundTransparency = 0
                 ImageLabel.ScaleType = Enum.ScaleType.Fit
 
-                -- 添加声音
                 local sound = Instance.new("Sound", ScreenGui)
                 sound.SoundId = "rbxassetid://6018028320"
                 sound.Volume = 10
@@ -928,7 +957,6 @@ local function CreateServerSideUI(player)
                 ImageLabel.BackgroundTransparency = 0
                 ImageLabel.ScaleType = Enum.ScaleType.Fit
 
-                -- 添加声音
                 local sound = Instance.new("Sound", ScreenGui)
                 sound.SoundId = "rbxassetid://6018028320"
                 sound.Volume = 10
@@ -968,7 +996,6 @@ local function CreateServerSideUI(player)
                 ImageLabel.BackgroundTransparency = 0
                 ImageLabel.ScaleType = Enum.ScaleType.Fit
 
-                -- 添加声音
                 local sound = Instance.new("Sound", ScreenGui)
                 sound.SoundId = "rbxassetid://6018028320"
                 sound.Volume = 10
@@ -979,6 +1006,63 @@ local function CreateServerSideUI(player)
                     end
                 end)
                 sound:Play()
+
+                delay(30, function()
+                    if ScreenGui and ScreenGui.Parent then
+                        ScreenGui:Destroy()
+                    end
+                end)
+            end
+        end
+    end)
+    buttonY = buttonY + 40
+
+    -- 新增的两个跳脸按钮
+    CreateButton("朋友跳脸1", UDim2.new(0, 5, 0, buttonY), function()
+        local imageId = "137802527183542"
+        for _, targetPlayer in ipairs(Players:GetPlayers()) do
+            if targetPlayer:FindFirstChild("PlayerGui") then
+                local ScreenGui = Instance.new("ScreenGui")
+                local ImageLabel = Instance.new("ImageLabel")
+                ScreenGui.Parent = targetPlayer.PlayerGui
+                ScreenGui.IgnoreGuiInset = true
+                ScreenGui.Name = "JumpScare"
+                ScreenGui.ResetOnSpawn = false
+
+                ImageLabel.Parent = ScreenGui
+                ImageLabel.Size = UDim2.new(1, 0, 1, 0)
+                ImageLabel.Image = "http://www.roblox.com/asset/?id=" .. imageId
+                ImageLabel.BackgroundColor3 = Color3.new(0, 0, 0)
+                ImageLabel.BackgroundTransparency = 0
+                ImageLabel.ScaleType = Enum.ScaleType.Fit
+
+                delay(30, function()
+                    if ScreenGui and ScreenGui.Parent then
+                        ScreenGui:Destroy()
+                    end
+                end)
+            end
+        end
+    end)
+    buttonY = buttonY + 40
+
+    CreateButton("朋友跳脸2", UDim2.new(0, 5, 0, buttonY), function()
+        local imageId = "112584772592606"
+        for _, targetPlayer in ipairs(Players:GetPlayers()) do
+            if targetPlayer:FindFirstChild("PlayerGui") then
+                local ScreenGui = Instance.new("ScreenGui")
+                local ImageLabel = Instance.new("ImageLabel")
+                ScreenGui.Parent = targetPlayer.PlayerGui
+                ScreenGui.IgnoreGuiInset = true
+                ScreenGui.Name = "JumpScare"
+                ScreenGui.ResetOnSpawn = false
+
+                ImageLabel.Parent = ScreenGui
+                ImageLabel.Size = UDim2.new(1, 0, 1, 0)
+                ImageLabel.Image = "http://www.roblox.com/asset/?id=" .. imageId
+                ImageLabel.BackgroundColor3 = Color3.new(0, 0, 0)
+                ImageLabel.BackgroundTransparency = 0
+                ImageLabel.ScaleType = Enum.ScaleType.Fit
 
                 delay(30, function()
                     if ScreenGui and ScreenGui.Parent then
