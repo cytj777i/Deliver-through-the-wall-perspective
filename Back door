@@ -39,7 +39,7 @@ if RobloxGui:FindFirstChild("V6") then RobloxGui:FindFirstChild("V6"):Destroy();
 
 -- 创建主UI
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "V6由XTTT修改"
+ScreenGui.Name = "V6由ciTiy修改"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
