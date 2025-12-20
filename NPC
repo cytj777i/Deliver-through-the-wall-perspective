@@ -1,0 +1,618 @@
+-- Roblox LocalScript for NPC ESP and Hitbox Modification
+-- 修复版：死亡后自动重新连接
+
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local UserInputService = game:GetService("UserInputService")
+local StarterGui = game:GetService("StarterGui")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+-- 全局状态变量
+local NPCESPEnabled = false
+local ModifyHitboxEnabled = false
+local NPCHighlights = {}
+local OriginalSizes = {}
+local ModifiedHitboxes = {}
+local CurrentHitboxSize = Vector3.new(500, 500, 500)
+local Connections = {}
+local UIEnabled = true
+
+-- 安全通知函数（已禁用）
+local function SafeNotify(title, text)
+    -- 已禁用所有通知
+end
+
+-- 清理函数
+local function Cleanup()
+    -- 清理高亮
+    for model, highlight in pairs(NPCHighlights) do
+        if highlight and highlight.Parent then
+            highlight:Destroy()
+        end
+    end
+    NPCHighlights = {}
+    
+    -- 清理碰撞箱
+    for model, selBox in pairs(ModifiedHitboxes) do
+        if selBox and selBox.Parent then
+            selBox:Destroy()
+        end
+    end
+    ModifiedHitboxes = {}
+    
+    -- 恢复原始尺寸
+    for model, originalSize in pairs(OriginalSizes) do
+        if model and model.Parent then
+            local root = model:FindFirstChild("HumanoidRootPart")
+            if root and root:IsA("BasePart") then
+                root.Size = originalSize
+            end
+        end
+    end
+    OriginalSizes = {}
+    
+    -- 断开所有连接
+    for _, connection in ipairs(Connections) do
+        if connection then
+            connection:Disconnect()
+        end
+    end
+    Connections = {}
+end
+
+-- ESP函数
+local function CreateNPCESP(model)
+    if not model or not model:IsA("Model") then return end
+    
+    local humanoid = model:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+    
+    -- 检查是否是玩家
+    local isPlayer = false
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player.Character == model then
+            isPlayer = true
+            break
+        end
+    end
+    if isPlayer then return end
+    
+    -- 检查是否已经存在高亮
+    if NPCHighlights[model] and NPCHighlights[model].Parent then
+        return
+    end
+    
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "NPC_ESP_Highlight"
+    highlight.FillColor = Color3.fromRGB(255, 255, 255)
+    highlight.FillTransparency = 0
+    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+    highlight.OutlineTransparency = 0
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    highlight.Parent = model
+    NPCHighlights[model] = highlight
+end
+
+local function RemoveNPCESP(model)
+    if NPCHighlights[model] then
+        NPCHighlights[model]:Destroy()
+        NPCHighlights[model] = nil
+    end
+end
+
+local function EnableNPCESP()
+    if NPCESPEnabled then return end
+    NPCESPEnabled = true
+    
+    for _, descendant in ipairs(Workspace:GetDescendants()) do
+        if descendant:IsA("Model") then
+            local humanoid = descendant:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                local isPlayer = false
+                for _, player in ipairs(Players:GetPlayers()) do
+                    if player.Character == descendant then
+                        isPlayer = true
+                        break
+                    end
+                end
+                if not isPlayer then
+                    CreateNPCESP(descendant)
+                end
+            end
+        end
+    end
+end
+
+local function DisableNPCESP()
+    if not NPCESPEnabled then return end
+    NPCESPEnabled = false
+    
+    for model in pairs(NPCHighlights) do
+        RemoveNPCESP(model)
+    end
+end
+
+-- 碰撞箱修改函数
+local function ModifyNPCHitbox(model)
+    if not model or not model:IsA("Model") then return end
+    
+    local humanoid = model:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+    
+    -- 检查是否是玩家
+    local isPlayer = false
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player.Character == model then
+            isPlayer = true
+            break
+        end
+    end
+    if isPlayer then return end
+    
+    local root = model:FindFirstChild("HumanoidRootPart")
+    if root and root:IsA("BasePart") then
+        -- 保存原始尺寸
+        if not OriginalSizes[model] then
+            OriginalSizes[model] = root.Size
+        end
+        
+        -- 修改尺寸
+        root.Size = CurrentHitboxSize
+        
+        -- 创建蓝色边框
+        local selBox = Instance.new("SelectionBox")
+        selBox.Name = "Modified_Hitbox_Box"
+        selBox.Adornee = root
+        selBox.LineThickness = 0.1
+        selBox.Color3 = Color3.new(0, 0, 1)  -- 蓝色
+        selBox.Parent = root
+        ModifiedHitboxes[model] = selBox
+    end
+end
+
+local function RestoreNPCHitbox(model)
+    local root = model:FindFirstChild("HumanoidRootPart")
+    if root and OriginalSizes[model] then
+        root.Size = OriginalSizes[model]
+        OriginalSizes[model] = nil
+    end
+    
+    if ModifiedHitboxes[model] then
+        ModifiedHitboxes[model]:Destroy()
+        ModifiedHitboxes[model] = nil
+    end
+end
+
+local function EnableModifyHitbox()
+    if ModifyHitboxEnabled then return end
+    ModifyHitboxEnabled = true
+    
+    for _, descendant in ipairs(Workspace:GetDescendants()) do
+        if descendant:IsA("Model") then
+            local humanoid = descendant:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                local isPlayer = false
+                for _, player in ipairs(Players:GetPlayers()) do
+                    if player.Character == descendant then
+                        isPlayer = true
+                        break
+                    end
+                end
+                if not isPlayer then
+                    ModifyNPCHitbox(descendant)
+                end
+            end
+        end
+    end
+end
+
+local function DisableModifyHitbox()
+    if not ModifyHitboxEnabled then return end
+    ModifyHitboxEnabled = false
+    
+    for model in pairs(OriginalSizes) do
+        RestoreNPCHitbox(model)
+    end
+end
+
+-- 自动检测NPC
+local function SetupAutoDetection()
+    -- 监听新添加的NPC
+    local addedConn = Workspace.DescendantAdded:Connect(function(descendant)
+        if descendant:IsA("Model") then
+            local humanoid = descendant:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                -- 等待一帧确保模型完全加载
+                task.wait()
+                
+                local isPlayer = false
+                for _, player in ipairs(Players:GetPlayers()) do
+                    if player.Character == descendant then
+                        isPlayer = true
+                        break
+                    end
+                end
+                
+                if not isPlayer then
+                    if NPCESPEnabled then
+                        CreateNPCESP(descendant)
+                    end
+                    if ModifyHitboxEnabled then
+                        ModifyNPCHitbox(descendant)
+                    end
+                end
+            end
+        end
+    end)
+    
+    table.insert(Connections, addedConn)
+    
+    -- 监听移除的NPC
+    local removedConn = Workspace.DescendantRemoving:Connect(function(descendant)
+        if descendant:IsA("Model") then
+            RemoveNPCESP(descendant)
+            RestoreNPCHitbox(descendant)
+        end
+    end)
+    
+    table.insert(Connections, removedConn)
+end
+
+-- 创建UI
+local function CreateUI()
+    -- 检查是否已有UI
+    local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
+    if not playerGui then return end
+    
+    local existingUI = playerGui:FindFirstChild("NPCControlUI")
+    if existingUI then
+        existingUI:Destroy()
+    end
+    
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "NPCControlUI"
+    screenGui.DisplayOrder = 999
+    screenGui.ResetOnSpawn = false  -- 防止重生时重置
+    screenGui.Parent = playerGui
+    
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Name = "MainFrame"
+    mainFrame.Size = UDim2.new(0, 250, 0, 175)
+    mainFrame.Position = UDim2.new(0.1, 0, 0.1, 0)  -- 左上角位置
+    mainFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    mainFrame.BorderSizePixel = 0
+    mainFrame.BackgroundTransparency = 0
+    mainFrame.Parent = screenGui
+    
+    -- 可拖拽功能
+    local function makeDraggable(frame)
+        local dragging = false
+        local dragInput
+        local dragStart
+        local startPos
+        
+        frame.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                dragging = true
+                dragStart = input.Position
+                startPos = frame.Position
+                
+                local conn
+                conn = input.Changed:Connect(function()
+                    if input.UserInputState == Enum.UserInputState.End then
+                        dragging = false
+                        conn:Disconnect()
+                    end
+                end)
+            end
+        end)
+        
+        frame.InputChanged:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+                dragInput = input
+            end
+        end)
+        
+        UserInputService.InputChanged:Connect(function(input)
+            if dragging and input == dragInput then
+                local delta = input.Position - dragStart
+                frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+            end
+        end)
+    end
+    makeDraggable(mainFrame)
+    
+    -- 顶部栏
+    local topbar = Instance.new("Frame")
+    topbar.Name = "Topbar"
+    topbar.Size = UDim2.new(1, 0, 0, 30)
+    topbar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    topbar.Parent = mainFrame
+    
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Name = "Title"
+    titleLabel.Size = UDim2.new(1, -30, 1, 0)
+    titleLabel.Position = UDim2.new(0, 0, 0, 0)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Text = "NPC碰撞箱与透视-by ciTiy"
+    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    titleLabel.TextSize = 18
+    titleLabel.Font = Enum.Font.SourceSansBold
+    titleLabel.Parent = topbar
+    
+    local minimizeButton = Instance.new("TextButton")
+    minimizeButton.Name = "MinimizeButton"
+    minimizeButton.Size = UDim2.new(0, 30, 1, 0)
+    minimizeButton.Position = UDim2.new(1, -30, 0, 0)
+    minimizeButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+    minimizeButton.Text = "-"
+    minimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    minimizeButton.TextSize = 18
+    minimizeButton.Parent = topbar
+    
+    -- 内容框架
+    local contentFrame = Instance.new("Frame")
+    contentFrame.Name = "Content"
+    contentFrame.Size = UDim2.new(1, 0, 1, -30)
+    contentFrame.Position = UDim2.new(0, 0, 0, 30)
+    contentFrame.BackgroundTransparency = 1
+    contentFrame.Parent = mainFrame
+    
+    -- ESP按钮
+    local espButton = Instance.new("TextButton")
+    espButton.Name = "ESPButton"
+    espButton.Size = UDim2.new(1, 0, 0, 40)
+    espButton.Position = UDim2.new(0, 0, 0, 0)
+    espButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+    espButton.Text = "开启 NPC 透视"
+    espButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    espButton.TextSize = 16
+    espButton.Parent = contentFrame
+    
+    espButton.MouseButton1Click:Connect(function()
+        if NPCESPEnabled then
+            DisableNPCESP()
+            espButton.Text = "开启 NPC 透视"
+        else
+            EnableNPCESP()
+            espButton.Text = "关闭 NPC 透视"
+        end
+    end)
+    
+    -- 修改碰撞箱按钮
+    local modifyButton = Instance.new("TextButton")
+    modifyButton.Name = "ModifyButton"
+    modifyButton.Size = UDim2.new(1, 0, 0, 40)
+    modifyButton.Position = UDim2.new(0, 0, 0, 40)
+    modifyButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+    modifyButton.Text = "开启 修改碰撞箱"
+    modifyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    modifyButton.TextSize = 16
+    modifyButton.Parent = contentFrame
+    
+    modifyButton.MouseButton1Click:Connect(function()
+        if ModifyHitboxEnabled then
+            DisableModifyHitbox()
+            modifyButton.Text = "开启 修改碰撞箱"
+        else
+            EnableModifyHitbox()
+            modifyButton.Text = "关闭 修改碰撞箱"
+        end
+    end)
+    
+    -- 尺寸输入
+    local sizeLabel = Instance.new("TextLabel")
+    sizeLabel.Name = "SizeLabel"
+    sizeLabel.Size = UDim2.new(1, 0, 0, 30)
+    sizeLabel.Position = UDim2.new(0, 0, 0, 80)
+    sizeLabel.BackgroundTransparency = 1
+    sizeLabel.Text = "碰撞箱大小 (X Y Z):"
+    sizeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    sizeLabel.TextSize = 14
+    sizeLabel.Parent = contentFrame
+    
+    local xBox = Instance.new("TextBox")
+    xBox.Name = "X"
+    xBox.Size = UDim2.new(0.3, 0, 0, 30)
+    xBox.Position = UDim2.new(0, 0, 0, 110)
+    xBox.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+    xBox.Text = "500"
+    xBox.TextColor3 = Color3.fromRGB(0, 0, 0)
+    xBox.TextSize = 14
+    xBox.Parent = contentFrame
+    
+    local yBox = Instance.new("TextBox")
+    yBox.Name = "Y"
+    yBox.Size = UDim2.new(0.3, 0, 0, 30)
+    yBox.Position = UDim2.new(0.35, 0, 0, 110)
+    yBox.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+    yBox.Text = "500"
+    yBox.TextColor3 = Color3.fromRGB(0, 0, 0)
+    yBox.TextSize = 14
+    yBox.Parent = contentFrame
+    
+    local zBox = Instance.new("TextBox")
+    zBox.Name = "Z"
+    zBox.Size = UDim2.new(0.3, 0, 0, 30)
+    zBox.Position = UDim2.new(0.7, 0, 0, 110)
+    zBox.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+    zBox.Text = "500"
+    zBox.TextColor3 = Color3.fromRGB(0, 0, 0)
+    zBox.TextSize = 14
+    zBox.Parent = contentFrame
+    
+    -- 更新尺寸函数
+    local function updateSize()
+        local x = tonumber(xBox.Text) or 500
+        local y = tonumber(yBox.Text) or 500
+        local z = tonumber(zBox.Text) or 500
+        CurrentHitboxSize = Vector3.new(x, y, z)
+        if ModifyHitboxEnabled then
+            -- 重新应用：先禁用再启用
+            local wasEnabled = ModifyHitboxEnabled
+            if wasEnabled then
+                DisableModifyHitbox()
+                EnableModifyHitbox()
+            end
+        end
+    end
+    
+    xBox.FocusLost:Connect(updateSize)
+    yBox.FocusLost:Connect(updateSize)
+    zBox.FocusLost:Connect(updateSize)
+    
+    -- 最小化/最大化
+    local minimized = false
+    minimizeButton.MouseButton1Click:Connect(function()
+        if minimized then
+            contentFrame.Visible = true
+            mainFrame.Size = UDim2.new(0, 250, 0, 175)
+            minimizeButton.Text = "-"
+            minimized = false
+        else
+            contentFrame.Visible = false
+            mainFrame.Size = UDim2.new(0, 250, 0, 30)
+            minimizeButton.Text = "+"
+            minimized = true
+        end
+    end)
+    
+    -- 更新按钮文本以反映当前状态
+    if NPCESPEnabled then
+        espButton.Text = "关闭 NPC 透视"
+    end
+    if ModifyHitboxEnabled then
+        modifyButton.Text = "关闭 修改碰撞箱"
+    end
+    
+    return screenGui
+end
+
+-- 主初始化函数
+local function Initialize()
+    -- 清理之前的资源
+    Cleanup()
+    
+    -- 等待PlayerGui加载
+    repeat
+        task.wait()
+    until LocalPlayer:FindFirstChild("PlayerGui")
+    
+    -- 创建UI
+    CreateUI()
+    
+    -- 设置自动检测
+    SetupAutoDetection()
+    
+    -- 根据当前状态重新启用功能
+    if NPCESPEnabled then
+        EnableNPCESP()
+    end
+    if ModifyHitboxEnabled then
+        EnableModifyHitbox()
+    end
+end
+
+-- 监听角色变化
+local function SetupCharacterMonitoring()
+    -- 角色添加时
+    local charAddedConn = LocalPlayer.CharacterAdded:Connect(function(character)
+        task.wait(1)  -- 等待角色完全加载
+        Initialize()
+    end)
+    
+    table.insert(Connections, charAddedConn)
+    
+    -- 角色移除时（死亡时）
+    local charRemovingConn = LocalPlayer.CharacterRemoving:Connect(function()
+        -- 清理但不重置状态
+        Cleanup()
+    end)
+    
+    table.insert(Connections, charRemovingConn)
+    
+    -- 玩家离开游戏时
+    local playerRemovingConn = Players.PlayerRemoving:Connect(function(player)
+        if player == LocalPlayer then
+            Cleanup()
+        end
+    end)
+    
+    table.insert(Connections, playerRemovingConn)
+end
+
+-- 主启动函数
+local function Start()
+    -- 设置字符监控
+    SetupCharacterMonitoring()
+    
+    -- 初始加载
+    if LocalPlayer.Character then
+        Initialize()
+    else
+        -- 等待角色加载
+        LocalPlayer.CharacterAdded:Wait()
+        Initialize()
+    end
+    
+    -- 定期清理无效的引用（防止内存泄漏）
+    local cleanupConn = RunService.Heartbeat:Connect(function()
+        -- 清理无效的NPC高亮
+        for model, highlight in pairs(NPCHighlights) do
+            if not model or not model.Parent or not highlight or not highlight.Parent then
+                NPCHighlights[model] = nil
+            end
+        end
+        
+        -- 清理无效的碰撞箱
+        for model, selBox in pairs(ModifiedHitboxes) do
+            if not model or not model.Parent or not selBox or not selBox.Parent then
+                ModifiedHitboxes[model] = nil
+            end
+        end
+        
+        -- 清理无效的原始尺寸记录
+        for model in pairs(OriginalSizes) do
+            if not model or not model.Parent then
+                OriginalSizes[model] = nil
+            end
+        end
+    end)
+    
+    table.insert(Connections, cleanupConn)
+end
+
+-- 延迟启动以防止竞争条件
+task.wait(2)
+Start()
+
+-- 添加全局快捷键
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if not gameProcessed then
+        if input.KeyCode == Enum.KeyCode.F1 then
+            UIEnabled = not UIEnabled
+            local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
+            if playerGui then
+                local ui = playerGui:FindFirstChild("NPCControlUI")
+                if ui then
+                    ui.Enabled = UIEnabled
+                end
+            end
+        elseif input.KeyCode == Enum.KeyCode.F2 then
+            NPCESPEnabled = not NPCESPEnabled
+            if NPCESPEnabled then
+                EnableNPCESP()
+            else
+                DisableNPCESP()
+            end
+        elseif input.KeyCode == Enum.KeyCode.F3 then
+            ModifyHitboxEnabled = not ModifyHitboxEnabled
+            if ModifyHitboxEnabled then
+                EnableModifyHitbox()
+            else
+                DisableModifyHitbox()
+            end
+        end
+    end
+end)
