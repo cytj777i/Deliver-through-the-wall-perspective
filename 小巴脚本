@@ -1,0 +1,388 @@
+-- 巴脚本 - Roblox辅助脚本
+-- 作者:小巴巴
+-- 版本：1.0
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+-- 获取本地玩家
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local rootPart = character:WaitForChild("HumanoidRootPart")
+
+-- 脚本状态
+local 巴脚本 = {
+    _飞行模式 = false,
+    _穿墙模式 = false,
+    _无限跳 = false,
+    _隐身模式 = false,
+    _锁血模式 = false,
+    _原始血量 = 100,
+    _飞行速度 = 50,
+    _连接器 = {},
+    _飞行连接 = nil
+}
+
+-- UI界面
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "巴脚本UI"
+ScreenGui.Parent = game:GetService("CoreGui")
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 300, 0, 400)
+MainFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+
+-- 标题
+local Title = Instance.new("TextLabel")
+Title.Name = "Title"
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Position = UDim2.new(0, 0, 0, 0)
+Title.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
+Title.Text = "巴脚本 v1.0 - Roblox"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 18
+Title.Parent = MainFrame
+
+-- 功能按钮创建函数
+local function 创建按钮(名称, 位置Y, 切换函数)
+    local button = Instance.new("TextButton")
+    button.Name = 名称
+    button.Size = UDim2.new(0.9, 0, 0, 40)
+    button.Position = UDim2.new(0.05, 0, 0, positionY)
+    button.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+    button.Text = 名称
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.Font = Enum.Font.Gotham
+    button.TextSize = 14
+    button.Parent = MainFrame
+    
+    local statusLabel = Instance.new("TextLabel")
+    statusLabel.Name = "Status"
+    statusLabel.Size = UDim2.new(0, 60, 0, 20)
+    statusLabel.Position = UDim2.new(1, -70, 0.5, -10)
+    statusLabel.BackgroundTransparency = 1
+    statusLabel.Text = "关闭"
+    statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+    statusLabel.Font = Enum.Font.Gotham
+    statusLabel.TextSize = 12
+    statusLabel.Parent = button
+    
+    button.MouseButton1Click:Connect(function()
+        切换函数()
+        statusLabel.Text = 巴脚本["_"..名称] and "开启" or "关闭"
+        statusLabel.TextColor3 = 巴脚本["_"..名称] and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 100, 100)
+    end)
+    
+    return button
+end
+
+-- 飞行功能
+function 巴脚本:切换飞行()
+    self._飞行模式 = not self._飞行模式
+    
+    if self._飞行模式 then
+        print("[飞行模式] 已开启 - 使用WASD移动，空格上升，Shift下降")
+        self:_启用飞行()
+    else
+        print("[飞行模式] 已关闭")
+        self:_禁用飞行()
+    end
+end
+
+function 巴脚本:_启用飞行()
+    -- 保存原始重力
+    self._原始重力 = workspace.Gravity
+    
+    -- 创建飞行体
+    local flightBody = Instance.new("BodyVelocity")
+    flightBody.Name = "FlightBody"
+    flightBody.MaxForce = Vector3.new(40000, 40000, 40000)
+    flightBody.Velocity = Vector3.new(0, 0, 0)
+    flightBody.P = 10000
+    flightBody.Parent = rootPart
+    
+    local flightGyro = Instance.new("BodyGyro")
+    flightGyro.Name = "FlightGyro"
+    flightGyro.MaxTorque = Vector3.new(40000, 40000, 40000)
+    flightGyro.P = 10000
+    flightGyro.Parent = rootPart
+    
+    -- 飞行控制
+    self._飞行连接 = RunService.Heartbeat:Connect(function(delta)
+        if not self._飞行模式 then return end
+        
+        local direction = Vector3.new(0, 0, 0)
+        
+        -- 键盘控制
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+            direction = direction + (rootPart.CFrame.LookVector * self._飞行速度)
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+            direction = direction - (rootPart.CFrame.LookVector * self._飞行速度)
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+            direction = direction - (rootPart.CFrame.RightVector * self._飞行速度)
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+            direction = direction + (rootPart.CFrame.RightVector * self._飞行速度)
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+            direction = direction + Vector3.new(0, self._飞行速度, 0)
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+            direction = direction - Vector3.new(0, self._飞行速度, 0)
+        end
+        
+        if flightBody and flightBody.Parent then
+            flightBody.Velocity = direction
+        end
+    end)
+    
+    -- 暂时禁用重力
+    workspace.Gravity = 0
+end
+
+function 巴脚本:_禁用飞行()
+    if self._飞行连接 then
+        self._飞行连接:Disconnect()
+        self._飞行连接 = nil
+    end
+    
+    -- 移除飞行体
+    if rootPart:FindFirstChild("FlightBody") then
+        rootPart.FlightBody:Destroy()
+    end
+    if rootPart:FindFirstChild("FlightGyro") then
+        rootPart.FlightGyro:Destroy()
+    end
+    
+    -- 恢复重力
+    if workspace.Gravity == 0 then
+        workspace.Gravity = self._原始重力 or 196.2
+    end
+end
+
+-- 穿墙功能
+function 巴脚本:切换穿墙()
+    self._穿墙模式 = not self._穿墙模式
+    
+    if self._穿墙模式 then
+        print("[穿墙模式] 已开启")
+        self:_启用穿墙()
+    else
+        print("[穿墙模式] 已关闭")
+        self:_禁用穿墙()
+    end
+end
+
+function 巴脚本:_启用穿墙()
+    -- 取消碰撞
+    for _, part in pairs(character:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.CanCollide = false
+        end
+    end
+    
+    -- 监听新部件
+    self._连接器["穿墙监听"] = character.DescendantAdded:Connect(function(part)
+        if part:IsA("BasePart") then
+            part.CanCollide = false
+        end
+    end)
+end
+
+function 巴脚本:_禁用穿墙()
+    -- 恢复碰撞
+    for _, part in pairs(character:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.CanCollide = true
+        end
+    end
+    
+    -- 断开连接
+    if self._连接器["穿墙监听"] then
+        self._连接器["穿墙监听"]:Disconnect()
+    end
+end
+
+-- 无限跳功能
+function 巴脚本:切换无限跳()
+    self._无限跳 = not self._无限跳
+    
+    if self._无限跳 then
+        print("[无限跳] 已开启")
+        self:_启用无限跳()
+    else
+        print("[无限跳] 已关闭")
+        self:_禁用无限跳()
+    end
+end
+
+function 巴脚本:_启用无限跳()
+    local originalJump = humanoid.JumpPower
+    humanoid.JumpPower = 100  -- 增加跳跃高度
+    
+    self._连接器["跳跃监听"] = UserInputService.JumpRequest:Connect(function()
+        if self._无限跳 then
+            humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end)
+end
+
+function 巴脚本:_禁用无限跳()
+    humanoid.JumpPower = 50  -- 恢复默认跳跃高度
+    
+    if self._连接器["跳跃监听"] then
+        self._连接器["跳跃监听"]:Disconnect()
+    end
+end
+
+-- 隐身功能
+function 巴脚本:切换隐身()
+    self._隐身模式 = not self._隐身模式
+    
+    if self._隐身模式 then
+        print("[隐身模式] 已开启")
+        self:_启用隐身()
+    else
+        print("[隐身模式] 已关闭")
+        self:_禁用隐身()
+    end
+end
+
+function 巴脚本:_启用隐身()
+    -- 透明化角色
+    for _, part in pairs(character:GetDescendants()) do
+        if part:IsA("BasePart") and part.Transparency < 1 then
+            if not self._原始透明度 then
+                self._原始透明度 = {}
+            end
+            self._原始透明度[part] = part.Transparency
+            part.Transparency = 0.8
+        end
+    end
+    
+    -- 隐藏名称标签
+    if character:FindFirstChild("Head") then
+        local head = character.Head
+        for _, descendant in pairs(head:GetDescendants()) do
+            if descendant:IsA("BillboardGui") then
+                descendant.Enabled = false
+            end
+        end
+    end
+end
+
+function 巴脚本:_禁用隐身()
+    -- 恢复透明度
+    if self._原始透明度 then
+        for part, transparency in pairs(self._原始透明度) do
+            if part and part.Parent then
+                part.Transparency = transparency
+            end
+        end
+        self._原始透明度 = nil
+    end
+    
+    -- 显示名称标签
+    if character:FindFirstChild("Head") then
+        local head = character.Head
+        for _, descendant in pairs(head:GetDescendants()) do
+            if descendant:IsA("BillboardGui") then
+                descendant.Enabled = true
+            end
+        end
+    end
+end
+
+-- 血量控制功能
+function 巴脚本:切换锁血()
+    self._锁血模式 = not self._锁血模式
+    
+    if self._锁血模式 then
+        print("[锁血模式] 已开启")
+        self:_启用锁血()
+    else
+        print("[锁血模式] 已关闭")
+        self:_禁用锁血()
+    end
+end
+
+function 巴脚本:_启用锁血()
+    self._原始血量 = humanoid.Health
+    humanoid.MaxHealth = 1000
+    humanoid.Health = 1000
+    
+    -- 监听血量变化
+    self._连接器["血量监听"] = humanoid:GetPropertyChangedSignal("Health"):Connect(function()
+        if self._锁血模式 then
+            humanoid.Health = 1000
+        end
+    end)
+end
+
+function 巴脚本:_禁用锁血()
+    humanoid.MaxHealth = 100
+    humanoid.Health = math.min(self._原始血量 or 100, 100)
+    
+    if self._连接器["血量监听"] then
+        self._连接器["血量监听"]:Disconnect()
+    end
+end
+
+-- 设置血量值
+function 巴脚本:设置血量(血量)
+    if typeof(血量) == "number" then
+        humanoid.Health = math.clamp(血量, 1, 10000)
+        humanoid.MaxHealth = math.max(humanoid.MaxHealth, 血量)
+        print("[血量] 已设置为: " .. 血量)
+    end
+end
+
+-- 一键开启所有功能
+function 巴脚本:无敌模式()
+    if not self._飞行模式 then self:切换飞行() end
+    if not self._穿墙模式 then self:切换穿墙() end
+    if not self._无限跳 then self:切换无限跳() end
+    if not self._隐身模式 then self:切换隐身() end
+    if not self._锁血模式 then self:切换锁血() end
+    print("[无敌模式] 已激活！")
+end
+
+-- 关闭所有功能
+function 巴脚本:关闭所有()
+    if self._飞行模式 then self:切换飞行() end
+    if self._穿墙模式 then self:切换穿墙() end
+    if self._无限跳 then self:切换无限跳() end
+    if self._隐身模式 then self:切换隐身() end
+    if self._锁血模式 then self:切换锁血() end
+    print("[所有功能] 已关闭")
+end
+
+-- 创建UI按钮
+local buttonY = 50
+创建按钮("飞行", buttonY, function() 巴脚本:切换飞行() end)
+buttonY = buttonY + 50
+创建按钮("穿墙", buttonY, function() 巴脚本:切换穿墙() end)
+buttonY = buttonY + 50
+创建按钮("无限跳", buttonY, function() 巴脚本:切换无限跳() end)
+buttonY = buttonY + 50
+创建按钮("隐身", buttonY, function() 巴脚本:切换隐身() end)
+buttonY = buttonY + 50
+创建按钮("锁血", buttonY, function() 巴脚本:切换锁血() end)
+
+-- 无敌模式按钮
+local godButton = Instance.new("TextButton")
+godButton.Name = "无敌模式"
+godButton.Size = UDim2.new(0.9, 0, 0, 40)
+godButton.Position = UDim2.new(0.05, 0, 0, buttonY)
+godButton.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
+godButton
