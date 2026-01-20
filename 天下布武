@@ -1,8 +1,10 @@
+-- e
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- 传送功能变量
 local Teleport = {
@@ -13,6 +15,10 @@ local Teleport = {
     AntiThrow = true,
     WallVision = false,
     OriginalTransparency = {},
+    
+    -- 甩飞功能变量
+    FlingActive = false,
+    FlingThread = nil,
 
     -- 环绕模式
     HorizontalOrbitActive = false,
@@ -34,7 +40,7 @@ local CoordinateManager = {
     FilePath = "SavedCoordinates.json"
 }
 
--- 文件操作函数
+-- 文件操作函数（兼容不同注入器）
 local function ReadFile(path)
     local success, result = pcall(function()
         if readfile then
@@ -145,8 +151,8 @@ ScreenGui.ResetOnSpawn = false
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Parent = ScreenGui
-MainFrame.Size = UDim2.new(0, 180, 0, 280) -- 增加高度以容纳坐标管理按钮
-MainFrame.Position = UDim2.new(0.5, -90, 0.5, -140)
+MainFrame.Size = UDim2.new(0, 180, 0, 315) -- 增加高度以容纳坐标管理按钮
+MainFrame.Position = UDim2.new(0.5, -90, 0.5, -157.5)
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
 MainFrame.Active = true
 MainFrame.Draggable = true
@@ -240,12 +246,12 @@ ScrollFrame.Position = UDim2.new(0, 6, 0, 32)
 ScrollFrame.BackgroundTransparency = 1
 ScrollFrame.ScrollBarThickness = 4
 ScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(80, 120, 200)
-ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 490) -- 增加画布大小
+ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 525) -- 增加画布大小
 
 -- 内容容器
 local Content = Instance.new("Frame")
 Content.Parent = ScrollFrame
-Content.Size = UDim2.new(1, 0, 0, 490) -- 增加内容高度
+Content.Size = UDim2.new(1, 0, 0, 525) -- 增加内容高度
 Content.BackgroundTransparency = 1
 
 -- 创建紧凑功能按钮
@@ -340,20 +346,21 @@ local StartButton = CreateButton("开始传送", 0, false)
 local PlayerSelectButton = CreateButton("选择玩家", 35, false)
 local StopButton = CreateButton("停止传送", 70, false)
 local AntiThrowButton = CreateButton("防甩飞: 开启", 105, true)
-local WallVisionButton = CreateButton("穿墙视野", 140, true)
+local FlingButton = CreateButton("甩飞: 关闭", 140, true) -- 新增的甩飞按钮
+local WallVisionButton = CreateButton("穿墙视野", 175, true)
 
 -- 坐标管理分隔线
 local CoordSeparator = Instance.new("Frame")
 CoordSeparator.Parent = Content
 CoordSeparator.Size = UDim2.new(1, 0, 0, 1)
-CoordSeparator.Position = UDim2.new(0, 0, 0, 175)
+CoordSeparator.Position = UDim2.new(0, 0, 0, 210)
 CoordSeparator.BackgroundColor3 = Color3.fromRGB(60, 200, 255)
 CoordSeparator.BackgroundTransparency = 0.5
 
 local CoordSeparatorLabel = Instance.new("TextLabel")
 CoordSeparatorLabel.Parent = Content
 CoordSeparatorLabel.Size = UDim2.new(1, 0, 0, 18)
-CoordSeparatorLabel.Position = UDim2.new(0, 0, 0, 180)
+CoordSeparatorLabel.Position = UDim2.new(0, 0, 0, 215)
 CoordSeparatorLabel.BackgroundTransparency = 1
 CoordSeparatorLabel.Text = "坐标管理"
 CoordSeparatorLabel.TextColor3 = Color3.fromRGB(120, 200, 255)
@@ -361,22 +368,22 @@ CoordSeparatorLabel.TextSize = 10
 CoordSeparatorLabel.Font = Enum.Font.GothamBold
 
 -- 坐标管理按钮
-local SaveCoordButton = CreateButton("保存当前坐标", 203, false)
-local TeleportCoordButton = CreateButton("传送保存坐标", 238, false)
-local DeleteCoordButton = CreateButton("删除保存坐标", 273, false)
+local SaveCoordButton = CreateButton("保存当前坐标", 238, false)
+local TeleportCoordButton = CreateButton("传送保存坐标", 273, false)
+local DeleteCoordButton = CreateButton("删除保存坐标", 308, false)
 
 -- 分隔线1
 local Separator1 = Instance.new("Frame")
 Separator1.Parent = Content
 Separator1.Size = UDim2.new(1, 0, 0, 1)
-Separator1.Position = UDim2.new(0, 0, 0, 308)
+Separator1.Position = UDim2.new(0, 0, 0, 343)
 Separator1.BackgroundColor3 = Color3.fromRGB(60, 120, 255)
 Separator1.BackgroundTransparency = 0.5
 
 local SeparatorLabel1 = Instance.new("TextLabel")
 SeparatorLabel1.Parent = Content
 SeparatorLabel1.Size = UDim2.new(1, 0, 0, 18)
-SeparatorLabel1.Position = UDim2.new(0, 0, 0, 313)
+SeparatorLabel1.Position = UDim2.new(0, 0, 0, 348)
 SeparatorLabel1.BackgroundTransparency = 1
 SeparatorLabel1.Text = "环绕设置"
 SeparatorLabel1.TextColor3 = Color3.fromRGB(120, 160, 255)
@@ -384,22 +391,22 @@ SeparatorLabel1.TextSize = 10
 SeparatorLabel1.Font = Enum.Font.GothamBold
 
 -- 环绕控制
-local ParallelOrbitButton = CreateButton("平行环绕", 336, true)
-local RadiusControl = CreateInputControl("环绕半径:", 371, 10, 1, 999999)
-local OrbitSpeedControl = CreateInputControl("环绕速度:", 401, 2, 0.1, 999999)
+local ParallelOrbitButton = CreateButton("平行环绕", 371, true)
+local RadiusControl = CreateInputControl("环绕半径:", 406, 10, 1, 999999)
+local OrbitSpeedControl = CreateInputControl("环绕速度:", 436, 2, 0.1, 999999)
 
 -- 分隔线2
 local Separator2 = Instance.new("Frame")
 Separator2.Parent = Content
 Separator2.Size = UDim2.new(1, 0, 0, 1)
-Separator2.Position = UDim2.new(0, 0, 0, 436)
+Separator2.Position = UDim2.new(0, 0, 0, 471)
 Separator2.BackgroundColor3 = Color3.fromRGB(60, 120, 255)
 Separator2.BackgroundTransparency = 0.5
 
 local SeparatorLabel2 = Instance.new("TextLabel")
 SeparatorLabel2.Parent = Content
 SeparatorLabel2.Size = UDim2.new(1, 0, 0, 18)
-SeparatorLabel2.Position = UDim2.new(0, 0, 0, 441)
+SeparatorLabel2.Position = UDim2.new(0, 0, 0, 476)
 SeparatorLabel2.BackgroundTransparency = 1
 SeparatorLabel2.Text = "高级设置"
 SeparatorLabel2.TextColor3 = Color3.fromRGB(120, 160, 255)
@@ -407,8 +414,8 @@ SeparatorLabel2.TextSize = 10
 SeparatorLabel2.Font = Enum.Font.GothamBold
 
 -- 高级设置
-local AntiThrowSpeedControl = CreateInputControl("防甩阈值:", 464, 50, 1, 999999)
-local DeleteUIButton = CreateButton("删除UI", 494, false)
+local AntiThrowSpeedControl = CreateInputControl("防甩阈值:", 499, 50, 1, 999999)
+local DeleteUIButton = CreateButton("删除UI", 529, false)
 
 -- 更新按钮状态
 local function UpdateButtonState(buttonName, isActive)
@@ -807,7 +814,7 @@ MinimizeButton.MouseButton1Click:Connect(function()
         ScrollFrame.Visible = false
         Glow.Visible = false
     else
-        MainFrame:TweenSize(UDim2.new(0, 180, 0, 280), "Out", "Quad", 0.3, true)
+        MainFrame:TweenSize(UDim2.new(0, 180, 0, 315), "Out", "Quad", 0.3, true)
         MinimizeButton.Text = "-"
         ScrollFrame.Visible = true
         Glow.Visible = true
@@ -1042,6 +1049,67 @@ local function TeleportRoutine()
     end
 end
 
+-- 甩飞功能
+local function StartFling()
+    if Teleport.FlingActive then return end
+    
+    Teleport.FlingActive = true
+    
+    -- 创建检测标识
+    if not ReplicatedStorage:FindFirstChild("juisdfj0i32i0eidsuf0iok") then
+        local detection = Instance.new("Decal")
+        detection.Name = "juisdfj0i32i0eidsuf0iok"
+        detection.Parent = ReplicatedStorage
+    end
+    
+    -- 甩飞功能核心逻辑
+    local function fling()
+        local lp = Players.LocalPlayer
+        local c, hrp, vel, movel = nil, nil, nil, 0.1
+    
+        while Teleport.FlingActive do
+            RunService.Heartbeat:Wait()
+            c = lp.Character
+            hrp = c and c:FindFirstChild("HumanoidRootPart")
+    
+            if hrp then
+                vel = hrp.Velocity
+                hrp.Velocity = vel * 10000 + Vector3.new(0, 10000, 0)
+                RunService.RenderStepped:Wait()
+                hrp.Velocity = vel
+                RunService.Stepped:Wait()
+                hrp.Velocity = vel + Vector3.new(0, movel, 0)
+                movel = -movel
+            end
+        end
+    end
+    
+    Teleport.FlingThread = coroutine.create(fling)
+    coroutine.resume(Teleport.FlingThread)
+    
+    FlingButton.Text = "甩飞: 开启"
+    UpdateButtonState("甩飞: 关闭", true)
+    ShowNotification("甩飞功能已开启", Color3.fromRGB(255, 50, 100))
+end
+
+local function StopFling()
+    if not Teleport.FlingActive then return end
+    
+    Teleport.FlingActive = false
+    
+    FlingButton.Text = "甩飞: 关闭"
+    UpdateButtonState("甩飞: 关闭", false)
+    ShowNotification("甩飞功能已关闭", Color3.fromRGB(100, 255, 100))
+end
+
+local function ToggleFling()
+    if Teleport.FlingActive then
+        StopFling()
+    else
+        StartFling()
+    end
+end
+
 -- 改进平行环绕逻辑 - 圆形轨迹且始终面向目标
 local function ParallelOrbitRoutine()
     if not Teleport.HorizontalOrbitActive then return end
@@ -1237,6 +1305,7 @@ StartButton.MouseButton1Click:Connect(StartTeleport)
 PlayerSelectButton.MouseButton1Click:Connect(CreatePlayerSelectionUI)
 StopButton.MouseButton1Click:Connect(StopTeleport)
 AntiThrowButton.MouseButton1Click:Connect(ToggleAntiThrow)
+FlingButton.MouseButton1Click:Connect(ToggleFling) -- 甩飞按钮事件
 WallVisionButton.MouseButton1Click:Connect(ToggleWallVision)
 SaveCoordButton.MouseButton1Click:Connect(SaveCurrentCoordinate)
 TeleportCoordButton.MouseButton1Click:Connect(TeleportToCoordinate)
@@ -1295,11 +1364,15 @@ Players.LocalPlayer.CharacterAdded:Connect(function(char)
         if Teleport.HorizontalOrbitActive then
             StopParallelOrbit()
         end
+        if Teleport.FlingActive then
+            StopFling()
+        end
     end)
 end)
 
 -- 初始化按钮状态
 UpdateButtonState("防甩飞: 开启", Teleport.AntiThrow)
+UpdateButtonState("甩飞: 关闭", false)
 UpdateButtonState("穿墙视野", Teleport.WallVision)
 UpdateButtonState("平行环绕", false)
 
